@@ -91,13 +91,13 @@ partial failures for bulk submission
 getting the native job ID when the job becomes QUEUED. Flux does this
 nicely, with a metadata dictionary.
 
+- [x] Add a get_version method/function with a note about version obj vs
+string depending on programming  language
+
 - [ ] "canceled" or "cancelled"?
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
-
-- [ ] Add a get_version method/function with a note about version obj vs
-string depending on programming  language
 
 - [ ] merge prev() spirit into previous method (the order)
 
