@@ -87,14 +87,14 @@ partial failures for bulk submission
 
 - [x] distinguish client-facing API from library-facing API
 
+- [x] Add metadata to JobStatus. One important use case we discussed is
+getting the native job ID when the job becomes QUEUED. Flux does this
+nicely, with a metadata dictionary.
+
 - [ ] "canceled" or "cancelled"?
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
-
-- [ ] Add metadata to JobStatus. One important use case we discussed is
-getting the native job ID when the job becomes QUEUED. Flux does this
-nicely, with a metadata dictionary.
 
 - [ ] Add a get_version method/function with a note about version obj vs
 string depending on programming  language
@@ -939,6 +939,18 @@ is expected to be provided by the standard library of the language in
 which the library is implemented. If such a class is not provided,
 implementations have the discretion of implementing a relevant
 `Timestamp` class.
+
+
+<a name="jobstatus-getmetdadata"></a>
+```java
+Dictionary<String, Object>? getMetadata()
+```
+
+Returns metadata associated with this status, if any. The content of the
+metadata dictionary is not mandated by this specification and is left to the
+implementation. Possible metadata entries include:
+
+* `native-id`: the native identifier used by the LRM for the job.
 
 
 <a name="jobstatus-getexitcode"></a>
