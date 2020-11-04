@@ -97,12 +97,12 @@ string depending on programming  language
 - [x] add ability to have custom attributes which could be passed to the
 underlying LRM (aka. dynamic attributes).
 
+- [x] merge prev() spirit into previous method (the order)
+
 - [ ] "canceled" or "cancelled"?
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
-
-- [ ] merge prev() spirit into previous method (the order)
 
 - [ ] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
@@ -1009,31 +1009,40 @@ comparable. The order is:
 
 - `CANCELLED > SUSPENDED`
 
-The relevance of the partial ordering is that the system guarantees that
-no transition that would violate this ordering can occur. For example, no
-job can go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE >
-QUEUED`, therefore `QUEUED < COMPLETED`.
+Implementations must enforce this ordering when delivering status updates to
+clients by guaranteeing that no transition that would violate this ordering can
+occur. For example, no job can go from `COMPLETED` to `QUEUED` because
+`COMPLETED > ACTIVE > QUEUED`, therefore `QUEUED < COMPLETED`.
 
+Furthermore, implementations should deliver synthetic status updates when
+necessary to compensate for missed status updates from underlying
+implementations. This can be done by noting that some states have immediate
+predecessors:
 
-<a name="jobstate-pred"></a>
+* `pred(COMPLETED) == ACTIVE`
+* `pred(FAILED) == ACTIVE`
+* `pred(RESUMED) == SUSPENDED`
+* `pred(SUSPENDED) == ACTIVE`
+* `pred(QUEUED) == NEW`
+
+From a practical perspective, an implementation, upon receiving state `newState`
+for a job whose current state is `oldState`, should recursively generate
+synthetic updates using, for example, the following pseudo-code:
+
 ```java
-JobState? pred()
+    void updateState(Job job, JobState newState) {
+        if (job.getStatus().getState() != newState) {
+            if (pred(newState) exists) {
+                // generate synthetic state
+                updateState(job, pred(newState));
+            }
+            job.setStatus(new JobStatus(newState));
+        }
+        else {
+            // the job is already in newState
+        }
+    }
 ```
-
-Returns the state that must have been the immediately preceding state to
-this state in the lifecycle of the job. Not all states have such a
-preceding state. The rules are:
-
-- `COMPLETED.pred() == ACTIVE`
-
-- `FAILED.pred() == ACTIVE`
-
-- `RESUMED.pred() == SUSPENDED`
-
-- `SUSPENDED.pred() == ACTIVE`
-
-- `QUEUED.pred() == NEW`
-
 
 <a name="jobstate-isterminal"></a>
 ```java
