@@ -88,13 +88,15 @@ partial failures for bulk submission
 - [x] distinguish client-facing API from library-facing API
 
 - [ ] "canceled" or "cancelled"?
+  AM: SAGA uses "CANCELED" as job state, FWIW, as does the whole RCT stack.
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
 
-- [ ] Add metadata to JobStatus. One important use case we discussed is
+- [x] Add metadata to JobStatus. One important use case we discussed is
 getting the native job ID when the job becomes QUEUED. Flux does this
 nicely, with a metadata dictionary.
+  AM: changed `getMessage` to `getContext` which returns those meta data.
 
 - [ ] Add a get_version method/function with a note about version obj vs
 string depending on programming  language
@@ -153,6 +155,11 @@ any "how do you do x?", please add here)
 exec/popen.
 
 - [ ] add some text about pilot jobs / reslicing
+      AM: IMHO, the easiest way to represent such hierarchies in the API is to
+      be able to obtain a JobExecutor from a (pilot) Job.  Alternatively,
+      a pilot job entering ACTIVE state can provide a JobExecutor endpoint as
+      metda data - but then we would require the non-standardized meta data to
+      be used.
 
 - [ ] move some of the technical sections to appendices
 
@@ -166,7 +173,7 @@ exec/popen.
     Things we could include in no particular order..
 
     - That we aim to make a minimal interface; advanced functionality is
-    beyond the scope of this API
+    beyond the scope of this (version of the) API
 
     - We would like the interface to be general and applicable to
     commonly deployed LRMs, cloud systems, etc. (I know some of this is
@@ -174,6 +181,7 @@ exec/popen.
 
     - We are focused on executing a process (e.g., popen rather than
     function call)
+    AM: Why actually?  The only point where this shows is the jobspec.
 
     - That we intend for this interface to be used by various workflow
     systems and directly by applications
@@ -182,7 +190,7 @@ exec/popen.
     and others
 
     - Do we want to set any goals about performance/scale? Presumably we
-    want ot aim to address exascale workloads and exascale machines
+    want to aim to address exascale workloads and exascale machines
     (thousands of nodes)
 
     - We consider allocation at the unit of a single job, no intention to
@@ -200,13 +208,18 @@ exascale machines, as well as propose such an API. A job management API
 is a set of interfaces that allows the specification and management of
 the invocation of application executables. The corresponding
 implementations of a job management API is a job management library. A
-job management library, through its  API,  is invoked by a client
+job management library, through its API, is invoked by a client
 application.
 
 Traditionally, job management is implemented on supercomputers by Local
 Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. In a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
+
+Non-Traditionally, job management is also provided by execution managers, which
+provided capabilities similar to LRMs but operate in user space, on a limited
+subset of resources, such as within a job's allocation.  The job management API
+aims to also transparently abstract such execution managers.
 
 
 ### A Note About Code Samples
@@ -226,8 +239,14 @@ pseudo-code which almost surely will require modifications to be usable.
 
 ## Layers
 
+AM: After the different discussions we had, I am not sure if the API should
+really distinguish these layers.  The *implementation* very much needs to, but
+I don't see how the description of a job, the management of its execution, or
+the semantics of its state would differ between those layers.  I would thus
+suggest to limit this discussion to the implementation of the API.
+
 There are at least three major ways in which a job management API can be
-used:
+implemented:
 
 - **locally**: the relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
@@ -242,7 +261,7 @@ using either a remote or local job management library; application jobs
 are then submitted to the pilot system which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
-as well as those used to run the application l and remote job management
+as well as those used to run the application and remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
@@ -398,10 +417,10 @@ methods.
 
 ## Interaction with LRMs and Scalability
 
-Implementations must use bulk status operations when interacting with
+Implementations should use bulk status operations when interacting with
 LRMs. Regularly invoking, for example, qstat for each job in a set of
 many jobs can quickly overwhelm a LRM. The solution is to subscribe to
-asynchronous notifications from the LRM,if supported, or instead use bulk
+asynchronous notifications from the LRM, if supported, or instead use bulk
 query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
 extract the information about the relevant jobs from the result.
 
@@ -410,23 +429,22 @@ extract the information about the relevant jobs from the result.
 
 ## State Consistency
 
-Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems ordering of events on one system cannot be guaranteed on another.
-For example, an application on System 1 can, in quick succession, open a
-TCP connection to System 2 and transmit, on each connection, the messages
-"A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e. it uses separate threads for each connection),
-it is entirely possible that some user code that monitors messages on
-System 2 receives the message "B" before "A". In terms of jobs,
-this may make it appear as if seemingly impossible things are happening,
-such as a job starting to run after it has completed. Implementations
-must ensure that client code does not receive events in orders that are
-clearly impossible. The specifics of how this must be handled by
-implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
-[`JobState`](#jobstate).
+TODO AM: state model should be defined before this section.
 
+The API specification pre-scribes a state model for jobs.  Backend
+implementations are likely to have their own state definitions and transition
+semantics.  An implementation of this API MUST ensure that
 
+  - backend states are mapped to the states defined in this document;
+  - state transitions are valid with respect to the state model here defined.
 
+An implementation MUST NOT issue state updates for any backend state transitions
+which cannot be mapped to the state model.  When a backend state model misses
+a representation for a state which the state model in this document requires,
+the implementation MUST report the respective state transition anyway, to the
+best of its knowledge.  For example, if a `JobExecutor` backend does, for some
+reason, not feature a state corresponding to `QUEUED`, then the implementation
+MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
 
 
 ## Bulk Submission
@@ -436,132 +454,7 @@ operations to submit multiple jobs. At the user-facing API level this
 would, for example, translate into the ability to call a `submit()`
 method with a list/array of jobs rather than having to call it multiple
 times with a single job. This is typically done for performance reasons.
-Consider a simple example, in which a hypothetical `submit(job)` method
-is implemented by connecting to a remote service and sending the
-serialized job information. The timing diagram is:
-
-<img width="300pt" src="diagrams/bulk_submission_simple.svg" alt="Single Job Timing Diagram"/>
-
-That is, in the simplest case, with no authentication present, it takes
-two round trips to submit one job, and three if one also waits for the
-connection to close. Calling the `submit()` method repeatedly in a loop
-results in the same process repeated serially, resulting in a total time
-of `3 * rtt * n`, where `n` is the total number of jobs and `rtt` is the
-round-trip time (the time it takes to send a message to the server plus
-the time it takes for the reply to make it back):
-
-<img width="300pt" src="diagrams/bulk_submission_simple_many.svg" alt="Multiple Jobs Timing Diagram"/>
-
-A way of speeding up the process is, if the details for all the jobs in
-the loop is known, to submit all the jobs at once:
-
-<img width="300pt" src="diagrams/bulk_submission_bulk.svg" alt="Bulk Jobs Timing Diagram"/>
-
-where `send(job_data[])` indicates that we are now sending an array of
-job information. This essentially reduces the time from `3 * rtt * n` to
-`3 * rtt`, or from `O(n)` to `O(1)`. The downside is that one must know
-what all the jobs in the array are at the time the `submit(job_data[])`
-call is made. In practice, it is likely that a job submission API will be
-driven by a workflow engine, which may not use static planning and
-produce jobs individually rather than in arrays. Nonetheless, it is
-possible to employ a buffer that accumulates job requests over a certain
-(short) period of time and submits all the collected jobs to the API
-using the bulk version of `submit()`. In essence, such an optimization
-could even be performed by the job submission library, shifting some of
-the complexity from the user into a reusable component.
-
-There exist a number of alternatives to bulk submission that can improve
-submission performance, which are analyzed in the following paragraphs.
-
-
-#### Threaded Submission
-
-Threaded submission involves, as the name implies, using multiple
-concurrent threads to submit jobs. This can effectively divide the
-submission time by the number of threads employed, as it can be seen from
-the following timing diagram:
-
-<img width="500pt" src="diagrams/bulk_submission_threaded.svg" alt="Threaded Jobs Timing Diagram"/>
-
-Threaded submission can, however, lose some of its advantage if any
-submission steps involve CPU-bound operations, such as is the case when
-initializing secure connections. A TLS handshake involves, for example,
-some encryption and decryption using asymmetric cryptography. This is
-usually slow, even for short messages, enough so as to limit the number
-of operations to a few hundreds per second per CPU core. Since CPU cores
-are time-shared between threads, only one CPU-bound operation can be
-effectively executing on a given core at one time. A possible timing
-diagram that assumes a single CPU core could look like this:
-
-<img width="500pt" src="diagrams/bulk_submission_threaded_tls.svg" alt="Threaded with TLS Jobs Timing Diagram"/>
-
-The extent to which cryptography is an issue in TLS is not entirely
-clear. A quick performance test using `openssl s_time -connect localhost`
-on decent hardware with Apache running locally returns approximately
-18000 operations per second with a 2048 bit certificate and approximately
-6000 operations per second with a 4096 bit certificate. Of course, this
-assumes that TLS is the only CPU-bound operation relevant during
-submission. A notable, if dated exception, was the concept of delegation
-in Gobus GSI, which involved the generation of an asymmetric key pair.
-For RSA 4096 bit keys, this is something that takes seconds on modern
-hardware.
-
-The problem of CPU-bound connection operations can be mitigated by
-caching the results of such CPU-bound operations. A simple way to achieve
-this is to cache the connections themselves. Alternatively, the security
-layer may provide relevant functionality. For example, TLS supports
-session resumption, which can be used to share cryptographic keys across
-multiple connections.
-
-
-#### Asynchronous Networking
-
-Given that a large majority of the thread time in a hypothetical
-`submit()` call is spent waiting for network packets to travel between
-machines, converting to fully asynchronous network calls can dissociate
-idle thread time on the client machine from the in-flight data delays.
-This, however, requires that the submission be asynchronous; that is, the
-`submit()` call must return immediately and the actual submission process
-must proceed asynchronously. The rough idea is to use asynchronous
-versions of networking calls, which we will denote by pre-pending the
-characters `"a_"`. These calls return immediately but signal the
-completion operation by calling a continuation function which is passed
-by the caller in an additional parameter. For example, instead of
-`connect()`, we can say `a_connect(c_connected)`, the latter being the
-asynchronous version of `connect()` which calls `c_connected()` when the
-connection succeeds. A possible timing diagram for submitting multiple
-jobs using asynchronous networking is shown in the picture below, where
-the color encodes the job with which the respective invocation is
-associated:
-
-<img width="300pt" src="diagrams/bulk_submission_async.svg" alt="Async Jobs Timing Diagram"/>
-
-
-While asynchronous networking addresses the problems imposed by network
-delays, it does little to alleviate potential throttling due to CPU-bound
-operations.
-
-
-#### Connection Multiplexing
-
-An alternative way of improving efficiency is to re-use a single
-connection for each remote resource that jobs are submitted to. If data
-is sent and received asynchronously, the timing has all the
-characteristics of the asynchronous networking case while also
-eliminating the need for repeated security handshakes or connection
-establishment:
-
-<img width="300pt" src="diagrams/bulk_submission_multiplexing.svg" alt="Connection Multiplexing Timing Diagram"/>
-
-Connection multiplexing also comes with performance advantages. When
-using individual connections to transmit short messages, TCP buffers must
-be emptied before they become full, since there is simply no other data
-to send over the connection. When using a single connection to transmit
-larger messages, TCP buffers can be more efficiently utilized.
-Additionally, it becomes feasible to tune buffer sizes in order to
-optimize the throughput of connections to particular services.
-
-
+We discuss bulk submissions in [Appendix A][bulk.md].
 
 
 ## The Job API; Layer 0
@@ -932,13 +825,14 @@ JobState getState()
 
 Return the state of the job.
 
-
-<a name="jobstatus-gettime"></a> ```java Timestamp getTime() ``` Returns
-the time at which the job has entered this state. The `Timestamp` class
-is expected to be provided by the standard library of the language in
-which the library is implemented. If such a class is not provided,
-implementations have the discretion of implementing a relevant
-`Timestamp` class.
+<a name="jobstatus-gettime"></a>
+```java
+Timestamp getTime()
+```
+Returns the time at which the job has entered this state. The `Timestamp` class
+is expected to be provided by the standard library of the language in which the
+library is implemented. If such a class is not provided, implementations have
+the discretion of implementing a relevant `Timestamp` class.
 
 
 <a name="jobstatus-getexitcode"></a>
@@ -949,12 +843,16 @@ int? getExitCode()
 If the job has exited, returns the exit code, otherwise `null`.
 
 
-<a name="jobstatus-getmessage"></a>
+<a name="jobstatus-getcontext"></a>
 ```java
-String? getMessage()
+Map<String, Any>? getContext()
 ```
 
-Returns the message associated with this status, if any.
+Returns additional, backend specific meta data associated with this status, if
+any.  Those meta data may include details on the state transition, backend
+native job IDs, or other, non-standardized pieces of information.  An
+implementation MAY specify a subset of information expected to be included in
+the returned map.
 
 
 <a name="jobstatus-isterminal"></a>
