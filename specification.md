@@ -570,7 +570,7 @@ This section describes the basic local API.
 
 
 
-###Implementation Notes
+### Implementation Notes
 
 The API specification is to be understood as a guideline that informs the
 implementation in a given language to the extent that the resulting
@@ -593,6 +593,16 @@ customary in the language in which the library is implemented
 ### JobExecutor
 
 #### Methods
+
+
+<a name="jobexecutor-constructor"></a>
+```java
+JobExecutor(String url)
+```
+
+Instantiates an `JobExecutor` object and binds it to the backend specified by
+URL `url`.  The URL will also encode any authentication details needed to
+access the backend.
 
 
 <a name="jobexecutor-getname"></a>
