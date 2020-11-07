@@ -431,7 +431,7 @@ extract the information about the relevant jobs from the result.
 
 TODO AM: state model should be defined before this section.
 
-The API specification pre-scribes a state model for jobs.  Backend
+The API specification prescribes a state model for jobs.  Backend
 implementations are likely to have their own state definitions and transition
 semantics.  An implementation of this API MUST ensure that
 
