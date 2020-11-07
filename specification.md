@@ -708,7 +708,8 @@ An implementation MUST ensure that job state transitions occur according to the
 following state model:  a job is created in an initial state `NEW`.  When the
 job is accepted by the backend for execution, it will enter the state `QUEUED`.
 When the job is being executed and consumes resources, it enters the `ACTIVE`
-state.  Upon completion, it will enter the `DONE` state which is a final state.
+state.  Upon completion, it will enter the `COMPLETED` state which is a final
+state.
 
 At any point in time (until the job is final), the job can enter the `FAILED`
 state on error conditions.  That state is also reached when the job completes
@@ -1017,7 +1018,7 @@ A convenience wrapper for
 ### JobState
 
 An enumeration holding the possible job states, which are: `NEW`,
-`QUEUED`, `ACTIVE`, `SUSPENDED`, `RESUMED`, `COMPLETED`, `FAILED`,
+`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`,
 `CANCELLED`.
 
 #### Methods
