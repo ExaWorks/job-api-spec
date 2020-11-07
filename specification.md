@@ -216,7 +216,7 @@ Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. In a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
-Non-Traditionally, job management is also provided by execution managers, which
+Nontraditionally, job management is also provided by execution managers, which
 provided capabilities similar to LRMs but operate in user space, on a limited
 subset of resources, such as within a job's allocation.  The job management API
 aims to also transparently abstract such execution managers.
