@@ -331,7 +331,7 @@ void runJobs() {
     jobsLeft = alljobs.size();
     executor.addJobStatusCallback(new JobStatusCallback() {
         jobStatusChanged(Job job, JobStatus status) {
-            if (status.isTerminal()) {
+            if (status.isFinal()) {
                 jobsLeft--;
             }
         }
@@ -356,7 +356,7 @@ void runJob(Job job, JobExecutor executor) {
     callback =
     executor.submit(job, new JobStatusCallback() {
         void jobStatusChanged(Job job, JobStatus status) {
-            if (status.isTerminal()) {
+            if (status.isFinal()) {
                 condition.signal();
             }
         }
@@ -672,7 +672,7 @@ implementation, which may be at some later time. A successful
 cancellation is reflected in a change of status of the respective job to
 `JobState.CANCELLED`. User code can synchronously wait until the
 `CANCELLED` state is reached using `job.waitFor(JobState.CANCELLED)` or
-even `job.waitFor()`, since the latter would wait for all terminal
+even `job.waitFor()`, since the latter would wait for all final
 states, including `JobState.CANCELLED`. In fact, it is recommended that
 `job.waitFor()` be used because it is entirely possible for the job to
 complete before the cancellation is communicated to the underlying
@@ -1005,21 +1005,20 @@ String? getMessage()
 Returns the message associated with this status, if any.
 
 
-<a name="jobstatus-isterminal"></a>
+<a name="jobstatus-isfinal"></a>
 ```java
-boolean isTerminal()
+boolean isFinal()
 ```
 
 A convenience wrapper for
-[`status.getState().isTerminal()`](#jobstate-isterminal).
+[`status.getState().isFinal()`](#jobstate-isFinal).
 
 
 
 ### JobState
 
 An enumeration holding the possible job states, which are: `NEW`,
-`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`,
-`CANCELLED`.
+`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELLED`.
 
 #### Methods
 
@@ -1028,22 +1027,15 @@ An enumeration holding the possible job states, which are: `NEW`,
 boolean isGreaterThan(JobState other)
 ```
 
-Defines a partial ordering on the states. Not all state pairs are
-comparable. The order is:
+Defines a partial ordering on the states. It is not possible to compare two
+final states -- otherwise all state pairs are comparable. Comparisons are
+transitive.  The order is:
 
-- `*  > NEW` (i.e., `NEW` is the lowest element)
-
-- `COMPLETED > ACTIVE`
-
-- `FAILED > ACTIVE`
-
-- `ACTIVE > QUEUED`
-
-- `COMPLETED > SUSPENDED`
-
-- `FAILED > SUSPENDED`
-
-- `CANCELLED > SUSPENDED`
+  - `QUEUED    > NEW`
+  - `ACTIVE    > QUEUED`
+  - `COMPLETED > ACTIVE`
+  - `FAILED    > ACTIVE`
+  - `CANCELLED > ACTIVE`
 
 The relevance of the partial ordering is that the system guarantees that
 no transition that would violate this ordering can occur. For example, no
@@ -1051,33 +1043,13 @@ job can go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE >
 QUEUED`, therefore `QUEUED < COMPLETED`.
 
 
-<a name="jobstate-pred"></a>
+<a name="jobstate-isfinal"></a>
 ```java
-JobState? pred()
-```
-
-Returns the state that must have been the immediately preceding state to
-this state in the lifecycle of the job. Not all states have such a
-preceding state. The rules are:
-
-- `COMPLETED.pred() == ACTIVE`
-
-- `FAILED.pred() == ACTIVE`
-
-- `RESUMED.pred() == SUSPENDED`
-
-- `SUSPENDED.pred() == ACTIVE`
-
-- `QUEUED.pred() == NEW`
-
-
-<a name="jobstate-isterminal"></a>
-```java
-boolean isTerminal()
+boolean isFinal()
 ```
 
 Returns `true` if a job cannot further change state once this state is
-reached. The terminal states are `COMPLETED`, `FAILED`, and `CANCELLED`.
+reached. The final states are `COMPLETED`, `FAILED`, and `CANCELLED`.
 
 
 
