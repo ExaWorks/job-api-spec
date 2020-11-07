@@ -27,6 +27,7 @@
             - [Methods](#methods)
                     - [Exceptions:](#exceptions)
         - [Job](#job)
+            - [State Model](#state-model)
             - [Methods](#methods)
         - [JobSpecification](#jobspecification)
             - [Methods](#methods)
@@ -693,6 +694,52 @@ to `null`.
 
 
 ### Job
+
+#### State Model
+
+Job instances are, in this API, stateful objects.  A job's state can be
+inspected via the `job.getStatus()` method which will return a `JobStatus`
+instance on which the job's state is available as an attribute.  State
+transitions can also be received via callbacks
+
+TODO: how are callbacks registered?
+
+An implementation MUST ensure that job state transitions occur according to the
+following state model:  a job is created in an initial state `NEW`.  When the
+job is accepted by the backend for execution, it will enter the state `QUEUED`.
+When the job is being executed and consumes resources, it enters the `ACTIVE`
+state.  Upon completion, it will enter the `DONE` state which is a final state.
+
+At any point in time (until the job is final), the job can enter the `FAILED`
+state on error conditions.  That state is also reached when the job completes
+execution with an error code, but can also indicate a backend error, or
+a library error of any kind.  The `FAILED` state is final.
+
+At any point in time (until the job is final), the job can enter the `CANCELED`
+state as reaction to the `job.cancel()` call.  Note that the transition to
+`CANCELED` is not immediate when calling that method, but the state transition
+only occurs once the backend is enacting that request.  
+
+The `ACTIVE` state is the only state where the job will consume resources.
+
+Backend implementations are likely to have their own state definitions state and
+transition semantics.  An implementation of this API MUST ensure that
+
+  - backend states are mapped to the states defined in this document;
+  - state transitions are valid with respect to the state model here defined.
+
+An implementation MUST NOT issue state updates for any backend state transitions
+which cannot be mapped to the state model.  When a backend state model misses
+a representation for a state which the state model in this document requires,
+the implementation MUST report the respective state transition anyway, to the
+best of its knowledge.  For example, if a `JobExecutor` backend does, for some
+reason, not feature a state corresponding to `QUEUED`, then the implementation
+MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
+
+Additional information (time stamps, backend details, transition triggers etc)
+MAY be available on certain state transitions, in certain implementations - See
+the `JobStatus` definition for additional information on such meta data.
+
 
 #### Methods
 
