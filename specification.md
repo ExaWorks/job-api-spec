@@ -849,7 +849,7 @@ Map<String, Any>? getContext()
 ```
 
 Returns additional, backend specific meta data associated with this status, if
-any.  Those meta data may include details on the state transition, backend
+any.  Those metadata may include details on the state transition, backend
 native job IDs, or other, non-standardized pieces of information.  An
 implementation MAY specify a subset of information expected to be included in
 the returned map.
