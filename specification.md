@@ -88,7 +88,6 @@ partial failures for bulk submission
 - [x] distinguish client-facing API from library-facing API
 
 - [ ] "canceled" or "cancelled"?
-  AM: SAGA uses "CANCELED" as job state, FWIW, as does the whole RCT stack.
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
@@ -96,7 +95,6 @@ distinguish between EAGAIN types of errors and others.
 - [x] Add metadata to JobStatus. One important use case we discussed is
 getting the native job ID when the job becomes QUEUED. Flux does this
 nicely, with a metadata dictionary.
-  AM: changed `getMessage` to `getContext` which returns those meta data.
 
 - [ ] Add a get_version method/function with a note about version obj vs
 string depending on programming  language
@@ -155,11 +153,6 @@ any "how do you do x?", please add here)
 exec/popen.
 
 - [ ] add some text about pilot jobs / reslicing
-      AM: IMHO, the easiest way to represent such hierarchies in the API is to
-      be able to obtain a JobExecutor from a (pilot) Job.  Alternatively,
-      a pilot job entering ACTIVE state can provide a JobExecutor endpoint as
-      metda data - but then we would require the non-standardized meta data to
-      be used.
 
 - [ ] move some of the technical sections to appendices
 
@@ -181,7 +174,6 @@ exec/popen.
 
     - We are focused on executing a process (e.g., popen rather than
     function call)
-    AM: Why actually?  The only point where this shows is the jobspec.
 
     - That we intend for this interface to be used by various workflow
     systems and directly by applications
@@ -238,12 +230,6 @@ pseudo-code which almost surely will require modifications to be usable.
 
 
 ## Layers
-
-AM: After the different discussions we had, I am not sure if the API should
-really distinguish these layers.  The *implementation* very much needs to, but
-I don't see how the description of a job, the management of its execution, or
-the semantics of its state would differ between those layers.  I would thus
-suggest to limit this discussion to the implementation of the API.
 
 There are at least three major ways in which a job management API can be
 implemented:
@@ -429,22 +415,24 @@ extract the information about the relevant jobs from the result.
 
 ## State Consistency
 
+Perhaps less relevant for Layer 0, but when dealing with concurrent
+systems ordering of events on one system cannot be guaranteed on another.
+For example, an application on System 1 can, in quick succession, open a
+TCP connection to System 2 and transmit, on each connection, the messages
+"A" and "B", respectively. If System 2 does not serialize
+connection handling (i.e. it uses separate threads for each connection),
+it is entirely possible that some user code that monitors messages on
+System 2 receives the message "B" before "A". In terms of jobs,
+this may make it appear as if seemingly impossible things are happening,
+such as a job starting to run after it has completed. Implementations
+must ensure that client code does not receive events in orders that are
+clearly impossible. The specifics of how this must be handled by
+implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
+[`JobState`](#jobstate).
+
 TODO AM: state model should be defined before this section.
 
-The API specification prescribes a state model for jobs.  Backend
-implementations are likely to have their own state definitions and transition
-semantics.  An implementation of this API MUST ensure that
 
-  - backend states are mapped to the states defined in this document;
-  - state transitions are valid with respect to the state model here defined.
-
-An implementation MUST NOT issue state updates for any backend state transitions
-which cannot be mapped to the state model.  When a backend state model misses
-a representation for a state which the state model in this document requires,
-the implementation MUST report the respective state transition anyway, to the
-best of its knowledge.  For example, if a `JobExecutor` backend does, for some
-reason, not feature a state corresponding to `QUEUED`, then the implementation
-MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
 
 
 ## Bulk Submission
