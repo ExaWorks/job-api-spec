@@ -328,7 +328,7 @@ asynchronous implementation can run multiple jobs in a single thread:
 ```java
 void runJobs() {
     jobsLeft = alljobs.size();
-    executor.addJobStatusCallback(new JobStatusCallback() {
+    executor.setJobStatusCallback(new JobStatusCallback() {
         jobStatusChanged(Job job, JobStatus status) {
             if (status.isTerminal()) {
                 jobsLeft--;
