@@ -1,13 +1,3 @@
-<style>
-.imp-note {
-    padding-left: 8pt;
-    border-left: 4pt solid #efcf00;
-    background-color: #ffffef;
-    padding-top: 8pt;
-    padding-bottom: 8pt;
-}
-</style>
-
 <link rel="stylesheet" href="extras.css">
 
 # Heading 1
