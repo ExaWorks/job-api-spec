@@ -8,6 +8,8 @@
 }
 </style>
 
+<link rel="stylesheet" href="extras.css">
+
 # Heading 1
 
 Normal paragraph.
@@ -31,9 +33,9 @@ another.code = "sample"
 
 </div>
 
-<span>
+<div class="imp-note-2">
     
 * list item
 * list item
 
-</span>
+</div>
