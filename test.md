@@ -16,10 +16,24 @@ Normal paragraph.
 some.code = "sample"
 ```
 
+* list item
+* list item
+
 <div class="imp-note">
 Implementation note paragraph.
 
 ```python
 another.code = "sample"
 ```
+
+* list item
+* list item
+
 </div>
+
+<span>
+    
+* list item
+* list item
+
+</span>
