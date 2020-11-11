@@ -11,7 +11,10 @@
     margin-bottom: 8pt;
 }
 
-.imp-note::before {
-    width: 4px;
-    background-color: green;
+.imp-note .highlight {
+    background-color: #f8f8e8;
+}
+
+.markdown-body .imp-note .highlight pre, .markdown-body .imp-note pre, .imp-note .editor-colors {
+    background-color: #f6f8e8;
 }
