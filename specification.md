@@ -94,9 +94,6 @@ nicely, with a metadata dictionary.
 - [x] Add a get_version method/function with a note about version obj vs
 string depending on programming  language
 
-- [x] add ability to have custom attributes which could be passed to the
-underlying LRM (aka. dynamic attributes).
-
 - [x] merge prev() spirit into previous method (the order)
 
 - [ ] "canceled" or "cancelled"?
@@ -107,6 +104,9 @@ distinguish between EAGAIN types of errors and others.
 - [ ] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
 we mandate it.
+
+- [ ] add ability to have custom attributes which could be passed to the
+underlying LRM (aka. dynamic attributes).
 
 - [ ] we need to go through the resource spec; many common things
 supported by other JM APIs are not supported by Flux Jobspec V1, such as
@@ -1315,19 +1315,6 @@ resources reserved through the advanced reservation represented by this
 ID.
 
 
-<a name="jobattributes-setcustomattribute"></a>
-```java
-void setCustomAttribute(String name, Object value);
-Object? getCustomAttribute(String name);
-```
-
-Allows setting/querying of custom attributes. Implementations should use a
-dictionary to implement the custom attributes. Additionally, implementations are
-encouraged to make sensible decisions on whether to store some or all of the
-fixed attributes in the same dictionary or not. It is, therefore, entirely
-possible for `getCustomAttribute("duration")` to return a value passed earlier
-to `setDuration()`, although the specific custom attribute name need not be
-`"duration"`.
 
 ### TimeInterval
 
