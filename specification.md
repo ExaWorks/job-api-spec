@@ -588,7 +588,7 @@ not required to do so.
 - getters/setters can be replaced by properties, depending on what is
 customary in the language in which the library is implemented
 
-- the root of the class hierarchy is called `Object` in this document
+
 
 ### JobExecutor
 
