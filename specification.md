@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="extras.css">
 
 # A Job Management API
 *Mihael Hategan [add your name here]*
