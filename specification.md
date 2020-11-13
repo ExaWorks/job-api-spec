@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="extras.css">
 
 # A Job Management API
 *Mihael Hategan [add your name here]*
@@ -96,7 +97,7 @@ string depending on programming  language
 
 - [x] merge prev() spirit into previous method (the order)
 
-- [ ] "canceled" or "cancelled"?
+- [x] "canceled" ~~or "cancelled"~~?
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
@@ -665,19 +666,19 @@ void cancel(Job job) throws SubmitException
 
 Cancels a job that has been submitted to underlying executor
 implementation. A successful return of this method only indicates that
-the request for cancellation has been communicated to the underlying
-implementation. The job will then be cancelled at the discretion of the
+the request for cancelation has been communicated to the underlying
+implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
-cancellation is reflected in a change of status of the respective job to
-`JobState.CANCELLED`. User code can synchronously wait until the
-`CANCELLED` state is reached using `job.waitFor(JobState.CANCELLED)` or
+cancelation is reflected in a change of status of the respective job to
+`JobState.CANCELED`. User code can synchronously wait until the
+`CANCELED` state is reached using `job.waitFor(JobState.CANCELED)` or
 even `job.waitFor()`, since the latter would wait for all terminal
-states, including `JobState.CANCELLED`. In fact, it is recommended that
+states, including `JobState.CANCELED`. In fact, it is recommended that
 `job.waitFor()` be used because it is entirely possible for the job to
-complete before the cancellation is communicated to the underlying
+complete before the cancelation is communicated to the underlying
 implementation and before the client code receives the completion
-notification. In such a case, the job will never enter the `CANCELLED`
-state and `job.waitFor(JobState.CANCELLED)` would hang indefinitely.
+notification. In such a case, the job will never enter the `CANCELED`
+state and `job.waitFor(JobState.CANCELED)` would hang indefinitely.
 
 <a name="jobexecutor-setjobstatuscallback"></a>
 ```java
@@ -763,7 +764,7 @@ Waits for the job to complete for a certain amount of time, or
 indefinitely if `timeout` is `null`. Returns a [JobStatus](#jobstatus)
 object that represents the status of the job at termination or `null` if
 the timeout is reached. Equivalent to `waitFor(timeout,
-JobState.COMPLETED, JobState.FAILED, JobState.CANCELLED)`.
+JobState.COMPLETED, JobState.FAILED, JobState.CANCELED)`.
 
 ```java
 JobStatus waitFor()
@@ -983,7 +984,7 @@ A convenience wrapper for
 
 An enumeration holding the possible job states, which are: `NEW`,
 `QUEUED`, `ACTIVE`, `SUSPENDED`, `RESUMED`, `COMPLETED`, `FAILED`,
-`CANCELLED`.
+`CANCELED`.
 
 #### Methods
 
@@ -1007,7 +1008,7 @@ comparable. The order is:
 
 - `FAILED > SUSPENDED`
 
-- `CANCELLED > SUSPENDED`
+- `CANCELED > SUSPENDED`
 
 Implementations must enforce this ordering when delivering status updates to
 clients by guaranteeing that no transition that would violate this ordering can
@@ -1050,7 +1051,7 @@ boolean isTerminal()
 ```
 
 Returns `true` if a job cannot further change state once this state is
-reached. The terminal states are `COMPLETED`, `FAILED`, and `CANCELLED`.
+reached. The terminal states are `COMPLETED`, `FAILED`, and `CANCELED`.
 
 
 
