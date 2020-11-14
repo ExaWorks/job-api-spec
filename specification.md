@@ -650,9 +650,9 @@ void submit(List<Job> jobs) throws InvalidJobListException, SubmitException
 ```
 
 Submits a list of jobs to the underlying implementation. This allows
-implementations to submit bulk jobs more efficiently than it would be to
-submit jobs individually. It is, therefore, discouraged to implement this
-method by repeatedly invoking `submit(job)`, unless no performance
+implementations to submit bulk jobs more efficiently than
+submitting jobs individually. Implementing this
+method by repeatedly invoking `submit(job)` is therefore discouraged, unless no performance
 benefit can be derived from bulk submission. It is possible for this
 method to only successfully submit a subset of the jobs. If that is the
 case, this method must throw `InvalidJobListException` and populate it
@@ -729,9 +729,9 @@ returned by this method is monotonic in time with respect to the partial
 ordering of [JobStatus](#jobstatus) types. That is, if
 `jobStatus1.getState()` and `jobStatus2.getState()` are comparable and
 `jobStatus1.getState() < jobStatus2.getState()`, then it is impossible
-for `jobStatus2` to be returned by a call placed previous to a call that
+for `jobStatus2` to be returned by a call placed prior to a call that
 returns `jobStatus1` if both calls are placed from the same thread or if
-a proper memory barrier is placed between the calls otherwise.
+a proper memory barrier is placed between the calls.
 Furthermore, implementations must, to the extent possible, simulate
 missing states. For example, if the implementation polls a LRM queue
 infrequently enough such that the active state of a job is skipped
@@ -780,7 +780,7 @@ void setStatusCallback(JobStatusCallback? cb)
 ```
 
 Sets a [status callback](#jobstatuscallback) for this job. The callback
-will be invoked whenever the state of this job changes. To unset the
+will be invoked when the state of this job changes. To unset the
 callback, call this method with a `null` argument.
 
 
@@ -797,8 +797,8 @@ String? getName()
 ```
 
 Sets/retrieves a name for the job. The name plays no functional role.
-Instead, it can help users in tracking the job across various layers.
-Implementations should make efforts in propagating the name such that the
+However, it can help users in tracking the job across various layers.
+Implementations should make an effort to propagate the name so that the
 user can quickly identify the job as it propagates through the system.
 For example, the job should appear with this name in the output of a
 potential `qstat` LRM command.
