@@ -304,8 +304,8 @@ not return until the job completes. The typical scenario in which a job
 management API would be used involves jobs that are launched on a client
 machine (e.g., login node), but whose CPU-bound part would run on a
 different machine (e.g., compute node). This implies that the fundamental
-operations that `job.run()` consists of are some initial submission steps
-which communicate the details of the job from the client machine to the
+operations that comprise `job.run()` are some initial submission steps
+that communicate the details of the job from the client machine to the
 compute node and start the relevant CPU-bound code on the compute node as
 well as a step that waits for the CPU-bound code to finish executing:
 
@@ -319,7 +319,7 @@ run() {
 Considering jobs with non-trivial run durations, the bulk of the time in
 the above simplified definition of `run()` would be spent in
 `waitForCompletion()`, which is an operation that, if implemented as
-efficiently as possible, would consume no share of CPU time locally
+efficiently as possible, would consume no CPU time locally
 during the execution of the job. However, it holds the non-CPU resources
 associated with the thread that invokes it, namely kernel and stack
 memory. Any jobs running concurrently would, each, hold the resources
@@ -402,7 +402,7 @@ methods.
 Implementations must use bulk status operations when interacting with
 LRMs. Regularly invoking, for example, qstat for each job in a set of
 many jobs can quickly overwhelm a LRM. The solution is to subscribe to
-asynchronous notifications from the LRM,if supported, or instead use bulk
+asynchronous notifications from the LRM, if supported, or instead use bulk
 query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
 extract the information about the relevant jobs from the result.
 
@@ -412,11 +412,11 @@ extract the information about the relevant jobs from the result.
 ## State Consistency
 
 Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems ordering of events on one system cannot be guaranteed on another.
+systems, ordering of events on one system cannot be guaranteed on another.
 For example, an application on System 1 can, in quick succession, open a
 TCP connection to System 2 and transmit, on each connection, the messages
 "A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e. it uses separate threads for each connection),
+connection handling (i.e., it uses separate threads for each connection),
 it is entirely possible that some user code that monitors messages on
 System 2 receives the message "B" before "A". In terms of jobs,
 this may make it appear as if seemingly impossible things are happening,
@@ -479,7 +479,7 @@ submission performance, which are analyzed in the following paragraphs.
 
 Threaded submission involves, as the name implies, using multiple
 concurrent threads to submit jobs. This can effectively divide the
-submission time by the number of threads employed, as it can be seen from
+submission time by the number of threads employed, as can be seen in
 the following timing diagram:
 
 <img width="500pt" src="diagrams/bulk_submission_threaded.svg" alt="Threaded Jobs Timing Diagram"/>
@@ -488,7 +488,7 @@ Threaded submission can, however, lose some of its advantage if any
 submission steps involve CPU-bound operations, such as is the case when
 initializing secure connections. A TLS handshake involves, for example,
 some encryption and decryption using asymmetric cryptography. This is
-usually slow, even for short messages, enough so as to limit the number
+usually slow enough, even for short messages, so as to limit the number
 of operations to a few hundreds per second per CPU core. Since CPU cores
 are time-shared between threads, only one CPU-bound operation can be
 effectively executing on a given core at one time. A possible timing
@@ -499,12 +499,12 @@ diagram that assumes a single CPU core could look like this:
 The extent to which cryptography is an issue in TLS is not entirely
 clear. A quick performance test using `openssl s_time -connect localhost`
 on decent hardware with Apache running locally returns approximately
-18000 operations per second with a 2048 bit certificate and approximately
-6000 operations per second with a 4096 bit certificate. Of course, this
+18000 operations per second with a 2048-bit certificate and approximately
+6000 operations per second with a 4096-bit certificate. Of course, this
 assumes that TLS is the only CPU-bound operation relevant during
 submission. A notable, if dated exception, was the concept of delegation
-in Gobus GSI, which involved the generation of an asymmetric key pair.
-For RSA 4096 bit keys, this is something that takes seconds on modern
+in Globus GSI, which involved the generation of an asymmetric key pair.
+For RSA 4096-bit keys, this is something that takes seconds on modern
 hardware.
 
 The problem of CPU-bound connection operations can be mitigated by
