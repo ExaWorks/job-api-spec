@@ -196,7 +196,7 @@ exec/popen.
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
-implementation issues of a job management API suitable for managing jobs on
+implementation issues of a job management API suitable for managing jobs that are on
 exascale machines, as well as propose such an API. A job management API
 is a set of interfaces that allow the specification and management of
 the invocation of application executables. The corresponding
