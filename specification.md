@@ -198,14 +198,14 @@ exec/popen.
 The purpose of this document is to provide an analysis of the design and
 implementation issues of a job management API suitable for use on
 exascale machines, as well as propose such an API. A job management API
-is a set of interfaces that allows the specification and management of
+is a set of interfaces that allow the specification and management of
 the invocation of application executables. The corresponding
-implementations of a job management API is a job management library. A
+implementation of a job management API is a job management library. A
 job management library, through its  API,  is invoked by a client
 application.
 
 Traditionally, job management is implemented on supercomputers by Local
-Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. In a first
+Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
@@ -230,27 +230,27 @@ pseudo-code which almost surely will require modifications to be usable.
 There are at least three major ways in which a job management API can be
 used:
 
-- **locally**: the relevant API functions are invoked by programs running
+- **Local**: the relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
 as a login/head node)
 
-- **remotely**: the API functions are invoked by programs running on a
+- **Remote**: the API functions are invoked by programs running on a
 different resource than the target resource; this requires some form of
 distributed architecture, such as a client-server model.
 
-- **nested** (also known as "pilot jobs"): a "pilot" job is run
+- **Nested** (also known as "pilot jobs"): a "pilot" job is run
 using either a remote or local job management library; application jobs
-are then submitted to the pilot system which sends them directly to the
+are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
 as well as those used to run the application l and remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
-differences that make the requirements for an API more complex for when
+differences that make the requirements for an API more complex when
 remote/nested management is involved. This document specifies a layered
-API in which a baseline API (layer 0)  allows for local management and
-additional layers allow for more complex functionality. In large lines,
+API in which a baseline API (Layer 0) allows for local management and
+additional layers allow for more complex functionality. At a high level,
 the layers are as follows:
 
 
@@ -289,7 +289,7 @@ should run
 
 ### Layer 2 (nested)
 
-- TODO: add a statement that we intend on supporting layer2 in the
+- TODO: add a statement that we intend on supporting Layer 2 in the
 future, and the rough functionality will be X, Y, Z
 
 - TBD
