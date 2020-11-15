@@ -196,16 +196,16 @@ exec/popen.
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
-implementation issues of a job management API suitable for use on
+implementation issues of a job management API suitable for managing jobs that are on
 exascale machines, as well as propose such an API. A job management API
-is a set of interfaces that allows the specification and management of
+is a set of interfaces that allow the specification and management of
 the invocation of application executables. The corresponding
-implementations of a job management API is a job management library. A
+implementation of a job management API is a job management library. A
 job management library, through its  API,  is invoked by a client
 application.
 
 Traditionally, job management is implemented on supercomputers by Local
-Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. In a first
+Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
@@ -231,27 +231,27 @@ implement a synchronous wrapper around the API.
 There are at least three major ways in which a job management API can be
 used:
 
-- **locally**: the relevant API functions are invoked by programs running
+- **Local**: the relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
 as a login/head node)
 
-- **remotely**: the API functions are invoked by programs running on a
+- **Remote**: the API functions are invoked by programs running on a
 different resource than the target resource; this requires some form of
 distributed architecture, such as a client-server model.
 
-- **nested** (also known as "pilot jobs"): a "pilot" job is run
+- **Nested** (also known as "pilot jobs"): a "pilot" job is run
 using either a remote or local job management library; application jobs
-are then submitted to the pilot system which sends them directly to the
+are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
 as well as those used to run the application l and remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
-differences that make the requirements for an API more complex for when
+differences that make the requirements for an API more complex when
 remote/nested management is involved. This document specifies a layered
-API in which a baseline API (layer 0)  allows for local management and
-additional layers allow for more complex functionality. In large lines,
+API in which a baseline API (Layer 0) allows for local management and
+additional layers allow for more complex functionality. At a high level,
 the layers are as follows:
 
 
@@ -290,7 +290,7 @@ should run
 
 ### Layer 2 (nested)
 
-- TODO: add a statement that we intend on supporting layer2 in the
+- TODO: add a statement that we intend on supporting Layer 2 in the
 future, and the rough functionality will be X, Y, Z
 
 - TBD
@@ -301,7 +301,7 @@ future, and the rough functionality will be X, Y, Z
 Implementations must use bulk status operations when interacting with
 LRMs. Regularly invoking, for example, qstat for each job in a set of
 many jobs can quickly overwhelm a LRM. The solution is to subscribe to
-asynchronous notifications from the LRM,if supported, or instead use bulk
+asynchronous notifications from the LRM, if supported, or instead use bulk
 query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
 extract the information about the relevant jobs from the result.
 
@@ -311,11 +311,11 @@ extract the information about the relevant jobs from the result.
 ## State Consistency
 
 Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems ordering of events on one system cannot be guaranteed on another.
+systems, ordering of events on one system cannot be guaranteed on another.
 For example, an application on System 1 can, in quick succession, open a
 TCP connection to System 2 and transmit, on each connection, the messages
 "A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e. it uses separate threads for each connection),
+connection handling (i.e., it uses separate threads for each connection),
 it is entirely possible that some user code that monitors messages on
 System 2 receives the message "B" before "A". In terms of jobs,
 this may make it appear as if seemingly impossible things are happening,
@@ -378,7 +378,7 @@ submission performance, which are analyzed in the following paragraphs.
 
 Threaded submission involves, as the name implies, using multiple
 concurrent threads to submit jobs. This can effectively divide the
-submission time by the number of threads employed, as it can be seen from
+submission time by the number of threads employed, as can be seen in
 the following timing diagram:
 
 <img width="500pt" src="diagrams/bulk_submission_threaded.svg" alt="Threaded Jobs Timing Diagram"/>
@@ -387,7 +387,7 @@ Threaded submission can, however, lose some of its advantage if any
 submission steps involve CPU-bound operations, such as is the case when
 initializing secure connections. A TLS handshake involves, for example,
 some encryption and decryption using asymmetric cryptography. This is
-usually slow, even for short messages, enough so as to limit the number
+usually slow enough, even for short messages, so as to limit the number
 of operations to a few hundreds per second per CPU core. Since CPU cores
 are time-shared between threads, only one CPU-bound operation can be
 effectively executing on a given core at one time. A possible timing
@@ -398,12 +398,12 @@ diagram that assumes a single CPU core could look like this:
 The extent to which cryptography is an issue in TLS is not entirely
 clear. A quick performance test using `openssl s_time -connect localhost`
 on decent hardware with Apache running locally returns approximately
-18000 operations per second with a 2048 bit certificate and approximately
-6000 operations per second with a 4096 bit certificate. Of course, this
+18000 operations per second with a 2048-bit certificate and approximately
+6000 operations per second with a 4096-bit certificate. Of course, this
 assumes that TLS is the only CPU-bound operation relevant during
 submission. A notable, if dated exception, was the concept of delegation
-in Gobus GSI, which involved the generation of an asymmetric key pair.
-For RSA 4096 bit keys, this is something that takes seconds on modern
+in Globus GSI, which involved the generation of an asymmetric key pair.
+For RSA 4096-bit keys, this is something that takes seconds on modern
 hardware.
 
 The problem of CPU-bound connection operations can be mitigated by
@@ -549,9 +549,9 @@ void submit(List<Job> jobs) throws InvalidJobListException, SubmitException
 ```
 
 Submits a list of jobs to the underlying implementation. This allows
-implementations to submit bulk jobs more efficiently than it would be to
-submit jobs individually. It is, therefore, discouraged to implement this
-method by repeatedly invoking `submit(job)`, unless no performance
+implementations to submit bulk jobs more efficiently than
+submitting jobs individually. Implementing this
+method by repeatedly invoking `submit(job)` is therefore discouraged, unless no performance
 benefit can be derived from bulk submission. It is possible for this
 method to only successfully submit a subset of the jobs. If that is the
 case, this method must throw `InvalidJobListException` and populate it
@@ -628,9 +628,9 @@ returned by this method is monotonic in time with respect to the partial
 ordering of [JobStatus](#jobstatus) types. That is, if
 `jobStatus1.getState()` and `jobStatus2.getState()` are comparable and
 `jobStatus1.getState() < jobStatus2.getState()`, then it is impossible
-for `jobStatus2` to be returned by a call placed previous to a call that
+for `jobStatus2` to be returned by a call placed prior to a call that
 returns `jobStatus1` if both calls are placed from the same thread or if
-a proper memory barrier is placed between the calls otherwise.
+a proper memory barrier is placed between the calls.
 Furthermore, implementations must, to the extent possible, simulate
 missing states. For example, if the implementation polls a LRM queue
 infrequently enough such that the active state of a job is skipped
@@ -679,7 +679,7 @@ void setStatusCallback(JobStatusCallback? cb)
 ```
 
 Sets a [status callback](#jobstatuscallback) for this job. The callback
-will be invoked whenever the state of this job changes. To unset the
+will be invoked when the state of this job changes. To unset the
 callback, call this method with a `null` argument.
 
 
@@ -696,8 +696,8 @@ String? getName()
 ```
 
 Sets/retrieves a name for the job. The name plays no functional role.
-Instead, it can help users in tracking the job across various layers.
-Implementations should make efforts in propagating the name such that the
+However, it can help users in tracking the job across various layers.
+Implementations should make an effort to propagate the name so that the
 user can quickly identify the job as it propagates through the system.
 For example, the job should appear with this name in the output of a
 potential `qstat` LRM command.
