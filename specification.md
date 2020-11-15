@@ -1462,15 +1462,15 @@ use:
 
 ### Appendix B - Synchronous vs. Asynchronous API
 
-Running a job synchronously means that a hypothetical `run()` call does
-not return until the job completes. The typical scenario in which a job
-management API would be used involves jobs that are launched on a client
-machine (e.g., login node), but whose CPU-bound part would run on a
-different machine (e.g., compute node). This implies that the fundamental
-operations that `job.run()` consists of are some initial submission steps
-which communicate the details of the job from the client machine to the
-compute node and start the relevant CPU-bound code on the compute node as
-well as a step that waits for the CPU-bound code to finish executing:
+Running a job synchronously means that a hypothetical `run()` call does not
+return until the job completes. The typical scenario in which a job management
+API would be used involves jobs that are launched on a client machine (e.g.,
+login node), but whose CPU-bound part would run on a different machine (e.g.,
+compute node). This implies that the fundamental operations that comprise
+`job.run()` are some initial submission steps that communicate the details of
+the job from the client machine to the compute node and start the relevant
+CPU-bound code on the compute node as well as a step that waits for the
+CPU-bound code to finish executing:
 
 ```java
 run() {
@@ -1479,15 +1479,14 @@ run() {
 }
 ```
 
-Considering jobs with non-trivial run durations, the bulk of the time in
-the above simplified definition of `run()` would be spent in
-`waitForCompletion()`, which is an operation that, if implemented as
-efficiently as possible, would consume no share of CPU time locally
-during the execution of the job. However, it holds the non-CPU resources
-associated with the thread that invokes it, namely kernel and stack
-memory. Any jobs running concurrently would, each, hold the resources
-associated with each of their respective threads. By contrast, an
-asynchronous implementation can run multiple jobs in a single thread:
+Considering jobs with non-trivial run durations, the bulk of the time in the
+above simplified definition of `run()` would be spent in `waitForCompletion()`,
+which is an operation that, if implemented as efficiently as possible, would
+consume no CPU time locally during the execution of the job. However, it holds
+the non-CPU resources associated with the thread that invokes it, namely kernel
+and stack memory. Any jobs running concurrently would, each, hold the resources
+associated with each of their respective threads. By contrast, an asynchronous
+implementation can run multiple jobs in a single thread:
 
 ```java
 void runJobs() {
