@@ -6,60 +6,60 @@
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [A Job Management API](#a-job-management-api)
-    - [STATUS](#status)
-    - [TODO](#todo)
-    - [Introduction](#introduction)
-        - [A Note About Code Samples](#a-note-about-code-samples)
-    - [Design goals/scope/assumptions?](#design-goalsscopeassumptions)
-    - [Layers](#layers)
-        - [Layer 0 (local)](#layer-0-local)
-        - [Layer 1 (remote)](#layer-1-remote)
-        - [Layer 2 (nested)](#layer-2-nested)
-    - [Synchronous vs. Asynchronous API](#synchronous-vs-asynchronous-api)
-    - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
-    - [State Consistency](#state-consistency)
-    - [Bulk Submission](#bulk-submission)
-            - [Threaded Submission](#threaded-submission)
-            - [Asynchronous Networking](#asynchronous-networking)
-            - [Connection Multiplexing](#connection-multiplexing)
-    - [The Job API; Layer 0](#the-job-api-layer-0)
-        - [Implementation Notes](#implementation-notes)
-        - [JobExecutor](#jobexecutor)
-            - [Methods](#methods)
-                    - [Exceptions:](#exceptions)
-        - [Job](#job)
-            - [Methods](#methods)
-        - [JobSpecification](#jobspecification)
-            - [Methods](#methods)
-        - [JobStatus](#jobstatus)
-            - [Methods](#methods)
-        - [JobState](#jobstate)
-            - [Methods](#methods)
-        - [JobStatusCallback](#jobstatuscallback)
-            - [Methods](#methods)
-        - [InvalidJobException](#invalidjobexception)
-            - [Methods](#methods)
-        - [InvalidJobListException](#invalidjoblistexception)
-            - [Methods](#methods)
-        - [FaultDetail](#faultdetail)
-            - [Methods](#methods)
-        - [ResourcesSpec](#resourcesspec)
-            - [Methods](#methods)
-        - [ResourceSpecV1](#resourcespecv1)
-            - [Methods](#methods)
-        - [JobAttributes](#jobattributes)
-            - [Methods](#methods)
-        - [TimeInterval](#timeinterval)
-            - [Constructors](#constructors)
-            - [Methods](#methods)
-        - [TimeUnit](#timeunit)
-    - [Appendix](#appendix)
-        - [Job Specification V1 Serialization Format](#job-specification-v1-serialization-format)
-            - [Resources](#resources)
-                - [Reserved Resource Types](#reserved-resource-types)
-                - [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
-            - [Tasks](#tasks)
-            - [Attributes](#attributes)
+	- [STATUS](#status)
+	- [TODO](#todo)
+	- [Introduction](#introduction)
+		- [A Note About Code Samples](#a-note-about-code-samples)
+	- [Motivation and Design Goals](#motivation-and-design-goals)
+	- [Layers](#layers)
+		- [Layer 0 (local)](#layer-0-local)
+		- [Layer 1 (remote)](#layer-1-remote)
+		- [Layer 2 (nested)](#layer-2-nested)
+	- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
+	- [State Consistency](#state-consistency)
+	- [Bulk Submission](#bulk-submission)
+			- [Threaded Submission](#threaded-submission)
+			- [Asynchronous Networking](#asynchronous-networking)
+			- [Connection Multiplexing](#connection-multiplexing)
+	- [The Job API; Layer 0](#the-job-api-layer-0)
+		- [Implementation Notes](#implementation-notes)
+		- [JobExecutor](#jobexecutor)
+			- [Methods](#methods)
+					- [Exceptions:](#exceptions)
+		- [Job](#job)
+			- [Methods](#methods)
+		- [JobSpecification](#jobspecification)
+			- [Methods](#methods)
+		- [JobStatus](#jobstatus)
+			- [Methods](#methods)
+		- [JobState](#jobstate)
+			- [Methods](#methods)
+		- [JobStatusCallback](#jobstatuscallback)
+			- [Methods](#methods)
+		- [InvalidJobException](#invalidjobexception)
+			- [Methods](#methods)
+		- [InvalidJobListException](#invalidjoblistexception)
+			- [Methods](#methods)
+		- [FaultDetail](#faultdetail)
+			- [Methods](#methods)
+		- [ResourcesSpec](#resourcesspec)
+			- [Methods](#methods)
+		- [ResourceSpecV1](#resourcespecv1)
+			- [Methods](#methods)
+		- [JobAttributes](#jobattributes)
+			- [Methods](#methods)
+		- [TimeInterval](#timeinterval)
+			- [Constructors](#constructors)
+			- [Methods](#methods)
+		- [TimeUnit](#timeunit)
+	- [Appendices](#appendices)
+		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+			- [Resources](#resources)
+				- [Reserved Resource Types](#reserved-resource-types)
+				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
+			- [Tasks](#tasks)
+			- [Attributes](#attributes)
+		- [Appendix B - Synchronous vs. Asynchronous API](#appendix-b-synchronous-vs-asynchronous-api)
 
 <!-- /TOC -->
 
@@ -157,10 +157,10 @@ exec/popen.
 
 - [ ] move some of the technical sections to appendices
 
-    - Bulk submission
+    - [ ] Bulk submission
 
-    - Make async vs sync much shorter with a pointer to the full text in
-    the appendix
+    - [x] Make async vs sync much shorter with a pointer to the full text in the
+    appendix
 
 - [ ] Add assumptions/goals/etc.
 
@@ -217,13 +217,14 @@ examples. Such code is not working code, but a Java/C++/.NET inspired
 pseudo-code which almost surely will require modifications to be usable.
 
 
+## Motivation and Design Goals
 
-
-
-## Design goals/scope/assumptions?
-
-
-
+The proposed API is asynchronous. A detailed discussion of the motivation behind
+this choice can be found in [Appendix B](#synchronous-vs-asynchronous-api). In
+short, the implementation of a synchronous API would not scale well in most
+languages. Additionally, if so needed, the API provides a
+[`waitFor()`](#job-waitfor) method that allows client code to trivially
+implement a synchronous wrapper around the API.
 
 ## Layers
 
@@ -293,108 +294,6 @@ should run
 future, and the rough functionality will be X, Y, Z
 
 - TBD
-
-
-
-
-## Synchronous vs. Asynchronous API
-
-Running a job synchronously means that a hypothetical `run()` call does
-not return until the job completes. The typical scenario in which a job
-management API would be used involves jobs that are launched on a client
-machine (e.g., login node), but whose CPU-bound part would run on a
-different machine (e.g., compute node). This implies that the fundamental
-operations that `job.run()` consists of are some initial submission steps
-which communicate the details of the job from the client machine to the
-compute node and start the relevant CPU-bound code on the compute node as
-well as a step that waits for the CPU-bound code to finish executing:
-
-```java
-run() {
-    submit();
-    waitForCompletion();
-}
-```
-
-Considering jobs with non-trivial run durations, the bulk of the time in
-the above simplified definition of `run()` would be spent in
-`waitForCompletion()`, which is an operation that, if implemented as
-efficiently as possible, would consume no share of CPU time locally
-during the execution of the job. However, it holds the non-CPU resources
-associated with the thread that invokes it, namely kernel and stack
-memory. Any jobs running concurrently would, each, hold the resources
-associated with each of their respective threads. By contrast, an
-asynchronous implementation can run multiple jobs in a single thread:
-
-```java
-void runJobs() {
-    jobsLeft = alljobs.size();
-    executor.setJobStatusCallback(new JobStatusCallback() {
-        jobStatusChanged(Job job, JobStatus status) {
-            if (status.isTerminal()) {
-                jobsLeft--;
-            }
-        }
-    });
-    for (job in alljobs) {
-        executor.submit(job);
-    }
-    // all jobs are now running
-    while (jobsLeft > 0) {
-        Thread.sleep(someDelay);
-    }
-}
-```
-
-Changing between an asynchronous interface and a synchronous one is a
-relatively simple matter. For example, running a job synchronously on top
-of an asynchronous API can be done as follows:
-
-```java
-void runJob(Job job, JobExecutor executor) {
-    condition = new Condition();
-    callback =
-    executor.submit(job, new JobStatusCallback() {
-        void jobStatusChanged(Job job, JobStatus status) {
-            if (status.isTerminal()) {
-                condition.signal();
-            }
-        }
-    });
-    condition.await();
-}
-```
-
-The converse, wrapping a synchronous API with an asynchronous interface
-is also straightforward:
-
-```java
-void submit(Job job, JobExecutor executor, JobStatusCallback cb) {
-    new Thread() {
-        run() {
-            executor.run(job);
-            cb.jobStatusChanged(job, ....);
-        }
-    }.start()
-}
-```
-
-There are, however, subtle issues that ultimately make the two approaches
-inequivalent:
-
-- a synchronous API must have some asynchronous status notifications if
-it is to allow timely propagation of events that are not strictly part of
-the overall job lifetime, such as, transitioning from a queued state to a
-running state when run by a queuing LRM;
-
-- an asynchronous translation layer on top of a synchronous API still
-suffers from the aforementioned wasted thread memory issue.
-
-In light of the above, one might conclude that a scalable API would start
-with an asynchronous API and optionally add convenience synchronous
-methods.
-
-
 
 
 ## Interaction with LRMs and Scalability
@@ -1361,9 +1260,9 @@ Represents a time unit and must have at least the following units:
 `SECOND`, `MINUTE`, `HOUR`.
 
 
-## Appendix
+## Appendices
 
-### Job Specification V1 Serialization Format
+### Appendix A - Job Specification V1 Serialization Format
 
 A domain specific language based on YAML is defined to express the
 resource requirements and other attributes of one or more programs
@@ -1560,3 +1459,100 @@ use:
     The name key contains the name of the job. The default name of a job
     is the first argument of the command run by the user, or it can be
     set by the user to an arbitrary value.
+
+### Appendix B - Synchronous vs. Asynchronous API
+
+Running a job synchronously means that a hypothetical `run()` call does
+not return until the job completes. The typical scenario in which a job
+management API would be used involves jobs that are launched on a client
+machine (e.g., login node), but whose CPU-bound part would run on a
+different machine (e.g., compute node). This implies that the fundamental
+operations that `job.run()` consists of are some initial submission steps
+which communicate the details of the job from the client machine to the
+compute node and start the relevant CPU-bound code on the compute node as
+well as a step that waits for the CPU-bound code to finish executing:
+
+```java
+run() {
+    submit();
+    waitForCompletion();
+}
+```
+
+Considering jobs with non-trivial run durations, the bulk of the time in
+the above simplified definition of `run()` would be spent in
+`waitForCompletion()`, which is an operation that, if implemented as
+efficiently as possible, would consume no share of CPU time locally
+during the execution of the job. However, it holds the non-CPU resources
+associated with the thread that invokes it, namely kernel and stack
+memory. Any jobs running concurrently would, each, hold the resources
+associated with each of their respective threads. By contrast, an
+asynchronous implementation can run multiple jobs in a single thread:
+
+```java
+void runJobs() {
+    jobsLeft = alljobs.size();
+    executor.addJobStatusCallback(new JobStatusCallback() {
+        jobStatusChanged(Job job, JobStatus status) {
+            if (status.isTerminal()) {
+                jobsLeft--;
+            }
+        }
+    });
+    for (job in alljobs) {
+        executor.submit(job);
+    }
+    // all jobs are now running
+    while (jobsLeft > 0) {
+        Thread.sleep(someDelay);
+    }
+}
+```
+
+Changing between an asynchronous interface and a synchronous one is a
+relatively simple matter. For example, running a job synchronously on top
+of an asynchronous API can be done as follows:
+
+```java
+void runJob(Job job, JobExecutor executor) {
+    condition = new Condition();
+    callback =
+    executor.submit(job, new JobStatusCallback() {
+        void jobStatusChanged(Job job, JobStatus status) {
+            if (status.isTerminal()) {
+                condition.signal();
+            }
+        }
+    });
+    condition.await();
+}
+```
+
+The converse, wrapping a synchronous API with an asynchronous interface
+is also straightforward:
+
+```java
+void submit(Job job, JobExecutor executor, JobStatusCallback cb) {
+    new Thread() {
+        run() {
+            executor.run(job);
+            cb.jobStatusChanged(job, ....);
+        }
+    }.start()
+}
+```
+
+There are, however, subtle issues that ultimately make the two approaches
+inequivalent:
+
+- a synchronous API must have some asynchronous status notifications if
+it is to allow timely propagation of events that are not strictly part of
+the overall job lifetime, such as, transitioning from a queued state to a
+running state when run by a queuing LRM;
+
+- an asynchronous translation layer on top of a synchronous API still
+suffers from the aforementioned wasted thread memory issue.
+
+In light of the above, one might conclude that a scalable API would start
+with an asynchronous API and optionally add convenience synchronous
+methods.
