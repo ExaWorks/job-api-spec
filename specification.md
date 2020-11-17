@@ -166,27 +166,27 @@ exec/popen.
 
     Things we could include in no particular order..
 
-    - That we aim to make a minimal interface; advanced functionality is
+    - [x] That we aim to make a minimal interface; advanced functionality is
     beyond the scope of this API
 
-    - We would like the interface to be general and applicable to
+    - [ ] We would like the interface to be general and applicable to
     commonly deployed LRMs, cloud systems, etc. (I know some of this is
     said above)
 
-    - We are focused on executing a process (e.g., popen rather than
+    - [ ] We are focused on executing a process (e.g., popen rather than
     function call)
 
-    - That we intend for this interface to be used by various workflow
+    - [ ] That we intend for this interface to be used by various workflow
     systems and directly by applications
 
-    - That we base the API on lessons learned with SAGA, DRMAA, Globus,
+    - [x] That we base the API on lessons learned with SAGA, DRMAA, Globus,
     and others
 
-    - Do we want to set any goals about performance/scale? Presumably we
+    - [ ] Do we want to set any goals about performance/scale? Presumably we
     want ot aim to address exascale workloads and exascale machines
     (thousands of nodes)
 
-    - We consider allocation at the unit of a single job, no intention to
+    - [ ] We consider allocation at the unit of a single job, no intention to
     dynamically update jobs
 
 
@@ -204,11 +204,36 @@ implementation of a job management API is a job management library. A
 job management library, through its  API,  is invoked by a client
 application.
 
-Traditionally, job management is implemented on supercomputers by Local
-Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
-approximation, a job management API is understood as an abstraction layer
-on top of various LRMs.
+Traditionally, job management is implemented on supercomputers by Local Resource
+Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first approximation, a job
+management API is understood as an abstraction layer on top of various LRMs.
+Consequently, the scope of the present API is informed by functionality commonly
+found across LRMs.
 
+The main motivation behind the present job management API is the ubiquity with
+which projects meant to simplify the process of doing science on compute
+clusters are forced to implement their own solution. The reason is simple. If
+any tool needs to be portable across multiple clusters (and it rarely makes
+sense to not want such portability), it must access the underlying cluster LRM
+in an abstract way; that is, it must use a job management API. The only stable
+job management API currently available is
+[SAGA](http://radical-cybertools.github.io/) [so, wait a minute, how do we
+justify not pushing SAGA forward?].
+
+We aim to provide a minimal API. That is, the API focuses on managing
+independent jobs and not much more. Functionality such as expressing and
+enforcing job dependencies, providing a uniform view of software environments
+deployed on target clusters/resources, or providing an information service
+describing characteristics of the target cluster/resource are beyond the scope
+of this API. This is motivated, in part, by the fact that such functionality
+would push the complexity of the API into unmanageable territory, while,
+simultaneously being better suited for separate components.
+
+We take inspiration from a number of projects, some defunct, with overlapping
+scope, such as [Globus
+GRAM](https://en.wikipedia.org/wiki/Grid_resource_allocation_manager),
+[SAGA](http://radical-cybertools.github.io/), and
+[DRMAA](http://www.drmaa.org/).
 
 ### A Note About Code Samples
 
