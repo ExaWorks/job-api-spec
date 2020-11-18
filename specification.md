@@ -60,6 +60,10 @@
 			- [Threaded Submission](#threaded-submission)
 			- [Asynchronous Networking](#asynchronous-networking)
 			- [Connection Multiplexing](#connection-multiplexing)
+		- [Appendix C - examples](#appendix-c-examples)
+			- [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
+			- [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
+			- [Have N jobs compete in the queue and keep only the winner](#have-n-jobs-compete-in-the-queue-and-keep-only-the-winner)
 
 <!-- /TOC -->
 
@@ -106,6 +110,28 @@ string depending on programming  language
     - [x] Make async vs sync much shorter with a pointer to the full text in the
     appendix
 
+- [ ] add examples of how one would use this API (and please, if you have
+    any "how do you do x?", please add here)
+
+    - [x] Submit X jobs and wait for them to complete in order of submission
+    with the waitFor function
+
+    - [x] Submit X jobs but ensure only Y job are queued/running at a time
+    (rolling window implemented with the jobStatusCallback)
+
+    - [ ] do the same but use the ListException from the submit call to do
+    the same
+
+    - [x] Submit a job, wait for it to be queued, then cancel it, then wait
+    for it to complete/be killed.
+
+    - [ ] Submit a malformed or unsatisfiable job, then check for the error
+    and print it out
+
+    - [ ] Construct a job that uses all the various "knobs" of the resource
+    and job specifications (with some verbose comments thrown in)
+
+
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
 
@@ -135,27 +161,6 @@ with (they never quite get the launching part right).
     launchers
 
 - [ ] add a section giving an overview of the API components
-
-- [ ] add examples of how one would use this API (and please, if you have
-any "how do you do x?", please add here)
-
-    - Submit X jobs and wait for them to complete in order of submission
-    with the waitFor function
-
-    - Submit X jobs but ensure only Y job are queued/running at a time
-    (rolling window implemented with the jobStatusCallback)
-
-    - do the same but use the ListException from the submit call to do
-    the same
-
-    - Submit a job, wait for it to be queued, then cancel it, then wait
-    for it to complete/be killed.
-
-    - Submit a malformed or unsatisfiable job, then check for the error
-    and print it out
-
-    - Construct a job that uses all the various "knobs" of the resource
-    and job specifications (with some verbose comments thrown in)
 
 - [ ] add some clarification about the correspondence between JobSpec and
 exec/popen.
@@ -1574,3 +1579,119 @@ to send over the connection. When using a single connection to transmit
 larger messages, TCP buffers can be more efficiently utilized.
 Additionally, it becomes feasible to tune buffer sizes in order to
 optimize the throughput of connections to particular services.
+
+
+
+### Appendix C - examples
+
+This Appendix contains some examples of how the API can be used. Unlike the
+specification language, the examples are in a hypothetical Python binding, which
+is expected to be a relatively frequently used binding.
+
+#### Submit and wait for N jobs
+
+This example shows how to submit `N` jobs and synchronously wait for them to
+complete.
+
+```python
+import psij
+
+jex = psij.JobExectorFactory.get_instance('slurm')
+
+def make_job():
+    job = psij.Job()
+    spec = psij.JobSpecification()
+    spec.executable = '/bin/sleep'
+    spec.arguments = ['10']
+    job.specification = spec
+    return job
+
+jobs = []
+for i in range(N):
+    job = make_job()
+    jobs.append(job)
+    jex.submit(job)
+
+for i in range(N):
+    jobs[i].wait_for()
+```
+
+
+#### Run N jobs while throttling to M concurrent jobs
+
+This example shows how to run a total of `N` jobs while ensuring that at most
+`M` are running in parallel at any given time. It uses the callback mechanism of
+the [JobExecutor class](#jobexecutor) to submit more jobs as previously
+submitted jobs complete in order to keep the running number of jobs at `M`.
+
+```python
+import psij
+
+class ThrottledSubmitter:
+    def __init__(self):
+        self.jex = psij.JobExecutorFactory.get_instance('torque', '>= 0.2')
+        # keep track of completed jobs so that we can submit the rest
+        self.jex.set_status_callback(self.callback)
+        self.crt = 0
+
+    def make_job(self):
+        ...
+
+    def submit_next():
+        if self.crt < N:
+            jex.submit(self.jobs[self.crt])
+            self.crt += 1
+
+    def start(self)
+        # create list of jobs
+        self.jobs = [self.make_job() for i in range(N)]
+
+        # submit initial M jobs
+        while self.crt < M:
+            submit_next()
+
+    def callback(self, job, status):
+        if status.final:
+            # a previously submitted job is now done, we have room to
+            # submit another
+            self.submit_next()
+
+ThrottleSubmitter().start()
+```
+
+#### Have N jobs compete in the queue and keep only the winner
+
+This example submits N jobs and waits for the first one to move from a queued
+state to a running state. It then cancels the other jobs and waits for them to
+be canceled and for the winner job to complete.
+
+```python
+import psij
+import threading
+
+def make_job():
+    ...
+
+jex = psij.JobExecutorFactory.get_instance(...)
+jobs = [make_job() for i in range(N)]
+event = threading.Event()
+lock = threading.RLock()
+
+def callback(job, status):
+    with lock:
+        if status.state != psij.JobState.ACTIVE or event.is_set():
+            # we only care about the first job that becomes active
+            return
+        event.set()
+
+    for cjob in jobs:
+        if cjob != job:
+            # cancel all jobs that are not the job
+            jex.cancel(cjob)
+
+jex.set_status_callback(callback)
+
+for job in jobs:
+    # wait for the job to be canceled or otherwise complete
+    job.waitFor()
+```
