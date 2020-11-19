@@ -6,7 +6,7 @@
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [A Job Management API](#a-job-management-api)
-	- [STATUS](#status)
+	- [STATUS: EARLY DRAFT](#status-early-draft)
 	- [TODO](#todo)
 	- [Introduction](#introduction)
 		- [A Note About Code Samples](#a-note-about-code-samples)
@@ -63,18 +63,7 @@
 
 <!-- /TOC -->
 
-
-
-
-## STATUS
-
-* (10/12/20) an initial version of this document was written
-
-* (10/15/20) internal comments are happening; small changes are
-integrated directly; bigger proposed changes are added to the TODO
-section and will be integrated once everybody has had a chance to read
-the doc and the discussions converge towards a consensus.
-
+## STATUS: EARLY DRAFT
 
 
 
