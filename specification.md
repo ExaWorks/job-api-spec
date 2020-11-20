@@ -95,12 +95,18 @@ string depending on programming  language
     - [x] Make async vs sync much shorter with a pointer to the full text in the
     appendix
 
-- [ ] Consider adding further exceptions to submit() in order to
-distinguish between EAGAIN types of errors and others.
-
-- [ ] think more about env var expansion in arguments and other places.
+- [x] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
 we mandate it.
+	- one point that might need further discussion is the properties in the
+	spec that are typed as `Path`. This type is not well defined in the spec
+	and could very well be changed to a simple string. On the other hand, a
+	carefully designed `Path` type may be useful in storing a large number of
+	paths efficiently, so it may not be wise to keep it around.
+
+
+- [ ] Consider adding further exceptions to submit() in order to
+distinguish between EAGAIN types of errors and others.
 
 - [ ] add ability to have custom attributes which could be passed to the
 underlying LRM (aka. dynamic attributes).
@@ -614,12 +620,14 @@ List<String>? getArguments()
 ```
 
 Sets/gets the argument list to be passed to the executable. Unlike with
-`execve()`, the first element of the list will correspond to `argv[1]`
-when accessed by the invoked executable. If no previous call to
-`setArguments` was made, `getArguments` will return `null`. The setter
-does not create a copy of the list. Therefore, it is possible to add
-arguments to the list by invoking `setArguments()` with a mutable list,
-then invoking `getArguments().add()`.
+`execve()`, the first element of the list will correspond to `argv[1]` when
+accessed by the invoked executable. If no previous call to `setArguments` was
+made, `getArguments` will return `null`. The setter does not create a copy of
+the list. Therefore, it is possible to add arguments to the list by invoking
+`setArguments()` with a mutable list, then invoking `getArguments().add()`. The
+strings in the argument list are subject to environment variable expansion, as
+described in
+[`JobSpecification.setEnvironment`](#jobspecification-setenvironment).
 
 
 <a name="jobspecification-setoverrideenvironment"></a>
@@ -1563,3 +1571,43 @@ to send over the connection. When using a single connection to transmit
 larger messages, TCP buffers can be more efficiently utilized.
 Additionally, it becomes feasible to tune buffer sizes in order to
 optimize the throughput of connections to particular services.
+
+
+
+### Appendix D - Environment Variable Expansion
+
+Environment variable expansion implies that certain strings, such as values in
+the [environment dictionary](#jobspecification-setenvironment) are subject to
+environment variable substitution rules. That is, sequences of the form
+`${VAR_NAME}` are replaced with the value of the environment variable `VAR_NAME`
+as defined on the machine where the job runs. For multi-process jobs (e.g. MPI
+jobs), the *machine* is defined as being the rank 0 node.
+
+Environment variable expansion in the environment dictionary is essential in
+being able to express common patterns, such as extending, for example, the
+`PATH` or `LD_LIBRARY_PATH` environment variables trough code such as:
+
+```python
+jobspec.environment = {'PATH': '/home/${USER}/app:${PATH}'}
+```
+
+In a `fork()/execve()` based local implementation of a
+[JobExecutor](#jobexeuctor) adapter, the adapter would take care of parsing
+values in the `jobspec.environment` dictionary and substituting relevant
+variables from the calling process' `environ`. In an adapter in which submission
+is implemented through submit scripts that are passed to a LRM, an
+implementation can simply leave the values in `jobspec.environment` as is (after
+properly quoting expressions that are not environment variable dereferences in
+this specification). A remote layer (i.e. Layer 1) implemented on top of
+existing Layer 0 adapters would rely exclusively on the Layer 0 adapter to
+implement environment variable expansion, whereas a pilot job system (Layer 2)
+would need to implement this feature in the pilot job.
+
+A question of relevance is whether adding support for environment variable
+expansion in strings other than values in `jobspec.environment` places an an
+unreasonable additional burden on the implementation. The answer appears to be
+negative. If an adapter implementation performs expansion on values in
+`jobspec.environment`, it must already have the tools that perform the parsing
+and token substitution on arbitrary strings. These tools can equally be applied
+to strings in `jobspec.arguments`. A similar argument can be made about Layer 0
+adapters that are based on submit scripts.
