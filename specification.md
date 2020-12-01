@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="extras.css">
 
-# A Job Management API
+# A Portable Submission Interface for Jobs (J/PSI)
 *Mihael Hategan [add your name here]*
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
@@ -64,6 +64,7 @@
 			- [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
 			- [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
 			- [Have N jobs compete in the queue and keep only the winner](#have-n-jobs-compete-in-the-queue-and-keep-only-the-winner)
+		- [Appendix D - Naming](#appendix-d-naming)
 
 <!-- /TOC -->
 
@@ -1583,13 +1584,13 @@ This example shows how to submit `N` jobs and synchronously wait for them to
 complete.
 
 ```python
-import psij
+import jpsi
 
-jex = psij.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExectorFactory.get_instance('slurm')
 
 def make_job():
-    job = psij.Job()
-    spec = psij.JobSpecification()
+    job = jpsi.Job()
+    spec = jpsi.JobSpecification()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.specification = spec
@@ -1614,11 +1615,11 @@ the [JobExecutor class](#jobexecutor) to submit more jobs as previously
 submitted jobs complete in order to keep the running number of jobs at `M`.
 
 ```python
-import psij
+import jpsi
 
 class ThrottledSubmitter:
     def __init__(self):
-        self.jex = psij.JobExecutorFactory.get_instance('torque', '>= 0.2')
+        self.jex = jpsi.JobExecutorFactory.get_instance('torque', '>= 0.2')
         # keep track of completed jobs so that we can submit the rest
         self.jex.set_status_callback(self.callback)
         self.crt = 0
@@ -1655,20 +1656,20 @@ state to a running state. It then cancels the other jobs and waits for them to
 be canceled and for the winner job to complete.
 
 ```python
-import psij
+import jpsi
 import threading
 
 def make_job():
     ...
 
-jex = psij.JobExecutorFactory.get_instance(...)
+jex = jpsi.JobExecutorFactory.get_instance(...)
 jobs = [make_job() for i in range(N)]
 event = threading.Event()
 lock = threading.RLock()
 
 def callback(job, status):
     with lock:
-        if status.state != psij.JobState.ACTIVE or event.is_set():
+        if status.state != jpsi.JobState.ACTIVE or event.is_set():
             # we only care about the first job that becomes active
             return
         event.set()
@@ -1684,3 +1685,10 @@ for job in jobs:
     # wait for the job to be canceled or otherwise complete
     job.waitFor()
 ```
+
+### Appendix D - Naming
+
+The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
+meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
+"Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
+[IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
