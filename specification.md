@@ -75,45 +75,12 @@
 
 ## TODO
 
-- [x] add details for SubmitException and InvalidJob(s)Exception
-
-- [x] clarify bulk versions of exceptions above and the semantics of
-partial failures for bulk submission
-
-- [x] distinguish client-facing API from library-facing API
-
-- [x] Add metadata to JobStatus. One important use case we discussed is
-getting the native job ID when the job becomes QUEUED. Flux does this
-nicely, with a metadata dictionary.
-
-- [x] Add a get_version method/function with a note about version obj vs
-string depending on programming  language
-
-- [x] merge prev() spirit into previous method (the order)
-
-- [x] "canceled" ~~or "cancelled"~~?
-
-- [x] move some of the technical sections to appendices
-
-    - [x] Bulk submission
-
-    - [x] Make async vs sync much shorter with a pointer to the full text in the
-    appendix
 
 - [ ] add examples of how one would use this API (and please, if you have
     any "how do you do x?", please add here)
 
-    - [x] Submit X jobs and wait for them to complete in order of submission
-    with the waitFor function
-
-    - [x] Submit X jobs but ensure only Y job are queued/running at a time
-    (rolling window implemented with the jobStatusCallback)
-
     - [ ] do the same but use the ListException from the submit call to do
     the same
-
-    - [x] Submit a job, wait for it to be queued, then cancel it, then wait
-    for it to complete/be killed.
 
     - [ ] Submit a malformed or unsatisfiable job, then check for the error
     and print it out
