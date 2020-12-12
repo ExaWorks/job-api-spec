@@ -79,9 +79,6 @@
 - [ ] add examples of how one would use this API (and please, if you have
     any "how do you do x?", please add here)
 
-    - [ ] do the same but use the ListException from the submit call to do
-    the same
-
     - [ ] Submit a malformed or unsatisfiable job, then check for the error
     and print it out
 
@@ -158,13 +155,13 @@ exec/popen.
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
-implementation issues of a job management API suitable for managing jobs that are on
-exascale machines, as well as propose such an API. A job management API
-is a set of interfaces that allow the specification and management of
-the invocation of application executables. The corresponding
-implementation of a job management API is a job management library. A
-job management library, through its  API,  is invoked by a client
-application.
+implementation issues of a job management API suitable for managing jobs
+that are on exascale machines, as well as propose such an API. A job
+management API is a set of interfaces that allow the specification and
+management of the invocation of application executables. The
+corresponding implementation of a job management API is a job management
+library. A job management library, through its  API,  is invoked by a
+client application.
 
 Traditionally, job management is implemented on supercomputers by Local
 Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
@@ -199,12 +196,14 @@ a synchronous API would not scale well in most languages. Additionally, if so
 needed, the API provides a [`waitFor()`](#job-waitfor) method that allows
 client code to trivially implement a synchronous wrapper around the API.
 
-- The API allows bulk job submission. The main reason for having a bulk
-submission interface is to facilitate the use of more efficient mechanisms for
-transmitting job information to an underlying implementation. While alternative
-methods exists that do not require a bulk submission call, they may place an
-undue burden on implementations. For a more extensive discussion on the topic,
-please see [Appendix C](#bulk-submission).
+- Bulk versions of calls have been considered. The main reason for having bulk
+calls is to facilitate the use of more efficient mechanisms for
+transmitting job information to an underlying implementation. However,
+alternative methods exists that do not require a bulk calls. Nonetheless,
+adding bulk calls to enable better performance in Layers 1-2, or even in
+Layer 0 if reasonably justified in the future, remains a possibility. For
+a technical discussion on the topic, please see [Appendix
+C](#bulk-submission).
 
 
 
@@ -391,19 +390,6 @@ status notifications about the job will be fired.
 
 - `SubmitException`: Thrown if the request cannot be sent to the underlying implementation
 
-
-```java
-void submit(List<Job> jobs) throws InvalidJobListException, SubmitException
-```
-
-Submits a list of jobs to the underlying implementation. This allows
-implementations to submit bulk jobs more efficiently than
-submitting jobs individually. Implementing this
-method by repeatedly invoking `submit(job)` is therefore discouraged, unless no performance
-benefit can be derived from bulk submission. It is possible for this
-method to only successfully submit a subset of the jobs. If that is the
-case, this method must throw `InvalidJobListException` and populate it
-with the jobs that have not been submitted.
 
 
 <a name="jobexecutor-cancel"></a>
@@ -842,61 +828,12 @@ Returns the details about the failure.
 String getMessage()
 ```
 
-A shortcut for `getDetail().getMessage()`.
-
-
-<a name="invalidjobexception-getexception"></a>
-```java
-Exception? getException()
-```
-
-A shortcut for `getDetail().getException()`.
-
-
-<a name="invalidjobexception-getjob"></a>
-```java
-Job getJob()
-```
-
-A shortcut for `getDetail().getJob()`.
-
-
-### InvalidJobListException
-
-#### Methods
-<a name="invalidjoblistexception-getdetaillist"></a>
-```java
-List<FaultDetail> getDetailList()
-```
-
-Returns a list of faults, one for each job whose submission has failed.
-
-
-### FaultDetail
-
-This class contains details about a failure associated with the
-submission of a job. It may appear redundant, since the information
-contained in it may very well have been contained in the
-[`InvalidJobException`](#invalidjobexception) class. This would imply
-that [`InvalidJobListException`](#invalidjoblistexception) should point
-to a list of `InvalidJobException` instances. However, in most languages,
-initializing an exception involves steps that can introduce unnecessary
-inefficiencies, such as recording a stack trace and other information
-about the context in which the exception object was created.
-
-
-#### Methods
-
-<a name="faultdetail-getmessage"></a>
-```java
-String getMessage()
-```
-
-Retrieves the message associated with this fault. This should be a
+Retrieves the message associated with this exception. This should be a
 descriptive message that is sufficiently clear to be presented to an
 end-user.
 
-<a name="faultdetail-getexception"></a>
+
+<a name="invalidjobexception-getexception"></a>
 ```java
 Exception? getException()
 ```
@@ -905,12 +842,14 @@ Returns an optional underlying exception that can potentially be used for
 debugging purposes, but which should not, in general, be presented to an
 end-user.
 
-<a name="faultdetail-getjob"></a>
+
+<a name="invalidjobexception-getjob"></a>
 ```java
 Job getJob()
 ```
 
-Returns the [`Job`](#job) associated with this fault.
+Returns the [`Job`](#job) associated with this exception.
+
 
 
 
