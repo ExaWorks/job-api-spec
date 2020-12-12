@@ -449,8 +449,6 @@ inspected via the `job.getStatus()` method which will return a `JobStatus`
 instance on which the job's state is available as an attribute.  State
 transitions can also be received via callbacks
 
-TODO: how are callbacks registered?
-
 An implementation MUST ensure that job state transitions occur according to the
 following state model:  a job is created in an initial state `NEW`.  When the
 job is accepted by the backend for execution, it will enter the state `QUEUED`.
