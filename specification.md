@@ -88,14 +88,6 @@
     - [ ] Construct a job that uses all the various "knobs" of the resource
     and job specifications (with some verbose comments thrown in)
 
-<<<<<<< HEAD
-=======
-- [x] add ability to have custom attributes which could be passed to the
-underlying LRM (aka. dynamic attributes).
-
-- [ ] "canceled" or "cancelled"?
->>>>>>> 4b91b35... Added custom attributes to JobAttributes
-
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
 
