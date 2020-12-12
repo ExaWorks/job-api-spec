@@ -1065,12 +1065,12 @@ void setCustomAttribute(String name, Object value);
 Object? getCustomAttribute(String name);
 ```
 
-Allows setting/querying of custom attributes. Implementations should use a
-dictionary to implement the custom attributes. Additionally, implementations are
-encouraged to make sensible decisions on whether to store some or all of the
-fixed attributes in the same dictionary or not. It is, therefore, entirely
-possible for `getCustomAttribute("duration")` to return a value passed earlier
-to `setDuration()`, although the specific custom attribute name need not be
+Allows setting/querying of custom attributes. Implementations are
+encouraged to make sensible decisions on whether to store some or all of
+the fixed attributes in the same structure as the custom attributes or
+not. It is, therefore, entirely possible for
+`getCustomAttribute("duration")` to return a value passed earlier to
+`setDuration()`, although the specific custom attribute name need not be
 `"duration"`.
 
 ### TimeInterval
