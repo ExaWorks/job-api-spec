@@ -1616,42 +1616,6 @@ class ThrottledSubmitter:
 ThrottleSubmitter().start()
 ```
 
-#### Have N jobs compete in the queue and keep only the winner
-
-This example submits N jobs and waits for the first one to move from a queued
-state to a running state. It then cancels the other jobs and waits for them to
-be canceled and for the winner job to complete.
-
-```python
-import jpsi
-import threading
-
-def make_job():
-    ...
-
-jex = jpsi.JobExecutorFactory.get_instance(...)
-jobs = [make_job() for i in range(N)]
-event = threading.Event()
-lock = threading.RLock()
-
-def callback(job, status):
-    with lock:
-        if status.state != jpsi.JobState.ACTIVE or event.is_set():
-            # we only care about the first job that becomes active
-            return
-        event.set()
-
-    for cjob in jobs:
-        if cjob != job:
-            # cancel all jobs that are not the job
-            jex.cancel(cjob)
-
-jex.set_status_callback(callback)
-
-for job in jobs:
-    # wait for the job to be canceled or otherwise complete
-    job.waitFor()
-```
 
 ### Appendix D - Naming
 
