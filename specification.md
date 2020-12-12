@@ -345,12 +345,12 @@ customary in the language in which the library is implemented
 
 <a name="jobexecutor-constructor"></a>
 ```java
-JobExecutor(String url)
+JobExecutor(String url) throws BackendException
 ```
 
 Instantiates an `JobExecutor` object and binds it to the backend specified by
 URL `url`.  The URL will also encode any authentication details needed to
-access the backend.
+access the backend.  
 
 
 <a name="jobexecutor-getname"></a>
@@ -376,7 +376,8 @@ a simple string type for the version.
 
 <a name="jobexecutor-submit"></a>
 ```java
-void submit(Job job) throws InvalidJobException, SubmitException
+void submit(Job job) throws InvalidJobException, SubmitException,
+     BackendException
 ```
 
 Submits a Job to the underlying implementation. Successful return of this
@@ -399,11 +400,16 @@ status notifications about the job will be fired.
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`: Thrown if the request cannot be sent to the underlying implementation
+- `SubmitException`: Thrown if the request cannot be sent to the underlying
+    implementation.
+
+- `BackendException`: Thrown if the connection to the LRM fails, or if the LRM
+    fails to respond to a request>
 
 
 ```java
-void submit(List<Job> jobs) throws InvalidJobListException, SubmitException
+void submit(List<Job> jobs) throws InvalidJobListException, SubmitException,
+     BackendException
 ```
 
 Submits a list of jobs to the underlying implementation. This allows
@@ -418,7 +424,7 @@ with the jobs that have not been submitted.
 
 <a name="jobexecutor-cancel"></a>
 ```java
-void cancel(Job job) throws SubmitException
+void cancel(Job job) throws SubmitException, BackendException
 ```
 
 Cancels a job that has been submitted to underlying executor
