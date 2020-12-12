@@ -1,106 +1,96 @@
+<link rel="stylesheet" href="extras.css">
 
-# A Job Management API
+# A Portable Submission Interface for Jobs (J/PSI)
 *Mihael Hategan [add your name here]*
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [A Job Management API](#a-job-management-api)
-    - [STATUS](#status)
-    - [TODO](#todo)
-    - [Introduction](#introduction)
-        - [A Note About Code Samples](#a-note-about-code-samples)
-    - [Design goals/scope/assumptions?](#design-goalsscopeassumptions)
-    - [Layers](#layers)
-        - [Layer 0 (local)](#layer-0-local)
-        - [Layer 1 (remote)](#layer-1-remote)
-        - [Layer 2 (nested)](#layer-2-nested)
-    - [Synchronous vs. Asynchronous API](#synchronous-vs-asynchronous-api)
-    - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
-    - [State Consistency](#state-consistency)
-    - [Bulk Submission](#bulk-submission)
-            - [Threaded Submission](#threaded-submission)
-            - [Asynchronous Networking](#asynchronous-networking)
-            - [Connection Multiplexing](#connection-multiplexing)
-    - [The Job API; Layer 0](#the-job-api-layer-0)
-        - [Implementation Notes](#implementation-notes)
-        - [JobExecutor](#jobexecutor)
-            - [Methods](#methods)
-                    - [Exceptions:](#exceptions)
-        - [Job](#job)
-            - [State Model](#state-model)
-            - [Methods](#methods)
-        - [JobSpecification](#jobspecification)
-            - [Methods](#methods)
-        - [JobStatus](#jobstatus)
-            - [Methods](#methods)
-        - [JobState](#jobstate)
-            - [Methods](#methods)
-        - [JobStatusCallback](#jobstatuscallback)
-            - [Methods](#methods)
-        - [InvalidJobException](#invalidjobexception)
-            - [Methods](#methods)
-        - [InvalidJobListException](#invalidjoblistexception)
-            - [Methods](#methods)
-        - [FaultDetail](#faultdetail)
-            - [Methods](#methods)
-        - [ResourcesSpec](#resourcesspec)
-            - [Methods](#methods)
-        - [ResourceSpecV1](#resourcespecv1)
-            - [Methods](#methods)
-        - [JobAttributes](#jobattributes)
-            - [Methods](#methods)
-        - [TimeInterval](#timeinterval)
-            - [Constructors](#constructors)
-            - [Methods](#methods)
-        - [TimeUnit](#timeunit)
-    - [Appendix](#appendix)
-        - [Job Specification V1 Serialization Format](#job-specification-v1-serialization-format)
-            - [Resources](#resources)
-                - [Reserved Resource Types](#reserved-resource-types)
-                - [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
-            - [Tasks](#tasks)
-            - [Attributes](#attributes)
+	- [STATUS: EARLY DRAFT](#status-early-draft)
+	- [TODO](#todo)
+	- [Introduction](#introduction)
+		- [A Note About Code Samples](#a-note-about-code-samples)
+	- [Motivation and Design Goals](#motivation-and-design-goals)
+	- [Layers](#layers)
+		- [Layer 0 (local)](#layer-0-local)
+		- [Layer 1 (remote)](#layer-1-remote)
+		- [Layer 2 (nested)](#layer-2-nested)
+	- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
+	- [State Consistency](#state-consistency)
+	- [The Job API; Layer 0](#the-job-api-layer-0)
+		- [Implementation Notes](#implementation-notes)
+		- [JobExecutor](#jobexecutor)
+			- [Methods](#methods)
+					- [Exceptions:](#exceptions)
+		- [Job](#job)
+			- [Methods](#methods)
+		- [JobSpecification](#jobspecification)
+			- [Methods](#methods)
+		- [JobStatus](#jobstatus)
+			- [Methods](#methods)
+		- [JobState](#jobstate)
+			- [Methods](#methods)
+		- [JobStatusCallback](#jobstatuscallback)
+			- [Methods](#methods)
+		- [InvalidJobException](#invalidjobexception)
+			- [Methods](#methods)
+		- [InvalidJobListException](#invalidjoblistexception)
+			- [Methods](#methods)
+		- [FaultDetail](#faultdetail)
+			- [Methods](#methods)
+		- [ResourcesSpec](#resourcesspec)
+			- [Methods](#methods)
+		- [ResourceSpecV1](#resourcespecv1)
+			- [Methods](#methods)
+		- [JobAttributes](#jobattributes)
+			- [Methods](#methods)
+		- [TimeInterval](#timeinterval)
+			- [Constructors](#constructors)
+			- [Methods](#methods)
+		- [TimeUnit](#timeunit)
+	- [Appendices](#appendices)
+		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+			- [Resources](#resources)
+				- [Reserved Resource Types](#reserved-resource-types)
+				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
+			- [Tasks](#tasks)
+			- [Attributes](#attributes)
+		- [Appendix B - Synchronous vs. Asynchronous API](#appendix-b-synchronous-vs-asynchronous-api)
+		- [Appendix C - Bulk Submission](#appendix-c-bulk-submission)
+			- [Threaded Submission](#threaded-submission)
+			- [Asynchronous Networking](#asynchronous-networking)
+			- [Connection Multiplexing](#connection-multiplexing)
+		- [Appendix C - examples](#appendix-c-examples)
+			- [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
+			- [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
+			- [Have N jobs compete in the queue and keep only the winner](#have-n-jobs-compete-in-the-queue-and-keep-only-the-winner)
+		- [Appendix D - Naming](#appendix-d-naming)
 
 <!-- /TOC -->
 
-
-
-
-## STATUS
-
-* (10/12/20) an initial version of this document was written
-
-* (10/15/20) internal comments are happening; small changes are
-integrated directly; bigger proposed changes are added to the TODO
-section and will be integrated once everybody has had a chance to read
-the doc and the discussions converge towards a consensus.
-
+## STATUS: EARLY DRAFT
 
 
 
 
 ## TODO
 
-- [x] add details for SubmitException and InvalidJob(s)Exception
 
-- [x] clarify bulk versions of exceptions above and the semantics of
-partial failures for bulk submission
+- [ ] add examples of how one would use this API (and please, if you have
+    any "how do you do x?", please add here)
 
-- [x] distinguish client-facing API from library-facing API
+    - [ ] do the same but use the ListException from the submit call to do
+    the same
 
-- [ ] "canceled" or "cancelled"?
+    - [ ] Submit a malformed or unsatisfiable job, then check for the error
+    and print it out
+
+    - [ ] Construct a job that uses all the various "knobs" of the resource
+    and job specifications (with some verbose comments thrown in)
+
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
-
-- [ ] Add metadata to JobStatus. One important use case we discussed is
-getting the native job ID when the job becomes QUEUED. Flux does this
-nicely, with a metadata dictionary.
-
-- [ ] Add a get_version method/function with a note about version obj vs
-string depending on programming  language
-
-- [ ] merge prev() spirit into previous method (the order)
 
 - [ ] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
@@ -129,38 +119,10 @@ with (they never quite get the launching part right).
 
 - [ ] add a section giving an overview of the API components
 
-- [ ] add examples of how one would use this API (and please, if you have
-any "how do you do x?", please add here)
-
-    - Submit X jobs and wait for them to complete in order of submission
-    with the waitFor function
-
-    - Submit X jobs but ensure only Y job are queued/running at a time
-    (rolling window implemented with the jobStatusCallback)
-
-    - do the same but use the ListException from the submit call to do
-    the same
-
-    - Submit a job, wait for it to be queued, then cancel it, then wait
-    for it to complete/be killed.
-
-    - Submit a malformed or unsatisfiable job, then check for the error
-    and print it out
-
-    - Construct a job that uses all the various "knobs" of the resource
-    and job specifications (with some verbose comments thrown in)
-
 - [ ] add some clarification about the correspondence between JobSpec and
 exec/popen.
 
 - [ ] add some text about pilot jobs / reslicing
-
-- [ ] move some of the technical sections to appendices
-
-    - Bulk submission
-
-    - Make async vs sync much shorter with a pointer to the full text in
-    the appendix
 
 - [ ] Add assumptions/goals/etc.
 
@@ -196,16 +158,16 @@ exec/popen.
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
-implementation issues of a job management API suitable for use on
+implementation issues of a job management API suitable for managing jobs that are on
 exascale machines, as well as propose such an API. A job management API
-is a set of interfaces that allows the specification and management of
+is a set of interfaces that allow the specification and management of
 the invocation of application executables. The corresponding
-implementations of a job management API is a job management library. A
+implementation of a job management API is a job management library. A
 job management library, through its  API,  is invoked by a client
 application.
 
 Traditionally, job management is implemented on supercomputers by Local
-Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. In a first
+Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
@@ -217,10 +179,32 @@ examples. Such code is not working code, but a Java/C++/.NET inspired
 pseudo-code which almost surely will require modifications to be usable.
 
 
+## Motivation and Design Goals
 
+The API is designed with a number of goals in mind. These are centered around
+scalability and keeping the API and potential implementations simple. Where
+trade-offs must be made, such as deciding between interface and implementation
+simplicity, interface simplicity is generally favored. However, an attempt is
+also made to distill and analyze the resulting complexities of a potential
+implementation in order to minimize the amount of work needed to write such an
+implementation.
 
+Specifically, the following aspects have informed the design in a significant
+fashion:
 
-## Design goals/scope/assumptions?
+- The proposed API is **asynchronous**. A detailed discussion about the choice
+between synchronous and asynchronous APIs can be found in
+[Appendix B](#synchronous-vs-asynchronous-api). In short, the implementation of
+a synchronous API would not scale well in most languages. Additionally, if so
+needed, the API provides a [`waitFor()`](#job-waitfor) method that allows
+client code to trivially implement a synchronous wrapper around the API.
+
+- The API allows bulk job submission. The main reason for having a bulk
+submission interface is to facilitate the use of more efficient mechanisms for
+transmitting job information to an underlying implementation. While alternative
+methods exists that do not require a bulk submission call, they may place an
+undue burden on implementations. For a more extensive discussion on the topic,
+please see [Appendix C](#bulk-submission).
 
 
 
@@ -230,27 +214,27 @@ pseudo-code which almost surely will require modifications to be usable.
 There are at least three major ways in which a job management API can be
 used:
 
-- **locally**: the relevant API functions are invoked by programs running
+- **Local**: the relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
 as a login/head node)
 
-- **remotely**: the API functions are invoked by programs running on a
+- **Remote**: the API functions are invoked by programs running on a
 different resource than the target resource; this requires some form of
 distributed architecture, such as a client-server model.
 
-- **nested** (also known as "pilot jobs"): a "pilot" job is run
+- **Nested** (also known as "pilot jobs"): a "pilot" job is run
 using either a remote or local job management library; application jobs
-are then submitted to the pilot system which sends them directly to the
+are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
 as well as those used to run the application l and remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
-differences that make the requirements for an API more complex for when
+differences that make the requirements for an API more complex when
 remote/nested management is involved. This document specifies a layered
-API in which a baseline API (layer 0)  allows for local management and
-additional layers allow for more complex functionality. In large lines,
+API in which a baseline API (Layer 0) allows for local management and
+additional layers allow for more complex functionality. At a high level,
 the layers are as follows:
 
 
@@ -289,112 +273,10 @@ should run
 
 ### Layer 2 (nested)
 
-- TODO: add a statement that we intend on supporting layer2 in the
+- TODO: add a statement that we intend on supporting Layer 2 in the
 future, and the rough functionality will be X, Y, Z
 
 - TBD
-
-
-
-
-## Synchronous vs. Asynchronous API
-
-Running a job synchronously means that a hypothetical `run()` call does
-not return until the job completes. The typical scenario in which a job
-management API would be used involves jobs that are launched on a client
-machine (e.g., login node), but whose CPU-bound part would run on a
-different machine (e.g., compute node). This implies that the fundamental
-operations that `job.run()` consists of are some initial submission steps
-which communicate the details of the job from the client machine to the
-compute node and start the relevant CPU-bound code on the compute node as
-well as a step that waits for the CPU-bound code to finish executing:
-
-```java
-run() {
-    submit();
-    waitForCompletion();
-}
-```
-
-Considering jobs with non-trivial run durations, the bulk of the time in
-the above simplified definition of `run()` would be spent in
-`waitForCompletion()`, which is an operation that, if implemented as
-efficiently as possible, would consume no share of CPU time locally
-during the execution of the job. However, it holds the non-CPU resources
-associated with the thread that invokes it, namely kernel and stack
-memory. Any jobs running concurrently would, each, hold the resources
-associated with each of their respective threads. By contrast, an
-asynchronous implementation can run multiple jobs in a single thread:
-
-```java
-void runJobs() {
-    jobsLeft = alljobs.size();
-    executor.addJobStatusCallback(new JobStatusCallback() {
-        jobStatusChanged(Job job, JobStatus status) {
-            if (status.isFinal()) {
-                jobsLeft--;
-            }
-        }
-    });
-    for (job in alljobs) {
-        executor.submit(job);
-    }
-    // all jobs are now running
-    while (jobsLeft > 0) {
-        Thread.sleep(someDelay);
-    }
-}
-```
-
-Changing between an asynchronous interface and a synchronous one is a
-relatively simple matter. For example, running a job synchronously on top
-of an asynchronous API can be done as follows:
-
-```java
-void runJob(Job job, JobExecutor executor) {
-    condition = new Condition();
-    callback =
-    executor.submit(job, new JobStatusCallback() {
-        void jobStatusChanged(Job job, JobStatus status) {
-            if (status.isFinal()) {
-                condition.signal();
-            }
-        }
-    });
-    condition.await();
-}
-```
-
-The converse, wrapping a synchronous API with an asynchronous interface
-is also straightforward:
-
-```java
-void submit(Job job, JobExecutor executor, JobStatusCallback cb) {
-    new Thread() {
-        run() {
-            executor.run(job);
-            cb.jobStatusChanged(job, ....);
-        }
-    }.start()
-}
-```
-
-There are, however, subtle issues that ultimately make the two approaches
-inequivalent:
-
-- a synchronous API must have some asynchronous status notifications if
-it is to allow timely propagation of events that are not strictly part of
-the overall job lifetime, such as, transitioning from a queued state to a
-running state when run by a queuing LRM;
-
-- an asynchronous translation layer on top of a synchronous API still
-suffers from the aforementioned wasted thread memory issue.
-
-In light of the above, one might conclude that a scalable API would start
-with an asynchronous API and optionally add convenience synchronous
-methods.
-
-
 
 
 ## Interaction with LRMs and Scalability
@@ -402,7 +284,7 @@ methods.
 Implementations must use bulk status operations when interacting with
 LRMs. Regularly invoking, for example, qstat for each job in a set of
 many jobs can quickly overwhelm a LRM. The solution is to subscribe to
-asynchronous notifications from the LRM,if supported, or instead use bulk
+asynchronous notifications from the LRM, if supported, or instead use bulk
 query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
 extract the information about the relevant jobs from the result.
 
@@ -412,11 +294,11 @@ extract the information about the relevant jobs from the result.
 ## State Consistency
 
 Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems ordering of events on one system cannot be guaranteed on another.
+systems, ordering of events on one system cannot be guaranteed on another.
 For example, an application on System 1 can, in quick succession, open a
 TCP connection to System 2 and transmit, on each connection, the messages
 "A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e. it uses separate threads for each connection),
+connection handling (i.e., it uses separate threads for each connection),
 it is entirely possible that some user code that monitors messages on
 System 2 receives the message "B" before "A". In terms of jobs,
 this may make it appear as if seemingly impossible things are happening,
@@ -426,141 +308,6 @@ clearly impossible. The specifics of how this must be handled by
 implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
 [`JobState`](#jobstate).
 
-
-
-
-
-## Bulk Submission
-
-Bulk submission refers to the idea of using a minimal number of
-operations to submit multiple jobs. At the user-facing API level this
-would, for example, translate into the ability to call a `submit()`
-method with a list/array of jobs rather than having to call it multiple
-times with a single job. This is typically done for performance reasons.
-Consider a simple example, in which a hypothetical `submit(job)` method
-is implemented by connecting to a remote service and sending the
-serialized job information. The timing diagram is:
-
-<img width="300pt" src="diagrams/bulk_submission_simple.svg" alt="Single Job Timing Diagram"/>
-
-That is, in the simplest case, with no authentication present, it takes
-two round trips to submit one job, and three if one also waits for the
-connection to close. Calling the `submit()` method repeatedly in a loop
-results in the same process repeated serially, resulting in a total time
-of `3 * rtt * n`, where `n` is the total number of jobs and `rtt` is the
-round-trip time (the time it takes to send a message to the server plus
-the time it takes for the reply to make it back):
-
-<img width="300pt" src="diagrams/bulk_submission_simple_many.svg" alt="Multiple Jobs Timing Diagram"/>
-
-A way of speeding up the process is, if the details for all the jobs in
-the loop is known, to submit all the jobs at once:
-
-<img width="300pt" src="diagrams/bulk_submission_bulk.svg" alt="Bulk Jobs Timing Diagram"/>
-
-where `send(job_data[])` indicates that we are now sending an array of
-job information. This essentially reduces the time from `3 * rtt * n` to
-`3 * rtt`, or from `O(n)` to `O(1)`. The downside is that one must know
-what all the jobs in the array are at the time the `submit(job_data[])`
-call is made. In practice, it is likely that a job submission API will be
-driven by a workflow engine, which may not use static planning and
-produce jobs individually rather than in arrays. Nonetheless, it is
-possible to employ a buffer that accumulates job requests over a certain
-(short) period of time and submits all the collected jobs to the API
-using the bulk version of `submit()`. In essence, such an optimization
-could even be performed by the job submission library, shifting some of
-the complexity from the user into a reusable component.
-
-There exist a number of alternatives to bulk submission that can improve
-submission performance, which are analyzed in the following paragraphs.
-
-
-#### Threaded Submission
-
-Threaded submission involves, as the name implies, using multiple
-concurrent threads to submit jobs. This can effectively divide the
-submission time by the number of threads employed, as it can be seen from
-the following timing diagram:
-
-<img width="500pt" src="diagrams/bulk_submission_threaded.svg" alt="Threaded Jobs Timing Diagram"/>
-
-Threaded submission can, however, lose some of its advantage if any
-submission steps involve CPU-bound operations, such as is the case when
-initializing secure connections. A TLS handshake involves, for example,
-some encryption and decryption using asymmetric cryptography. This is
-usually slow, even for short messages, enough so as to limit the number
-of operations to a few hundreds per second per CPU core. Since CPU cores
-are time-shared between threads, only one CPU-bound operation can be
-effectively executing on a given core at one time. A possible timing
-diagram that assumes a single CPU core could look like this:
-
-<img width="500pt" src="diagrams/bulk_submission_threaded_tls.svg" alt="Threaded with TLS Jobs Timing Diagram"/>
-
-The extent to which cryptography is an issue in TLS is not entirely
-clear. A quick performance test using `openssl s_time -connect localhost`
-on decent hardware with Apache running locally returns approximately
-18000 operations per second with a 2048 bit certificate and approximately
-6000 operations per second with a 4096 bit certificate. Of course, this
-assumes that TLS is the only CPU-bound operation relevant during
-submission. A notable, if dated exception, was the concept of delegation
-in Gobus GSI, which involved the generation of an asymmetric key pair.
-For RSA 4096 bit keys, this is something that takes seconds on modern
-hardware.
-
-The problem of CPU-bound connection operations can be mitigated by
-caching the results of such CPU-bound operations. A simple way to achieve
-this is to cache the connections themselves. Alternatively, the security
-layer may provide relevant functionality. For example, TLS supports
-session resumption, which can be used to share cryptographic keys across
-multiple connections.
-
-
-#### Asynchronous Networking
-
-Given that a large majority of the thread time in a hypothetical
-`submit()` call is spent waiting for network packets to travel between
-machines, converting to fully asynchronous network calls can dissociate
-idle thread time on the client machine from the in-flight data delays.
-This, however, requires that the submission be asynchronous; that is, the
-`submit()` call must return immediately and the actual submission process
-must proceed asynchronously. The rough idea is to use asynchronous
-versions of networking calls, which we will denote by pre-pending the
-characters `"a_"`. These calls return immediately but signal the
-completion operation by calling a continuation function which is passed
-by the caller in an additional parameter. For example, instead of
-`connect()`, we can say `a_connect(c_connected)`, the latter being the
-asynchronous version of `connect()` which calls `c_connected()` when the
-connection succeeds. A possible timing diagram for submitting multiple
-jobs using asynchronous networking is shown in the picture below, where
-the color encodes the job with which the respective invocation is
-associated:
-
-<img width="300pt" src="diagrams/bulk_submission_async.svg" alt="Async Jobs Timing Diagram"/>
-
-
-While asynchronous networking addresses the problems imposed by network
-delays, it does little to alleviate potential throttling due to CPU-bound
-operations.
-
-
-#### Connection Multiplexing
-
-An alternative way of improving efficiency is to re-use a single
-connection for each remote resource that jobs are submitted to. If data
-is sent and received asynchronously, the timing has all the
-characteristics of the asynchronous networking case while also
-eliminating the need for repeated security handshakes or connection
-establishment:
-
-<img width="300pt" src="diagrams/bulk_submission_multiplexing.svg" alt="Connection Multiplexing Timing Diagram"/>
-
-Connection multiplexing also comes with performance advantages. When
-using individual connections to transmit short messages, TCP buffers must
-be emptied before they become full, since there is simply no other data
-to send over the connection. When using a single connection to transmit
-larger messages, TCP buffers can be more efficiently utilized.
-Additionally, it becomes feasible to tune buffer sizes in order to
-optimize the throughput of connections to particular services.
 
 
 
@@ -650,9 +397,9 @@ void submit(List<Job> jobs) throws InvalidJobListException, SubmitException
 ```
 
 Submits a list of jobs to the underlying implementation. This allows
-implementations to submit bulk jobs more efficiently than it would be to
-submit jobs individually. It is, therefore, discouraged to implement this
-method by repeatedly invoking `submit(job)`, unless no performance
+implementations to submit bulk jobs more efficiently than
+submitting jobs individually. Implementing this
+method by repeatedly invoking `submit(job)` is therefore discouraged, unless no performance
 benefit can be derived from bulk submission. It is possible for this
 method to only successfully submit a subset of the jobs. If that is the
 case, this method must throw `InvalidJobListException` and populate it
@@ -666,19 +413,19 @@ void cancel(Job job) throws SubmitException
 
 Cancels a job that has been submitted to underlying executor
 implementation. A successful return of this method only indicates that
-the request for cancellation has been communicated to the underlying
-implementation. The job will then be cancelled at the discretion of the
+the request for cancelation has been communicated to the underlying
+implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
-cancellation is reflected in a change of status of the respective job to
-`JobState.CANCELLED`. User code can synchronously wait until the
-`CANCELLED` state is reached using `job.waitFor(JobState.CANCELLED)` or
-even `job.waitFor()`, since the latter would wait for all final
-states, including `JobState.CANCELLED`. In fact, it is recommended that
+cancelation is reflected in a change of status of the respective job to
+`JobState.CANCELED`. User code can synchronously wait until the
+`CANCELED` state is reached using `job.waitFor(JobState.CANCELED)` or
+even `job.waitFor()`, since the latter would wait for all terminal
+states, including `JobState.CANCELED`. In fact, it is recommended that
 `job.waitFor()` be used because it is entirely possible for the job to
-complete before the cancellation is communicated to the underlying
+complete before the cancelation is communicated to the underlying
 implementation and before the client code receives the completion
-notification. In such a case, the job will never enter the `CANCELLED`
-state and `job.waitFor(JobState.CANCELLED)` would hang indefinitely.
+notification. In such a case, the job will never enter the `CANCELED`
+state and `job.waitFor(JobState.CANCELED)` would hang indefinitely.
 
 <a name="jobexecutor-setjobstatuscallback"></a>
 ```java
@@ -776,9 +523,9 @@ returned by this method is monotonic in time with respect to the partial
 ordering of [JobStatus](#jobstatus) types. That is, if
 `jobStatus1.getState()` and `jobStatus2.getState()` are comparable and
 `jobStatus1.getState() < jobStatus2.getState()`, then it is impossible
-for `jobStatus2` to be returned by a call placed previous to a call that
+for `jobStatus2` to be returned by a call placed prior to a call that
 returns `jobStatus1` if both calls are placed from the same thread or if
-a proper memory barrier is placed between the calls otherwise.
+a proper memory barrier is placed between the calls.
 Furthermore, implementations must, to the extent possible, simulate
 missing states. For example, if the implementation polls a LRM queue
 infrequently enough such that the active state of a job is skipped
@@ -811,7 +558,7 @@ Waits for the job to complete for a certain amount of time, or
 indefinitely if `timeout` is `null`. Returns a [JobStatus](#jobstatus)
 object that represents the status of the job at termination or `null` if
 the timeout is reached. Equivalent to `waitFor(timeout,
-JobState.COMPLETED, JobState.FAILED, JobState.CANCELLED)`.
+JobState.COMPLETED, JobState.FAILED, JobState.CANCELED)`.
 
 ```java
 JobStatus waitFor()
@@ -827,7 +574,7 @@ void setStatusCallback(JobStatusCallback? cb)
 ```
 
 Sets a [status callback](#jobstatuscallback) for this job. The callback
-will be invoked whenever the state of this job changes. To unset the
+will be invoked when the state of this job changes. To unset the
 callback, call this method with a `null` argument.
 
 
@@ -844,8 +591,8 @@ String? getName()
 ```
 
 Sets/retrieves a name for the job. The name plays no functional role.
-Instead, it can help users in tracking the job across various layers.
-Implementations should make efforts in propagating the name such that the
+However, it can help users in tracking the job across various layers.
+Implementations should make an effort to propagate the name so that the
 user can quickly identify the job as it propagates through the system.
 For example, the job should appear with this name in the output of a
 potential `qstat` LRM command.
@@ -989,6 +736,18 @@ implementations have the discretion of implementing a relevant
 `Timestamp` class.
 
 
+<a name="jobstatus-getmetdadata"></a>
+```java
+Dictionary<String, Object>? getMetadata()
+```
+
+Returns metadata associated with this status, if any. The content of the
+metadata dictionary is not mandated by this specification and is left to the
+implementation. Possible metadata entries include:
+
+* `native-id`: the native identifier used by the LRM for the job.
+
+
 <a name="jobstatus-getexitcode"></a>
 ```java
 int? getExitCode()
@@ -1018,7 +777,7 @@ A convenience wrapper for
 ### JobState
 
 An enumeration holding the possible job states, which are: `NEW`,
-`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELLED`.
+`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
 #### Methods
 
@@ -1040,7 +799,10 @@ transitive.  The order is:
 The relevance of the partial ordering is that the system guarantees that
 no transition that would violate this ordering can occur. For example, no
 job can go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE >
-QUEUED`, therefore `QUEUED < COMPLETED`.
+QUEUED`, therefore `COMPLETED > QUEUED`.
+
+An implementation must ensure that state update notifications are delivered in
+order and without missing intermediate states.
 
 
 <a name="jobstate-isfinal"></a>
@@ -1049,7 +811,7 @@ boolean isFinal()
 ```
 
 Returns `true` if a job cannot further change state once this state is
-reached. The final states are `COMPLETED`, `FAILED`, and `CANCELLED`.
+reached. The final states are `COMPLETED`, `FAILED`, and `CANCELED`.
 
 
 
@@ -1359,9 +1121,9 @@ Represents a time unit and must have at least the following units:
 `SECOND`, `MINUTE`, `HOUR`.
 
 
-## Appendix
+## Appendices
 
-### Job Specification V1 Serialization Format
+### Appendix A - Job Specification V1 Serialization Format
 
 A domain specific language based on YAML is defined to express the
 resource requirements and other attributes of one or more programs
@@ -1558,3 +1320,355 @@ use:
     The name key contains the name of the job. The default name of a job
     is the first argument of the command run by the user, or it can be
     set by the user to an arbitrary value.
+
+### Appendix B - Synchronous vs. Asynchronous API
+
+Running a job synchronously means that a hypothetical `run()` call does not
+return until the job completes. The typical scenario in which a job management
+API would be used involves jobs that are launched on a client machine (e.g.,
+login node), but whose CPU-bound part would run on a different machine (e.g.,
+compute node). This implies that the fundamental operations that comprise
+`job.run()` are some initial submission steps that communicate the details of
+the job from the client machine to the compute node and start the relevant
+CPU-bound code on the compute node as well as a step that waits for the
+CPU-bound code to finish executing:
+
+```java
+run() {
+    submit();
+    waitForCompletion();
+}
+```
+
+Considering jobs with non-trivial run durations, the bulk of the time in the
+above simplified definition of `run()` would be spent in `waitForCompletion()`,
+which is an operation that, if implemented as efficiently as possible, would
+consume no CPU time locally during the execution of the job. However, it holds
+the non-CPU resources associated with the thread that invokes it, namely kernel
+and stack memory. Any jobs running concurrently would, each, hold the resources
+associated with each of their respective threads. By contrast, an asynchronous
+implementation can run multiple jobs in a single thread:
+
+```java
+void runJobs() {
+    jobsLeft = alljobs.size();
+    executor.addJobStatusCallback(new JobStatusCallback() {
+        jobStatusChanged(Job job, JobStatus status) {
+            if (status.isTerminal()) {
+                jobsLeft--;
+            }
+        }
+    });
+    for (job in alljobs) {
+        executor.submit(job);
+    }
+    // all jobs are now running
+    while (jobsLeft > 0) {
+        Thread.sleep(someDelay);
+    }
+}
+```
+
+Changing between an asynchronous interface and a synchronous one is a
+relatively simple matter. For example, running a job synchronously on top
+of an asynchronous API can be done as follows:
+
+```java
+void runJob(Job job, JobExecutor executor) {
+    condition = new Condition();
+    callback =
+    executor.submit(job, new JobStatusCallback() {
+        void jobStatusChanged(Job job, JobStatus status) {
+            if (status.isTerminal()) {
+                condition.signal();
+            }
+        }
+    });
+    condition.await();
+}
+```
+
+The converse, wrapping a synchronous API with an asynchronous interface
+is also straightforward:
+
+```java
+void submit(Job job, JobExecutor executor, JobStatusCallback cb) {
+    new Thread() {
+        run() {
+            executor.run(job);
+            cb.jobStatusChanged(job, ....);
+        }
+    }.start()
+}
+```
+
+There are, however, subtle issues that ultimately make the two approaches
+inequivalent:
+
+- a synchronous API must have some asynchronous status notifications if
+it is to allow timely propagation of events that are not strictly part of
+the overall job lifetime, such as, transitioning from a queued state to a
+running state when run by a queuing LRM;
+
+- an asynchronous translation layer on top of a synchronous API still
+suffers from the aforementioned wasted thread memory issue.
+
+In light of the above, one might conclude that a scalable API would start
+with an asynchronous API and optionally add convenience synchronous
+methods.
+
+
+### Appendix C - Bulk Submission
+
+Bulk submission refers to the idea of using a minimal number of
+operations to submit multiple jobs. At the user-facing API level this
+would, for example, translate into the ability to call a `submit()`
+method with a list/array of jobs rather than having to call it multiple
+times with a single job. This is typically done for performance reasons.
+Consider a simple example, in which a hypothetical `submit(job)` method
+is implemented by connecting to a remote service and sending the
+serialized job information. The timing diagram is:
+
+<img width="300pt" src="diagrams/bulk_submission_simple.svg" alt="Single Job Timing Diagram"/>
+
+That is, in the simplest case, with no authentication present, it takes
+two round trips to submit one job, and three if one also waits for the
+connection to close. Calling the `submit()` method repeatedly in a loop
+results in the same process repeated serially, resulting in a total time
+of `3 * rtt * n`, where `n` is the total number of jobs and `rtt` is the
+round-trip time (the time it takes to send a message to the server plus
+the time it takes for the reply to make it back):
+
+<img width="300pt" src="diagrams/bulk_submission_simple_many.svg" alt="Multiple Jobs Timing Diagram"/>
+
+A way of speeding up the process is, if the details for all the jobs in
+the loop is known, to submit all the jobs at once:
+
+<img width="300pt" src="diagrams/bulk_submission_bulk.svg" alt="Bulk Jobs Timing Diagram"/>
+
+where `send(job_data[])` indicates that we are now sending an array of
+job information. This essentially reduces the time from `3 * rtt * n` to
+`3 * rtt`, or from `O(n)` to `O(1)`. The downside is that one must know
+what all the jobs in the array are at the time the `submit(job_data[])`
+call is made. In practice, it is likely that a job submission API will be
+driven by a workflow engine, which may not use static planning and
+produce jobs individually rather than in arrays. Nonetheless, it is
+possible to employ a buffer that accumulates job requests over a certain
+(short) period of time and submits all the collected jobs to the API
+using the bulk version of `submit()`. In essence, such an optimization
+could even be performed by the job submission library, shifting some of
+the complexity from the user into a reusable component.
+
+There exist a number of alternatives to bulk submission that can improve
+submission performance, which are analyzed in the following paragraphs.
+
+
+#### Threaded Submission
+
+Threaded submission involves, as the name implies, using multiple
+concurrent threads to submit jobs. This can effectively divide the
+submission time by the number of threads employed, as can be seen in
+the following timing diagram:
+
+<img width="500pt" src="diagrams/bulk_submission_threaded.svg" alt="Threaded Jobs Timing Diagram"/>
+
+Threaded submission can, however, lose some of its advantage if any
+submission steps involve CPU-bound operations, such as is the case when
+initializing secure connections. A TLS handshake involves, for example,
+some encryption and decryption using asymmetric cryptography. This is
+usually slow enough, even for short messages, so as to limit the number
+of operations to a few hundreds per second per CPU core. Since CPU cores
+are time-shared between threads, only one CPU-bound operation can be
+effectively executing on a given core at one time. A possible timing
+diagram that assumes a single CPU core could look like this:
+
+<img width="500pt" src="diagrams/bulk_submission_threaded_tls.svg" alt="Threaded with TLS Jobs Timing Diagram"/>
+
+The extent to which cryptography is an issue in TLS is not entirely
+clear. A quick performance test using `openssl s_time -connect localhost`
+on decent hardware with Apache running locally returns approximately
+18000 operations per second with a 2048-bit certificate and approximately
+6000 operations per second with a 4096-bit certificate. Of course, this
+assumes that TLS is the only CPU-bound operation relevant during
+submission. A notable, if dated exception, was the concept of delegation
+in Globus GSI, which involved the generation of an asymmetric key pair.
+For RSA 4096-bit keys, this is something that takes seconds on modern
+hardware.
+
+The problem of CPU-bound connection operations can be mitigated by
+caching the results of such CPU-bound operations. A simple way to achieve
+this is to cache the connections themselves. Alternatively, the security
+layer may provide relevant functionality. For example, TLS supports
+session resumption, which can be used to share cryptographic keys across
+multiple connections.
+
+
+#### Asynchronous Networking
+
+Given that a large majority of the thread time in a hypothetical
+`submit()` call is spent waiting for network packets to travel between
+machines, converting to fully asynchronous network calls can dissociate
+idle thread time on the client machine from the in-flight data delays.
+This, however, requires that the submission be asynchronous; that is, the
+`submit()` call must return immediately and the actual submission process
+must proceed asynchronously. The rough idea is to use asynchronous
+versions of networking calls, which we will denote by pre-pending the
+characters `"a_"`. These calls return immediately but signal the
+completion operation by calling a continuation function which is passed
+by the caller in an additional parameter. For example, instead of
+`connect()`, we can say `a_connect(c_connected)`, the latter being the
+asynchronous version of `connect()` which calls `c_connected()` when the
+connection succeeds. A possible timing diagram for submitting multiple
+jobs using asynchronous networking is shown in the picture below, where
+the color encodes the job with which the respective invocation is
+associated:
+
+<img width="300pt" src="diagrams/bulk_submission_async.svg" alt="Async Jobs Timing Diagram"/>
+
+
+While asynchronous networking addresses the problems imposed by network
+delays, it does little to alleviate potential throttling due to CPU-bound
+operations.
+
+
+#### Connection Multiplexing
+
+An alternative way of improving efficiency is to re-use a single
+connection for each remote resource that jobs are submitted to. If data
+is sent and received asynchronously, the timing has all the
+characteristics of the asynchronous networking case while also
+eliminating the need for repeated security handshakes or connection
+establishment:
+
+<img width="300pt" src="diagrams/bulk_submission_multiplexing.svg" alt="Connection Multiplexing Timing Diagram"/>
+
+Connection multiplexing also comes with performance advantages. When
+using individual connections to transmit short messages, TCP buffers must
+be emptied before they become full, since there is simply no other data
+to send over the connection. When using a single connection to transmit
+larger messages, TCP buffers can be more efficiently utilized.
+Additionally, it becomes feasible to tune buffer sizes in order to
+optimize the throughput of connections to particular services.
+
+
+
+### Appendix C - examples
+
+This Appendix contains some examples of how the API can be used. Unlike the
+specification language, the examples are in a hypothetical Python binding, which
+is expected to be a relatively frequently used binding.
+
+#### Submit and wait for N jobs
+
+This example shows how to submit `N` jobs and synchronously wait for them to
+complete.
+
+```python
+import jpsi
+
+jex = jpsi.JobExectorFactory.get_instance('slurm')
+
+def make_job():
+    job = jpsi.Job()
+    spec = jpsi.JobSpecification()
+    spec.executable = '/bin/sleep'
+    spec.arguments = ['10']
+    job.specification = spec
+    return job
+
+jobs = []
+for i in range(N):
+    job = make_job()
+    jobs.append(job)
+    jex.submit(job)
+
+for i in range(N):
+    jobs[i].wait_for()
+```
+
+
+#### Run N jobs while throttling to M concurrent jobs
+
+This example shows how to run a total of `N` jobs while ensuring that at most
+`M` are running in parallel at any given time. It uses the callback mechanism of
+the [JobExecutor class](#jobexecutor) to submit more jobs as previously
+submitted jobs complete in order to keep the running number of jobs at `M`.
+
+```python
+import jpsi
+
+class ThrottledSubmitter:
+    def __init__(self):
+        self.jex = jpsi.JobExecutorFactory.get_instance('torque', '>= 0.2')
+        # keep track of completed jobs so that we can submit the rest
+        self.jex.set_status_callback(self.callback)
+        self.crt = 0
+
+    def make_job(self):
+        ...
+
+    def submit_next():
+        if self.crt < N:
+            jex.submit(self.jobs[self.crt])
+            self.crt += 1
+
+    def start(self)
+        # create list of jobs
+        self.jobs = [self.make_job() for i in range(N)]
+
+        # submit initial M jobs
+        while self.crt < M:
+            submit_next()
+
+    def callback(self, job, status):
+        if status.final:
+            # a previously submitted job is now done, we have room to
+            # submit another
+            self.submit_next()
+
+ThrottleSubmitter().start()
+```
+
+#### Have N jobs compete in the queue and keep only the winner
+
+This example submits N jobs and waits for the first one to move from a queued
+state to a running state. It then cancels the other jobs and waits for them to
+be canceled and for the winner job to complete.
+
+```python
+import jpsi
+import threading
+
+def make_job():
+    ...
+
+jex = jpsi.JobExecutorFactory.get_instance(...)
+jobs = [make_job() for i in range(N)]
+event = threading.Event()
+lock = threading.RLock()
+
+def callback(job, status):
+    with lock:
+        if status.state != jpsi.JobState.ACTIVE or event.is_set():
+            # we only care about the first job that becomes active
+            return
+        event.set()
+
+    for cjob in jobs:
+        if cjob != job:
+            # cancel all jobs that are not the job
+            jex.cancel(cjob)
+
+jex.set_status_callback(callback)
+
+for job in jobs:
+    # wait for the job to be canceled or otherwise complete
+    job.waitFor()
+```
+
+### Appendix D - Naming
+
+The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
+meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
+"Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
+[IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
