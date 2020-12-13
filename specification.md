@@ -85,16 +85,12 @@
     - [ ] Construct a job that uses all the various "knobs" of the resource
     and job specifications (with some verbose comments thrown in)
 
-
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
 
 - [ ] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
 we mandate it.
-
-- [ ] add ability to have custom attributes which could be passed to the
-underlying LRM (aka. dynamic attributes).
 
 - [ ] we need to go through the resource spec; many common things
 supported by other JM APIs are not supported by Flux Jobspec V1, such as
@@ -1002,6 +998,19 @@ resources reserved through the advanced reservation represented by this
 ID.
 
 
+<a name="jobattributes-setcustomattribute"></a>
+```java
+void setCustomAttribute(String name, Object value);
+Object? getCustomAttribute(String name);
+```
+
+Allows setting/querying of custom attributes. Implementations are
+encouraged to make sensible decisions on whether to store some or all of
+the fixed attributes in the same structure as the custom attributes or
+not. It is, therefore, entirely possible for
+`getCustomAttribute("duration")` to return a value passed earlier to
+`setDuration()`, although the specific custom attribute name need not be
+`"duration"`.
 
 ### TimeInterval
 
