@@ -424,6 +424,51 @@ to `null`.
 
 ### Job
 
+#### State Model
+
+Job instances are, in this API, stateful objects.  A job's state can be
+inspected via the `job.getStatus()` method which will return a `JobStatus`
+instance on which the job's state is available as an attribute.  State
+transitions can also be received via callbacks
+
+An implementation MUST ensure that job state transitions occur according to the
+following state model:  a job is created in an initial state `NEW`.  When the
+job is accepted by the backend for execution, it will enter the state `QUEUED`.
+When the job is being executed and consumes resources, it enters the `ACTIVE`
+state.  Upon completion, it will enter the `COMPLETED` state which is a final
+state.
+
+At any point in time (until the job is final), the job can enter the `FAILED`
+state on error conditions.  That state is also reached when the job completes
+execution with an error code, but can also indicate a backend error, or
+a library error of any kind.  The `FAILED` state is final.
+
+At any point in time (until the job is final), the job can enter the `CANCELED`
+state as reaction to the `job.cancel()` call.  Note that the transition to
+`CANCELED` is not immediate when calling that method, but the state transition
+only occurs once the backend is enacting that request.  
+
+The `ACTIVE` state is the only state where the job will consume resources.
+
+Backend implementations are likely to have their own state definitions state and
+transition semantics.  An implementation of this API MUST ensure that
+
+  - backend states are mapped to the states defined in this document;
+  - state transitions are valid with respect to the state model here defined.
+
+An implementation MUST NOT issue state updates for any backend state transitions
+which cannot be mapped to the state model.  When a backend state model misses
+a representation for a state which the state model in this document requires,
+the implementation MUST report the respective state transition anyway, to the
+best of its knowledge.  For example, if a `JobExecutor` backend does, for some
+reason, not feature a state corresponding to `QUEUED`, then the implementation
+MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
+
+Additional information (time stamps, backend details, transition triggers etc)
+MAY be available on certain state transitions, in certain implementations - See
+the `JobStatus` definition for additional information on such meta data.
+
+
 #### Methods
 
 <a name="job-getid"></a>
@@ -699,21 +744,20 @@ String? getMessage()
 Returns the message associated with this status, if any.
 
 
-<a name="jobstatus-isterminal"></a>
+<a name="jobstatus-isfinal"></a>
 ```java
-boolean isTerminal()
+boolean isFinal()
 ```
 
 A convenience wrapper for
-[`status.getState().isTerminal()`](#jobstate-isterminal).
+[`status.getState().isFinal()`](#jobstate-isFinal).
 
 
 
 ### JobState
 
 An enumeration holding the possible job states, which are: `NEW`,
-`QUEUED`, `ACTIVE`, `SUSPENDED`, `RESUMED`, `COMPLETED`, `FAILED`,
-`CANCELED`.
+`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
 #### Methods
 
@@ -722,65 +766,32 @@ An enumeration holding the possible job states, which are: `NEW`,
 boolean isGreaterThan(JobState other)
 ```
 
-Defines a partial ordering on the states. Not all state pairs are
-comparable. The order is:
+Defines a partial ordering on the states. It is not possible to compare two
+final states -- otherwise all state pairs are comparable. Comparisons are
+transitive.  The order is:
 
-- `*  > NEW` (i.e., `NEW` is the lowest element)
+  - `QUEUED    > NEW`
+  - `ACTIVE    > QUEUED`
+  - `COMPLETED > ACTIVE`
+  - `FAILED    > ACTIVE`
+  - `CANCELLED > ACTIVE`
 
-- `COMPLETED > ACTIVE`
+The relevance of the partial ordering is that the system guarantees that
+no transition that would violate this ordering can occur. For example, no
+job can go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE >
+QUEUED`, therefore `COMPLETED > QUEUED`.
 
-- `FAILED > ACTIVE`
+An implementation must ensure that state update notifications are delivered in
+order and without missing intermediate states.
 
-- `ACTIVE > QUEUED`
 
-- `COMPLETED > SUSPENDED`
-
-- `FAILED > SUSPENDED`
-
-- `CANCELED > SUSPENDED`
-
-Implementations must enforce this ordering when delivering status updates to
-clients by guaranteeing that no transition that would violate this ordering can
-occur. For example, no job can go from `COMPLETED` to `QUEUED` because
-`COMPLETED > ACTIVE > QUEUED`, therefore `QUEUED < COMPLETED`.
-
-Furthermore, implementations should deliver synthetic status updates when
-necessary to compensate for missed status updates from underlying
-implementations. This can be done by noting that some states have immediate
-predecessors:
-
-* `pred(COMPLETED) == ACTIVE`
-* `pred(FAILED) == ACTIVE`
-* `pred(RESUMED) == SUSPENDED`
-* `pred(SUSPENDED) == ACTIVE`
-* `pred(QUEUED) == NEW`
-
-From a practical perspective, an implementation, upon receiving state `newState`
-for a job whose current state is `oldState`, should recursively generate
-synthetic updates using, for example, the following pseudo-code:
-
+<a name="jobstate-isfinal"></a>
 ```java
-    void updateState(Job job, JobState newState) {
-        if (job.getStatus().getState() != newState) {
-            if (pred(newState) exists) {
-                // generate synthetic state
-                updateState(job, pred(newState));
-            }
-            job.setStatus(new JobStatus(newState));
-        }
-        else {
-            // the job is already in newState
-        }
-    }
-```
-
-<a name="jobstate-isterminal"></a>
-```java
-boolean isTerminal()
+boolean isFinal()
 ```
 
 Returns `true` if a job cannot further change state once this state is
-reached. The terminal states are `COMPLETED`, `FAILED`, and `CANCELED`.
+reached. The final states are `COMPLETED`, `FAILED`, and `CANCELED`.
 
 
 
