@@ -79,15 +79,11 @@
 - [ ] add examples of how one would use this API (and please, if you have
     any "how do you do x?", please add here)
 
-    - [ ] do the same but use the ListException from the submit call to do
-    the same
-
     - [ ] Submit a malformed or unsatisfiable job, then check for the error
     and print it out
 
     - [ ] Construct a job that uses all the various "knobs" of the resource
     and job specifications (with some verbose comments thrown in)
-
 
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
@@ -95,9 +91,6 @@ distinguish between EAGAIN types of errors and others.
 - [ ] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
 we mandate it.
-
-- [ ] add ability to have custom attributes which could be passed to the
-underlying LRM (aka. dynamic attributes).
 
 - [ ] we need to go through the resource spec; many common things
 supported by other JM APIs are not supported by Flux Jobspec V1, such as
@@ -158,13 +151,13 @@ exec/popen.
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
-implementation issues of a job management API suitable for managing jobs that are on
-exascale machines, as well as propose such an API. A job management API
-is a set of interfaces that allow the specification and management of
-the invocation of application executables. The corresponding
-implementation of a job management API is a job management library. A
-job management library, through its  API,  is invoked by a client
-application.
+implementation issues of a job management API suitable for managing jobs
+that are on exascale machines, as well as propose such an API. A job
+management API is a set of interfaces that allow the specification and
+management of the invocation of application executables. The
+corresponding implementation of a job management API is a job management
+library. A job management library, through its  API,  is invoked by a
+client application.
 
 Traditionally, job management is implemented on supercomputers by Local
 Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
@@ -199,12 +192,14 @@ a synchronous API would not scale well in most languages. Additionally, if so
 needed, the API provides a [`waitFor()`](#job-waitfor) method that allows
 client code to trivially implement a synchronous wrapper around the API.
 
-- The API allows bulk job submission. The main reason for having a bulk
-submission interface is to facilitate the use of more efficient mechanisms for
-transmitting job information to an underlying implementation. While alternative
-methods exists that do not require a bulk submission call, they may place an
-undue burden on implementations. For a more extensive discussion on the topic,
-please see [Appendix C](#bulk-submission).
+- Bulk versions of calls have been considered. The main reason for having bulk
+calls is to facilitate the use of more efficient mechanisms for
+transmitting job information to an underlying implementation. However,
+alternative methods exists that do not require a bulk calls. Nonetheless,
+adding bulk calls to enable better performance in Layers 1-2, or even in
+Layer 0 if reasonably justified in the future, remains a possibility. For
+a technical discussion on the topic, please see [Appendix
+C](#bulk-submission).
 
 
 
@@ -349,8 +344,8 @@ JobExecutor(String url) throws BackendException
 ```
 
 Instantiates an `JobExecutor` object and binds it to the backend specified by
-URL `url`.  The URL will also encode any authentication details needed to
-access the backend.  
+URL `url` (optional).  The URL will also encode any authentication details
+needed to access the backend.
 
 
 <a name="jobexecutor-getname"></a>
@@ -407,21 +402,6 @@ status notifications about the job will be fired.
     fails to respond to a request>
 
 
-```java
-void submit(List<Job> jobs) throws InvalidJobListException, SubmitException,
-     BackendException
-```
-
-Submits a list of jobs to the underlying implementation. This allows
-implementations to submit bulk jobs more efficiently than
-submitting jobs individually. Implementing this
-method by repeatedly invoking `submit(job)` is therefore discouraged, unless no performance
-benefit can be derived from bulk submission. It is possible for this
-method to only successfully submit a subset of the jobs. If that is the
-case, this method must throw `InvalidJobListException` and populate it
-with the jobs that have not been submitted.
-
-
 <a name="jobexecutor-cancel"></a>
 ```java
 void cancel(Job job) throws SubmitException, BackendException
@@ -457,6 +437,51 @@ to `null`.
 
 
 ### Job
+
+#### State Model
+
+Job instances are, in this API, stateful objects.  A job's state can be
+inspected via the `job.getStatus()` method which will return a `JobStatus`
+instance on which the job's state is available as an attribute.  State
+transitions can also be received via callbacks
+
+An implementation MUST ensure that job state transitions occur according to the
+following state model:  a job is created in an initial state `NEW`.  When the
+job is accepted by the backend for execution, it will enter the state `QUEUED`.
+When the job is being executed and consumes resources, it enters the `ACTIVE`
+state.  Upon completion, it will enter the `COMPLETED` state which is a final
+state.
+
+At any point in time (until the job is final), the job can enter the `FAILED`
+state on error conditions.  That state is also reached when the job completes
+execution with an error code, but can also indicate a backend error, or
+a library error of any kind.  The `FAILED` state is final.
+
+At any point in time (until the job is final), the job can enter the `CANCELED`
+state as reaction to the `job.cancel()` call.  Note that the transition to
+`CANCELED` is not immediate when calling that method, but the state transition
+only occurs once the backend is enacting that request.  
+
+The `ACTIVE` state is the only state where the job will consume resources.
+
+Backend implementations are likely to have their own state definitions state and
+transition semantics.  An implementation of this API MUST ensure that
+
+  - backend states are mapped to the states defined in this document;
+  - state transitions are valid with respect to the state model here defined.
+
+An implementation MUST NOT issue state updates for any backend state transitions
+which cannot be mapped to the state model.  When a backend state model misses
+a representation for a state which the state model in this document requires,
+the implementation MUST report the respective state transition anyway, to the
+best of its knowledge.  For example, if a `JobExecutor` backend does, for some
+reason, not feature a state corresponding to `QUEUED`, then the implementation
+MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
+
+Additional information (time stamps, backend details, transition triggers etc)
+MAY be available on certain state transitions, in certain implementations - See
+the `JobStatus` definition for additional information on such meta data.
+
 
 #### Methods
 
@@ -733,21 +758,20 @@ String? getMessage()
 Returns the message associated with this status, if any.
 
 
-<a name="jobstatus-isterminal"></a>
+<a name="jobstatus-isfinal"></a>
 ```java
-boolean isTerminal()
+boolean isFinal()
 ```
 
 A convenience wrapper for
-[`status.getState().isTerminal()`](#jobstate-isterminal).
+[`status.getState().isFinal()`](#jobstate-isFinal).
 
 
 
 ### JobState
 
 An enumeration holding the possible job states, which are: `NEW`,
-`QUEUED`, `ACTIVE`, `SUSPENDED`, `RESUMED`, `COMPLETED`, `FAILED`,
-`CANCELED`.
+`QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
 #### Methods
 
@@ -756,65 +780,32 @@ An enumeration holding the possible job states, which are: `NEW`,
 boolean isGreaterThan(JobState other)
 ```
 
-Defines a partial ordering on the states. Not all state pairs are
-comparable. The order is:
+Defines a partial ordering on the states. It is not possible to compare two
+final states -- otherwise all state pairs are comparable. Comparisons are
+transitive.  The order is:
 
-- `*  > NEW` (i.e., `NEW` is the lowest element)
+  - `QUEUED    > NEW`
+  - `ACTIVE    > QUEUED`
+  - `COMPLETED > ACTIVE`
+  - `FAILED    > ACTIVE`
+  - `CANCELLED > ACTIVE`
 
-- `COMPLETED > ACTIVE`
+The relevance of the partial ordering is that the system guarantees that
+no transition that would violate this ordering can occur. For example, no
+job can go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE >
+QUEUED`, therefore `COMPLETED > QUEUED`.
 
-- `FAILED > ACTIVE`
+An implementation must ensure that state update notifications are delivered in
+order and without missing intermediate states.
 
-- `ACTIVE > QUEUED`
 
-- `COMPLETED > SUSPENDED`
-
-- `FAILED > SUSPENDED`
-
-- `CANCELED > SUSPENDED`
-
-Implementations must enforce this ordering when delivering status updates to
-clients by guaranteeing that no transition that would violate this ordering can
-occur. For example, no job can go from `COMPLETED` to `QUEUED` because
-`COMPLETED > ACTIVE > QUEUED`, therefore `QUEUED < COMPLETED`.
-
-Furthermore, implementations should deliver synthetic status updates when
-necessary to compensate for missed status updates from underlying
-implementations. This can be done by noting that some states have immediate
-predecessors:
-
-* `pred(COMPLETED) == ACTIVE`
-* `pred(FAILED) == ACTIVE`
-* `pred(RESUMED) == SUSPENDED`
-* `pred(SUSPENDED) == ACTIVE`
-* `pred(QUEUED) == NEW`
-
-From a practical perspective, an implementation, upon receiving state `newState`
-for a job whose current state is `oldState`, should recursively generate
-synthetic updates using, for example, the following pseudo-code:
-
+<a name="jobstate-isfinal"></a>
 ```java
-    void updateState(Job job, JobState newState) {
-        if (job.getStatus().getState() != newState) {
-            if (pred(newState) exists) {
-                // generate synthetic state
-                updateState(job, pred(newState));
-            }
-            job.setStatus(new JobStatus(newState));
-        }
-        else {
-            // the job is already in newState
-        }
-    }
-```
-
-<a name="jobstate-isterminal"></a>
-```java
-boolean isTerminal()
+boolean isFinal()
 ```
 
 Returns `true` if a job cannot further change state once this state is
-reached. The terminal states are `COMPLETED`, `FAILED`, and `CANCELED`.
+reached. The final states are `COMPLETED`, `FAILED`, and `CANCELED`.
 
 
 
@@ -858,61 +849,12 @@ Returns the details about the failure.
 String getMessage()
 ```
 
-A shortcut for `getDetail().getMessage()`.
-
-
-<a name="invalidjobexception-getexception"></a>
-```java
-Exception? getException()
-```
-
-A shortcut for `getDetail().getException()`.
-
-
-<a name="invalidjobexception-getjob"></a>
-```java
-Job getJob()
-```
-
-A shortcut for `getDetail().getJob()`.
-
-
-### InvalidJobListException
-
-#### Methods
-<a name="invalidjoblistexception-getdetaillist"></a>
-```java
-List<FaultDetail> getDetailList()
-```
-
-Returns a list of faults, one for each job whose submission has failed.
-
-
-### FaultDetail
-
-This class contains details about a failure associated with the
-submission of a job. It may appear redundant, since the information
-contained in it may very well have been contained in the
-[`InvalidJobException`](#invalidjobexception) class. This would imply
-that [`InvalidJobListException`](#invalidjoblistexception) should point
-to a list of `InvalidJobException` instances. However, in most languages,
-initializing an exception involves steps that can introduce unnecessary
-inefficiencies, such as recording a stack trace and other information
-about the context in which the exception object was created.
-
-
-#### Methods
-
-<a name="faultdetail-getmessage"></a>
-```java
-String getMessage()
-```
-
-Retrieves the message associated with this fault. This should be a
+Retrieves the message associated with this exception. This should be a
 descriptive message that is sufficiently clear to be presented to an
 end-user.
 
-<a name="faultdetail-getexception"></a>
+
+<a name="invalidjobexception-getexception"></a>
 ```java
 Exception? getException()
 ```
@@ -921,12 +863,14 @@ Returns an optional underlying exception that can potentially be used for
 debugging purposes, but which should not, in general, be presented to an
 end-user.
 
-<a name="faultdetail-getjob"></a>
+
+<a name="invalidjobexception-getjob"></a>
 ```java
 Job getJob()
 ```
 
-Returns the [`Job`](#job) associated with this fault.
+Returns the [`Job`](#job) associated with this exception.
+
 
 
 
@@ -1079,6 +1023,19 @@ resources reserved through the advanced reservation represented by this
 ID.
 
 
+<a name="jobattributes-setcustomattribute"></a>
+```java
+void setCustomAttribute(String name, Object value);
+Object? getCustomAttribute(String name);
+```
+
+Allows setting/querying of custom attributes. Implementations are
+encouraged to make sensible decisions on whether to store some or all of
+the fixed attributes in the same structure as the custom attributes or
+not. It is, therefore, entirely possible for
+`getCustomAttribute("duration")` to return a value passed earlier to
+`setDuration()`, although the specific custom attribute name need not be
+`"duration"`.
 
 ### TimeInterval
 
@@ -1632,42 +1589,6 @@ class ThrottledSubmitter:
 ThrottleSubmitter().start()
 ```
 
-#### Have N jobs compete in the queue and keep only the winner
-
-This example submits N jobs and waits for the first one to move from a queued
-state to a running state. It then cancels the other jobs and waits for them to
-be canceled and for the winner job to complete.
-
-```python
-import jpsi
-import threading
-
-def make_job():
-    ...
-
-jex = jpsi.JobExecutorFactory.get_instance(...)
-jobs = [make_job() for i in range(N)]
-event = threading.Event()
-lock = threading.RLock()
-
-def callback(job, status):
-    with lock:
-        if status.state != jpsi.JobState.ACTIVE or event.is_set():
-            # we only care about the first job that becomes active
-            return
-        event.set()
-
-    for cjob in jobs:
-        if cjob != job:
-            # cancel all jobs that are not the job
-            jex.cancel(cjob)
-
-jex.set_status_callback(callback)
-
-for job in jobs:
-    # wait for the job to be canceled or otherwise complete
-    job.waitFor()
-```
 
 ### Appendix D - Naming
 
