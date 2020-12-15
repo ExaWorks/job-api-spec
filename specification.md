@@ -421,6 +421,35 @@ an individual job status callback or not. To remove the callback, set it
 to `null`.
 
 
+<a name="jobexecutor-list"></a>
+```java
+List<String> list()
+```
+
+Return a list of job IDs which are known to this executor instance.  The
+returned list MAY contain IDs of jobs which were not submitted via this
+instance, and MAY NOT contain IDs of jobs which have been submitted by this
+instance, but are finalized and purged already.  IDs for any job which has been
+submitted via this instance and which is not yet in a final state MUST be
+returned.  The returned IDs can be used to (re-)attach a job instance to the job
+via the `executor.attach(id)` call.  This implies that the call SHALL only
+return those IDs to which the callee can attach with under currently used
+authorization.
+
+
+<a name="jobexecutor-attach"></a>
+```java
+Job attach(String jobID)
+```
+
+Return a job which is attached to the backend job identified by the specified
+ID.  The returned job instance MAY have an `UNKNOWN` state until the
+implementation asynchronously obtained information about the actual job state.
+The method MUST raise an `InvalidJobException` if the job ID cannot be used to
+uniquely identify a job.  The `jobID` can either refer to the ID returned by
+`Job.getID()`, which represents the ID used by the J/PSI implementation, or to
+the native job ID used by the LRM backend.
+
 
 ### Job
 
@@ -480,7 +509,20 @@ Returns this job's ID. The ID is assigned automatically by the
 implementation when the Job object is constructed. The ID is guaranteed
 to be unique on the client machine. The ID does not have to match the ID
 of the underlying LRM job, but is used to identify `Job` instances as
-seen by a client application.
+seen by a client application.  The ID can be used to later re-attach to the
+job with `Job j = executor.attach(native_job_id)`.
+
+
+<a name="job-getnativeid"></a>
+```java
+String? getNativeId()
+```
+
+Returns this job's native ID as assigned by the underlying LRM.  The ID will
+only be available once the job has entered the `QUEUED` state - the returned
+value will be `null` otherwise.  The returned ID can be used to communicate
+with the LRM out-of-band, and also to later re-attach to the job with
+`Job j = executor.attach(native_job_id)`.
 
 
 <a name="job-setspecification"></a>
