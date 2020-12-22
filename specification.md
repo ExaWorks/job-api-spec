@@ -49,7 +49,7 @@
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
 	- [Appendices](#appendices)
-		- [Appendix A - Job Spec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - JobSpec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
