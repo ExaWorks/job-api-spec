@@ -759,6 +759,9 @@ A convenience wrapper for
 An enumeration holding the possible job states, which are: `NEW`,
 `QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
+An additional enumeration `FINAL` is defined to denote the set of final states
+(`COMPLETED`, `FAILED`, `CANCELED`).
+
 #### Methods
 
 <a name="jobstate-isgreaterthan"></a>
