@@ -38,9 +38,9 @@
 			- [Methods](#methods)
 		- [FaultDetail](#faultdetail)
 			- [Methods](#methods)
-		- [ResourcesSpec](#resourcesspec)
+		- [ResourceSpecification](#resourcesspecification)
 			- [Methods](#methods)
-		- [ResourceSpecV1](#resourcespecv1)
+		- [ResourceSpecificationV1](#resourcespecificationv1)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
 			- [Methods](#methods)
@@ -485,8 +485,8 @@ seen by a client application.
 
 <a name="job-setspecification"></a>
 ```java
-void setSpecification(JobSpec spec)
-JobSpec? getSpecification()
+void setSpecification(JobSpecification spec)
+JobSpecification? getSpecification()
 ```
 
 Sets/retrieves the [job specification](#jobspecification) for this job. A
@@ -671,11 +671,11 @@ Set/get the paths to the standard stream files.
 
 <a name="jobspecification-setresources"></a>
 ```java
-void setResources(ResourcesSpec resources)
-ResourcesSpec? getResources()
+void setResources(ResourceSpecification resources)
+ResourceSpecification? getResources()
 ```
 
-Gets/sets the [resource requirements](#resourcesspec) of this job. The
+Gets/sets the [resource requirements](#resourcesspecification) of this job. The
 resource requirements specify the details of how the job is to be run on
 a cluster, such as the number and type of compute nodes used, etc.
 
@@ -860,11 +860,11 @@ Returns the [`Job`](#job) associated with this exception.
 
 
 
-### ResourcesSpec
+### ResourceSpecification
 
-The `ResourcesSpec` class is a base abstract class that describes job
+The `ResourceSpecification` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
-[`ResourceSpecV1`](#resourcespecv1).
+[`ResourceSpecificationV1`](#resourcespecificationv1).
 
 #### Methods
 
@@ -873,10 +873,10 @@ int getVersion()
 ```
 
 Returns the version of the class implementing the resource specification.
-For example, `ResourceSpecV1.getVersion()` would return `1`.
+For example, `ResourceSpecificationV1.getVersion()` would return `1`.
 
 
-### ResourceSpecV1
+### ResourceSpecificationV1
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
@@ -1080,10 +1080,10 @@ V1](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_25.ht
 which is itself a simplified version of the [canonical Flux jobspec
 format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_14.html).
 
-A jobspec V1 YAML document SHALL consist of a dictionary defining the
+A job specification V1 YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
-Each of the listed jobspec keys SHALL meet the form and requirements
+Each of the listed job specification keys SHALL meet the form and requirements
 listed in detail in the sections below.
 
 #### Resources
@@ -1120,9 +1120,9 @@ be a dictionary conforming to the resource vertex specification.
 **label**
 
 The `label` key SHALL be a string that may be used to reference this
-resource vertex from other locations within the same jobspec. `label`
-SHALL be local to the namespace of the current jobspec, and each label in
-the current jobspec must be unique. `label` SHALL be mandatory in
+resource vertex from other locations within the same job specification. `label`
+SHALL be local to the namespace of the current job specification, and each label
+in the current job specification must be unique. `label` SHALL be mandatory in
 resource vertices of type `slot`.
 
 ##### Reserved Resource Types
@@ -1130,14 +1130,14 @@ resource vertices of type `slot`.
 **slot**
 
 A resource type of `type: slot` SHALL indicate a grouping of resources
-into a named task slot. A `slot` SHALL be a valid resource spec including
-a `label` key, the value of which may be used to reference the named task
-slot during tasks definition. The `label` provided SHALL be local to the
-namespace of the current jobspec.
+into a named task slot. A `slot` SHALL be a valid resource specification
+including a `label` key, the value of which may be used to reference the
+named task slot during tasks definition. The `label` provided SHALL be local
+to the namespace of the current job specification.
 
 A task slot SHALL have at least one edge specified using `with`:, and the
 resources associated with a slot SHALL be exclusively allocated to the
-program described in the jobspec.
+program described in the job specification.
 
 ##### V1-Specific Resource Graph Restrictions
 
@@ -1218,13 +1218,13 @@ the application demands.
 Attributes in the `system` dictionary are additional parameters that
 affect program execution, scheduling, etc. All attributes in `system` are
 reserved words, however unrecognized words SHALL trigger no more than a
-warning. This permits jobspec reuse between schedulers which may be
+warning. This permits job specification reuse between schedulers which may be
 configured differently and recognize different sets of attributes.
 
 Most system attributes are optional. Schedulers SHALL provide reasonable
 defaults for any system attributes that they recognize when at all
 possible. Most system attributes are optional, but the duration attribute
-is required in jobspec V1.
+is required in job specification V1.
 
 Some common system attributes are:
 
