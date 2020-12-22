@@ -1080,7 +1080,7 @@ V1](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_25.ht
 which is itself a simplified version of the [canonical Flux jobspec
 format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_14.html).
 
-A job specification V1 YAML document SHALL consist of a dictionary defining the
+A jobspec V1 YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
 Each of the listed job specification keys SHALL meet the form and requirements
