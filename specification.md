@@ -24,7 +24,7 @@
 					- [Exceptions:](#exceptions)
 		- [Job](#job)
 			- [Methods](#methods)
-		- [JobSpecification](#jobspecification)
+		- [JobSpec](#jobspec)
 			- [Methods](#methods)
 		- [JobStatus](#jobstatus)
 			- [Methods](#methods)
@@ -38,9 +38,9 @@
 			- [Methods](#methods)
 		- [FaultDetail](#faultdetail)
 			- [Methods](#methods)
-		- [ResourceSpecification](#resourcesspecification)
+		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
-		- [ResourceSpecificationV1](#resourcespecificationv1)
+		- [ResourceSpec](#resourcespecv1)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
 			- [Methods](#methods)
@@ -49,7 +49,7 @@
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
 	- [Appendices](#appendices)
-		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - Job Spec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
@@ -483,13 +483,13 @@ of the underlying LRM job, but is used to identify `Job` instances as
 seen by a client application.
 
 
-<a name="job-setspecification"></a>
+<a name="job-setspec"></a>
 ```java
-void setSpecification(JobSpecification spec)
-JobSpecification? getSpecification()
+void setSpec(JobSpec spec)
+JobSpec? getSpec()
 ```
 
-Sets/retrieves the [job specification](#jobspecification) for this job. A
+Sets/retrieves the [job specification](#jobspec) for this job. A
 valid job requires a non-null specification.
 
 
@@ -559,12 +559,12 @@ callback, call this method with a `null` argument.
 
 
 
-### JobSpecification
+### JobSpec
 
 #### Methods
 
 
-<a name="jobspecification-setname"></a>
+<a name="jobspec-setname"></a>
 ```java
 void setName(String name)
 String? getName()
@@ -578,7 +578,7 @@ For example, the job should appear with this name in the output of a
 potential `qstat` LRM command.
 
 
-<a name="jobspecification-setdirectory"></a>
+<a name="jobspec-setdirectory"></a>
 ```java
 void setDirectory(Path directory)
 Path? getDirectory()
@@ -595,7 +595,7 @@ writable. Clients should also note that directories valid on the submit
 side are not necessarily valid on the machine that runs the job.
 
 
-<a name="jobspecification-setexecutable"></a>
+<a name="jobspec-setexecutable"></a>
 ```java
 void setExecutable(Path executable)
 Path? getExecutable()
@@ -604,10 +604,10 @@ Path? getExecutable()
 Sets/gets the path to the executable file to be launched. A relative path
 is considered relative to the job directory (if specified, or the default
 job directory, as indicated in the description of
-[setDirectory()](#jobspecification-setdirectory)).
+[setDirectory()](#jobspec-setdirectory)).
 
 
-<a name="jobspecification-setarguments"></a>
+<a name="jobspec-setarguments"></a>
 ```java
 void setArguments(List<String> arguments)
 List<String>? getArguments()
@@ -622,7 +622,7 @@ arguments to the list by invoking `setArguments()` with a mutable list,
 then invoking `getArguments().add()`.
 
 
-<a name="jobspecification-setoverrideenvironment"></a>
+<a name="jobspec-setoverrideenvironment"></a>
 ```java
 void setOverrideEnvironment(boolean clearEnvironment)
 boolean getOverrideEnvironment()
@@ -639,7 +639,7 @@ applications, such as the location of a scratch directory in `$SCRATCH`,
 while still allowing clients to define unrelated environment variables.
 
 
-<a name="jobspecification-setenvironment"></a>
+<a name="jobspec-setenvironment"></a>
 ```java
 void setEnvironment(Map<String, String> environment)
 Map<String, String>? getEnvironment()
@@ -654,9 +654,9 @@ extending path lists, such as `PATH` or `LD_LIBRARY_PATH`. The setter
 stores the map as passed by client code and does not make a copy of it.
 
 
-<a name="jobspecification-setstdinpath"></a>
-<a name="jobspecification-setstdoutpath"></a>
-<a name="jobspecification-setstderrpath"></a>
+<a name="jobspec-setstdinpath"></a>
+<a name="jobspec-setstdoutpath"></a>
+<a name="jobspec-setstderrpath"></a>
 ```java
 void setStdinPath(Path stdin)
 Path? getStdinPath()
@@ -669,18 +669,18 @@ Path? getStderrPath()
 Set/get the paths to the standard stream files.
 
 
-<a name="jobspecification-setresources"></a>
+<a name="jobspec-setresources"></a>
 ```java
-void setResources(ResourceSpecification resources)
-ResourceSpecification? getResources()
+void setResources(ResourceSpec resources)
+ResourceSpec? getResources()
 ```
 
-Gets/sets the [resource requirements](#resourcesspecification) of this job. The
+Gets/sets the [resource requirements](#resourcespec) of this job. The
 resource requirements specify the details of how the job is to be run on
 a cluster, such as the number and type of compute nodes used, etc.
 
 
-<a name="jobspecification-setattributes"></a>
+<a name="jobspec-setattributes"></a>
 ```java
 void setAttributes(JobAttributes attributes)
 JobAttributes getAttributes()
@@ -860,11 +860,11 @@ Returns the [`Job`](#job) associated with this exception.
 
 
 
-### ResourceSpecification
+### ResourceSpec
 
-The `ResourceSpecification` class is a base abstract class that describes job
+The `ResourceSpec` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
-[`ResourceSpecificationV1`](#resourcespecificationv1).
+[`ResourceSpec`](#resourcespecv1).
 
 #### Methods
 
@@ -873,10 +873,10 @@ int getVersion()
 ```
 
 Returns the version of the class implementing the resource specification.
-For example, `ResourceSpecificationV1.getVersion()` would return `1`.
+For example, `ResourceSpec.getVersion()` would return `1`.
 
 
-### ResourceSpecificationV1
+### ResourceSpec
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
@@ -1516,7 +1516,7 @@ jex = jpsi.JobExectorFactory.get_instance('slurm')
 
 def make_job():
     job = jpsi.Job()
-    spec = jpsi.JobSpecification()
+    spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.specification = spec
