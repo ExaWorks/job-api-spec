@@ -421,22 +421,6 @@ an individual job status callback or not. To remove the callback, set it
 to `null`.
 
 
-<a name="jobexecutor-list"></a>
-```java
-List<String> list()
-```
-
-Return a list of job IDs which are known to this executor instance.  The
-returned list MAY contain IDs of jobs which were not submitted via this
-instance, and MAY NOT contain IDs of jobs which have been submitted by this
-instance, but are finalized and purged already.  IDs for any job which has been
-submitted via this instance and which is not yet in a final state MUST be
-returned.  The returned IDs can be used to (re-)attach a job instance to the job
-via the `executor.attach(id)` call.  This implies that the call SHALL only
-return those IDs to which the callee can attach with under currently used
-authorization.
-
-
 <a name="jobexecutor-attach"></a>
 ```java
 Job attach(String jobID)
