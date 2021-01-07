@@ -76,10 +76,6 @@
 ## TODO
 
 
-- [ ] we need to go through the resource spec; many common things
-supported by other JM APIs are not supported by Flux Jobspec V1, such as
-queue/project/reservation, memory and/or storage requirements
-
 - [ ] we need to discuss launchers (srun, mpirun, etc.); this is absent
 from the public API and from this document entirely, but chances are that
 we cannot entirely avoid this issue, so we might need to define an
