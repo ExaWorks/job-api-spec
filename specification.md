@@ -259,6 +259,39 @@ customary in the language in which the library is implemented
 
 ### JobExecutor
 
+The `JobExecutor` represents one or more concrete mechanisms for
+executing jobs. It contains all the operations that are specific to a
+particular such mechanism. Specifically, it knows how to start a job
+through the `submit()` call, query the status of jobs and inform client
+API of any updates through callbacks, and can `cancel()` a running job.
+
+Client code interacts with a concrete job execution mechanism by invoking
+methods on objects declared (in a strictly-typed language) as
+`JobExecutor`. This leaves a number of possible ways to structure an
+implementation of  this API:
+
+1. Treat `JobExecutor` as an abstract base class and have concrete
+subclasses of `JobExecutor` implement the specific mechanisms. The
+subclasses can then be instantiated either directly, using a factory
+pattern, or any other reasonable mechanism. For example:
+
+    ```java
+    JobExecutor executor = new PBSJobExecutor();
+	Job job = ...
+	executor.submit(job);
+	```
+
+2. Treat `JobExecutor` as a frontend class, which can possibly be
+instantiated in a way that allows the selection of the particular
+concrete job submission mechanism and manage jobs by directly invoking
+methods of the `JobExecutor` class. For example:
+
+    ```java
+	JobExecutor executor = new JobExecutor("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
+
 #### Methods
 
 
@@ -370,7 +403,7 @@ a library error of any kind.  The `FAILED` state is final.
 At any point in time (until the job is final), the job can enter the `CANCELED`
 state as reaction to the `job.cancel()` call.  Note that the transition to
 `CANCELED` is not immediate when calling that method, but the state transition
-only occurs once the backend is enacting that request.  
+only occurs once the backend is enacting that request.
 
 The `ACTIVE` state is the only state where the job will consume resources.
 
