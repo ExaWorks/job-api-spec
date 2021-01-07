@@ -76,15 +76,6 @@
 ## TODO
 
 
-- [ ] add examples of how one would use this API (and please, if you have
-    any "how do you do x?", please add here)
-
-    - [ ] Submit a malformed or unsatisfiable job, then check for the error
-    and print it out
-
-    - [ ] Construct a job that uses all the various "knobs" of the resource
-    and job specifications (with some verbose comments thrown in)
-
 - [ ] Consider adding further exceptions to submit() in order to
 distinguish between EAGAIN types of errors and others.
 
