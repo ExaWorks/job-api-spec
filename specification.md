@@ -72,11 +72,6 @@
 
 
 
-
-## TODO
-
-
-
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
