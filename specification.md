@@ -76,9 +76,6 @@
 ## TODO
 
 
-- [ ] Consider adding further exceptions to submit() in order to
-distinguish between EAGAIN types of errors and others.
-
 - [ ] think more about env var expansion in arguments and other places.
 The important issue is how much of a burden this is on implementations if
 we mandate it.
