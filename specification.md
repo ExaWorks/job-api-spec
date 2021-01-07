@@ -76,36 +76,6 @@
 ## TODO
 
 
-- [ ] Add assumptions/goals/etc.
-
-    Things we could include in no particular order..
-
-    - That we aim to make a minimal interface; advanced functionality is
-    beyond the scope of this API
-
-    - We would like the interface to be general and applicable to
-    commonly deployed LRMs, cloud systems, etc. (I know some of this is
-    said above)
-
-    - We are focused on executing a process (e.g., popen rather than
-    function call)
-
-    - That we intend for this interface to be used by various workflow
-    systems and directly by applications
-
-    - That we base the API on lessons learned with SAGA, DRMAA, Globus,
-    and others
-
-    - Do we want to set any goals about performance/scale? Presumably we
-    want ot aim to address exascale workloads and exascale machines
-    (thousands of nodes)
-
-    - We consider allocation at the unit of a single job, no intention to
-    dynamically update jobs
-
-
-
-
 
 ## Introduction
 
