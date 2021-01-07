@@ -76,9 +76,6 @@
 ## TODO
 
 
-- [ ] add some clarification about the correspondence between JobSpec and
-exec/popen.
-
 - [ ] add some text about pilot jobs / reslicing
 
 - [ ] Add assumptions/goals/etc.
