@@ -76,10 +76,6 @@
 ## TODO
 
 
-- [ ] think more about env var expansion in arguments and other places.
-The important issue is how much of a burden this is on implementations if
-we mandate it.
-
 - [ ] we need to go through the resource spec; many common things
 supported by other JM APIs are not supported by Flux Jobspec V1, such as
 queue/project/reservation, memory and/or storage requirements
