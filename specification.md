@@ -76,8 +76,6 @@
 ## TODO
 
 
-- [ ] add a section giving an overview of the API components
-
 - [ ] add some clarification about the correspondence between JobSpec and
 exec/popen.
 
