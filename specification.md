@@ -76,20 +76,6 @@
 ## TODO
 
 
-- [ ] we need to discuss launchers (srun, mpirun, etc.); this is absent
-from the public API and from this document entirely, but chances are that
-we cannot entirely avoid this issue, so we might need to define an
-abstraction over various launchers. This could, in principle, be hidden
-in the adapters, but experience suggests that it's often (1)
-insufficient and (2) the reason why libraries like these are hard to work
-with (they never quite get the launching part right).
-
-    - the public API need only reflect that the user could pick a
-    non-default launcher by name
-
-    - canonical implementation should have a nice way of abstracting over
-    launchers
-
 - [ ] add a section giving an overview of the API components
 
 - [ ] add some clarification about the correspondence between JobSpec and
