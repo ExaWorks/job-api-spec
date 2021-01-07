@@ -76,8 +76,6 @@
 ## TODO
 
 
-- [ ] add some text about pilot jobs / reslicing
-
 - [ ] Add assumptions/goals/etc.
 
     Things we could include in no particular order..
