@@ -805,6 +805,9 @@ used for lengthy processing.
 
 ### InvalidJobException
 
+An exception describing a problem with the information contained in a
+[`Job`](#job) object.
+
 #### Methods
 
 <a name="invalidjobexception-getdetail"></a>
