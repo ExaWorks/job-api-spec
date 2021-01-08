@@ -942,6 +942,9 @@ signifies to the LRM that GPU nodes are being requested.
 
 ### JobAttributes
 
+A class containing ancillary job information that describes how a job is to be
+run.
+
 #### Methods
 
 <a name="jobattributes-setduration"></a>
