@@ -381,6 +381,20 @@ to `null`.
 
 ### Job
 
+The `Job` class encapsulates all of the information needed to run a job
+as well as the job's state. Instances of this class are created by user
+code and populated with information describing what to run as part of the
+job (e.g., the executable path, the arguments, etc.) as well as how the
+job is to be run, where applicable. The later involves specifying, for
+example, the number of CPU cores desired or other such requirements. Once
+all relevant information is provided, the job may be sent to an
+underlying implementation using the [`submit()`](#jobexecutor-submit)
+call of a [`JobExecutor`](#jobexecutor) instance. The executor then takes
+care of updating the status of the job, which is accessible synchronously
+through the [`Job.getStatus()`](#job-getstatus) call or. asynchronously,
+through callbacks. Implementations of job executors must ensure that the
+following state model is adhered to.
+
 #### State Model
 
 Job instances are, in this API, stateful objects.  A job's state can be
