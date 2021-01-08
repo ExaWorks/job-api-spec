@@ -391,7 +391,7 @@ all relevant information is provided, the job may be sent to an
 underlying implementation using the [`submit()`](#jobexecutor-submit)
 call of a [`JobExecutor`](#jobexecutor) instance. The executor then takes
 care of updating the status of the job, which is accessible synchronously
-through the [`Job.getStatus()`](#job-getstatus) call or. asynchronously,
+through the [`Job.getStatus()`](#job-getstatus) call or, asynchronously,
 through callbacks. Implementations of job executors must ensure that the
 following state model is adhered to.
 
