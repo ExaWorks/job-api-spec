@@ -301,8 +301,9 @@ methods of the `JobExecutor` class. For example:
 	executor.submit(job);
 	```
 
-A precise choice is not specified in this document. It may be specified at a
-later time and/or in a language-specific document.
+A precise choice is not specified in this document. However, in order to
+promote source-level compatibility between implementations, it may be
+specified at a later time and/or in a language-specific document.
 
 
 
