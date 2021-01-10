@@ -281,6 +281,15 @@ pattern, or any other reasonable mechanism. For example:
 	executor.submit(job);
 	```
 
+    or
+
+	```java
+    JobExecutor executor = JobExecutorFactory.getInstance("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
+
+
 2. Treat `JobExecutor` as a frontend class, which can possibly be
 instantiated in a way that allows the selection of the particular
 concrete job submission mechanism and manage jobs by directly invoking
