@@ -268,7 +268,7 @@ API of any updates through callbacks, and can `cancel()` a running job.
 Client code interacts with a concrete job execution mechanism by invoking
 methods on objects declared (in a strictly-typed language) as
 `JobExecutor`. This leaves a number of possible ways to structure an
-implementation of  this API:
+implementation of this API. We list two:
 
 1. Treat `JobExecutor` as an abstract base class and have concrete
 subclasses of `JobExecutor` implement the specific mechanisms. The
