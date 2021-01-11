@@ -783,6 +783,41 @@ Returns the [`Job`](#job) associated with this exception.
 
 
 
+### SubmitException
+
+This exception is thrown when the
+[`JobExecutor.submit()`](#jobexecutor-submit) call fails for a reason
+that is independent of the job being submitted.
+
+#### Methods
+
+<a name="submitexception-getdetail"></a>
+```java
+FaultDetail getDetail()
+```
+
+Returns the details about the failure.
+
+<a name="submitexception-getmessage"></a>
+```java
+String getMessage()
+```
+
+Retrieves the message associated with this exception. This should be a
+descriptive message that is sufficiently clear to be presented to an
+end-user.
+
+
+<a name="submitexception-getexception"></a>
+```java
+Exception? getException()
+```
+
+Returns an optional underlying exception that can potentially be used for
+debugging purposes, but which should not, in general, be presented to an
+end-user.
+
+
 
 ### ResourcesSpec
 
