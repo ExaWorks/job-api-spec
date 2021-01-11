@@ -34,8 +34,6 @@
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
 			- [Methods](#methods)
-		- [InvalidJobListException](#invalidjoblistexception)
-			- [Methods](#methods)
 		- [FaultDetail](#faultdetail)
 			- [Methods](#methods)
 		- [ResourcesSpec](#resourcesspec)
