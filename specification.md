@@ -686,12 +686,10 @@ states. Specifically, it contains the new state, a timestamp at which the
 transition occurred, as well as optional metadata about the new state.
 
 <span class="imp-note">
-
 Implementations should, if possible, use timestamps provided by the
 underlying job execution mechanism and, if such timestamps are not
 available, provide timestamps that are as close as possible to the time
 when the actual transition occurred.
-
 </span>
 
 #### Methods
