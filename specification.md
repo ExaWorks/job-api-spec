@@ -257,6 +257,54 @@ customary in the language in which the library is implemented
 
 ### JobExecutor
 
+The `JobExecutor` represents one or more concrete mechanisms for
+executing jobs. It contains all the operations that are specific to a
+particular such mechanism. Specifically, it knows how to start a job
+through the `submit()` call, query the status of jobs and inform client
+API of any updates through callbacks, and can `cancel()` a running job.
+
+Client code interacts with a concrete job execution mechanism by invoking
+methods on objects declared (in a strictly-typed language) as
+`JobExecutor`. This leaves a number of possible ways to structure an
+implementation of this API. We list two:
+
+1. Treat `JobExecutor` as an abstract base class and have concrete
+subclasses of `JobExecutor` implement the specific mechanisms. The
+subclasses can then be instantiated either directly, using a factory
+pattern, or any other reasonable mechanism. For example:
+
+    ```java
+    JobExecutor executor = new PBSJobExecutor();
+	Job job = ...
+	executor.submit(job);
+	```
+
+    or
+
+	```java
+    JobExecutor executor = JobExecutorFactory.getInstance("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
+
+
+2. Treat `JobExecutor` as a frontend class, which can possibly be
+instantiated in a way that allows the selection of the particular
+concrete job submission mechanism and manage jobs by directly invoking
+methods of the `JobExecutor` class. For example:
+
+    ```java
+	JobExecutor executor = new JobExecutor("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
+
+A precise choice is not specified in this document. However, in order to
+promote source-level compatibility between implementations, it may be
+specified at a later time and/or in a language-specific document.
+
+
+
 #### Methods
 
 
@@ -346,6 +394,20 @@ to `null`.
 
 ### Job
 
+The `Job` class encapsulates all of the information needed to run a job
+as well as the job's state. Instances of this class are created by user
+code and populated with information describing what to run as part of the
+job (e.g., the executable path, the arguments, etc.) as well as how the
+job is to be run, where applicable. The later involves specifying, for
+example, the number of CPU cores desired or other such requirements. Once
+all relevant information is provided, the job may be sent to an
+underlying implementation using the [`submit()`](#jobexecutor-submit)
+call of a [`JobExecutor`](#jobexecutor) instance. The executor then takes
+care of updating the status of the job, which is accessible synchronously
+through the [`Job.getStatus()`](#job-getstatus) call or, asynchronously,
+through callbacks. Implementations of job executors must ensure that the
+following state model is adhered to.
+
 #### State Model
 
 Job instances are, in this API, stateful objects.  A job's state can be
@@ -368,7 +430,7 @@ a library error of any kind.  The `FAILED` state is final.
 At any point in time (until the job is final), the job can enter the `CANCELED`
 state as reaction to the `job.cancel()` call.  Note that the transition to
 `CANCELED` is not immediate when calling that method, but the state transition
-only occurs once the backend is enacting that request.  
+only occurs once the backend is enacting that request.
 
 The `ACTIVE` state is the only state where the job will consume resources.
 
@@ -619,6 +681,19 @@ terminating a job.
 
 ### JobStatus
 
+The `JobStatus` class contains details about job transitions to new
+states. Specifically, it contains the new state, a timestamp at which the
+transition occurred, as well as optional metadata about the new state.
+
+<span class="imp-note">
+
+Implementations should, if possible, use timestamps provided by the
+underlying job execution mechanism and, if such timestamps are not
+available, provide timestamps that are as close as possible to the time
+when the actual transition occurred.
+
+</span>
+
 #### Methods
 
 
@@ -742,6 +817,9 @@ used for lengthy processing.
 
 
 ### InvalidJobException
+
+An exception describing a problem with the information contained in a
+[`Job`](#job) object.
 
 #### Methods
 
@@ -876,6 +954,9 @@ signifies to the LRM that GPU nodes are being requested.
 
 
 ### JobAttributes
+
+A class containing ancillary job information that describes how a job is to be
+run.
 
 #### Methods
 
