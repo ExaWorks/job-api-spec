@@ -231,11 +231,41 @@ implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
 
 ## The Job API; Layer 0
 
-This section describes the basic local API.
+This section describes the most basic form of J/PSI API, namely one in
+which the location of the backend is either implicit or local. The main
+components of the API are shown below:
+
+<img width="100%" src="diagrams/class_diagram.svg" alt="Async Jobs Timing Diagram"/>
+
+The components of the API can be divided into a passive set, describing
+jobs and their state, and an active set, the
+[`JobExecutor`](#job-executor) connectors, which translates job
+information and interacts with specific backends. In other words, the API
+is designed such that all backend-specific logic can be contained in
+`JobExecutor` connectors. Consequently, all actions, such as `submit()`
+and `cancel()` as well as job status updates belong to the `JobExecutor`
+(although convenience methods also allow the job status to be directly
+retrievable from [`Job`](#job) objects).
+
+The passive set of components has the [`Job`](#job) class at the top. A
+`Job` object has a [`JobSpecification`](#jobspecification), which
+describes the high-level details of the job. Here, "high-level" is meant
+to track the capabilities of what can typically be achieved with
+`fork/exec` calls, namely specifying the executable and its arguments,
+the environment of the job, its working directory, and the location of
+input and output streams. Additional information that is specific to
+queuing systems is specified using both the
+[`JobAttributes`](#jobattributes) class, as well as the [`ResourcesSpec`]
+class. The `ResourcesSpec` class and its concrete sub-classes, of which
+only [`ResourceSpecV1`](#resourcespecv1) is specified at this time, can
+be used to describe the resources required to run the job, whereas the
+`JobAttributes` class is used to specify any other job information that
+is not conceptually part of the resource specification.
 
 
 
-###Implementation Notes
+
+### Implementation Notes
 
 The API specification is to be understood as a guideline that informs the
 implementation in a given language to the extent that the resulting
