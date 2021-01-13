@@ -24,7 +24,7 @@
 					- [Exceptions:](#exceptions)
 		- [Job](#job)
 			- [Methods](#methods)
-		- [JobSpecification](#jobspecification)
+		- [JobSpec](#jobspec)
 			- [Methods](#methods)
 		- [JobStatus](#jobstatus)
 			- [Methods](#methods)
@@ -36,9 +36,9 @@
 			- [Methods](#methods)
 		- [FaultDetail](#faultdetail)
 			- [Methods](#methods)
-		- [ResourcesSpec](#resourcesspec)
+		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
-		- [ResourceSpecV1](#resourcespecv1)
+		- [ResourceSpec](#resourcespecv1)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
 			- [Methods](#methods)
@@ -47,7 +47,7 @@
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
 	- [Appendices](#appendices)
-		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - JobSpec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
@@ -497,13 +497,13 @@ of the underlying LRM job, but is used to identify `Job` instances as
 seen by a client application.
 
 
-<a name="job-setspecification"></a>
+<a name="job-setspec"></a>
 ```java
-void setSpecification(JobSpec spec)
-JobSpec? getSpecification()
+void setSpec(JobSpec spec)
+JobSpec? getSpec()
 ```
 
-Sets/retrieves the [job specification](#jobspecification) for this job. A
+Sets/retrieves the [job specification](#jobspec) for this job. A
 valid job requires a non-null specification.
 
 
@@ -573,12 +573,12 @@ callback, call this method with a `null` argument.
 
 
 
-### JobSpecification
+### JobSpec
 
 #### Methods
 
 
-<a name="jobspecification-setname"></a>
+<a name="jobspec-setname"></a>
 ```java
 void setName(String name)
 String? getName()
@@ -592,7 +592,7 @@ For example, the job should appear with this name in the output of a
 potential `qstat` LRM command.
 
 
-<a name="jobspecification-setdirectory"></a>
+<a name="jobspec-setdirectory"></a>
 ```java
 void setDirectory(Path directory)
 Path? getDirectory()
@@ -609,7 +609,7 @@ writable. Clients should also note that directories valid on the submit
 side are not necessarily valid on the machine that runs the job.
 
 
-<a name="jobspecification-setexecutable"></a>
+<a name="jobspec-setexecutable"></a>
 ```java
 void setExecutable(Path executable)
 Path? getExecutable()
@@ -618,10 +618,10 @@ Path? getExecutable()
 Sets/gets the path to the executable file to be launched. A relative path
 is considered relative to the job directory (if specified, or the default
 job directory, as indicated in the description of
-[setDirectory()](#jobspecification-setdirectory)).
+[setDirectory()](#jobspec-setdirectory)).
 
 
-<a name="jobspecification-setarguments"></a>
+<a name="jobspec-setarguments"></a>
 ```java
 void setArguments(List<String> arguments)
 List<String>? getArguments()
@@ -636,7 +636,7 @@ arguments to the list by invoking `setArguments()` with a mutable list,
 then invoking `getArguments().add()`.
 
 
-<a name="jobspecification-setoverrideenvironment"></a>
+<a name="jobspec-setoverrideenvironment"></a>
 ```java
 void setOverrideEnvironment(boolean clearEnvironment)
 boolean getOverrideEnvironment()
@@ -653,7 +653,7 @@ applications, such as the location of a scratch directory in `$SCRATCH`,
 while still allowing clients to define unrelated environment variables.
 
 
-<a name="jobspecification-setenvironment"></a>
+<a name="jobspec-setenvironment"></a>
 ```java
 void setEnvironment(Map<String, String> environment)
 Map<String, String>? getEnvironment()
@@ -668,9 +668,9 @@ extending path lists, such as `PATH` or `LD_LIBRARY_PATH`. The setter
 stores the map as passed by client code and does not make a copy of it.
 
 
-<a name="jobspecification-setstdinpath"></a>
-<a name="jobspecification-setstdoutpath"></a>
-<a name="jobspecification-setstderrpath"></a>
+<a name="jobspec-setstdinpath"></a>
+<a name="jobspec-setstdoutpath"></a>
+<a name="jobspec-setstderrpath"></a>
 ```java
 void setStdinPath(Path stdin)
 Path? getStdinPath()
@@ -683,18 +683,18 @@ Path? getStderrPath()
 Set/get the paths to the standard stream files.
 
 
-<a name="jobspecification-setresources"></a>
+<a name="jobspec-setresources"></a>
 ```java
-void setResources(ResourcesSpec resources)
-ResourcesSpec? getResources()
+void setResources(ResourceSpec resources)
+ResourceSpec? getResources()
 ```
 
-Gets/sets the [resource requirements](#resourcesspec) of this job. The
+Gets/sets the [resource requirements](#resourcespec) of this job. The
 resource requirements specify the details of how the job is to be run on
 a cluster, such as the number and type of compute nodes used, etc.
 
 
-<a name="jobspecification-setattributes"></a>
+<a name="jobspec-setattributes"></a>
 ```java
 void setAttributes(JobAttributes attributes)
 JobAttributes getAttributes()
@@ -888,11 +888,11 @@ Returns the [`Job`](#job) associated with this exception.
 
 
 
-### ResourcesSpec
+### ResourceSpec
 
-The `ResourcesSpec` class is a base abstract class that describes job
+The `ResourceSpec` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
-[`ResourceSpecV1`](#resourcespecv1).
+[`ResourceSpec`](#resourcespecv1).
 
 #### Methods
 
@@ -901,10 +901,10 @@ int getVersion()
 ```
 
 Returns the version of the class implementing the resource specification.
-For example, `ResourceSpecV1.getVersion()` would return `1`.
+For example, `ResourceSpec.getVersion()` would return `1`.
 
 
-### ResourceSpecV1
+### ResourceSpec
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
@@ -1114,7 +1114,7 @@ format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_1
 A jobspec V1 YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
-Each of the listed jobspec keys SHALL meet the form and requirements
+Each of the listed job specification keys SHALL meet the form and requirements
 listed in detail in the sections below.
 
 #### Resources
@@ -1151,9 +1151,9 @@ be a dictionary conforming to the resource vertex specification.
 **label**
 
 The `label` key SHALL be a string that may be used to reference this
-resource vertex from other locations within the same jobspec. `label`
-SHALL be local to the namespace of the current jobspec, and each label in
-the current jobspec must be unique. `label` SHALL be mandatory in
+resource vertex from other locations within the same job specification. `label`
+SHALL be local to the namespace of the current job specification, and each label
+in the current job specification must be unique. `label` SHALL be mandatory in
 resource vertices of type `slot`.
 
 ##### Reserved Resource Types
@@ -1161,14 +1161,14 @@ resource vertices of type `slot`.
 **slot**
 
 A resource type of `type: slot` SHALL indicate a grouping of resources
-into a named task slot. A `slot` SHALL be a valid resource spec including
-a `label` key, the value of which may be used to reference the named task
-slot during tasks definition. The `label` provided SHALL be local to the
-namespace of the current jobspec.
+into a named task slot. A `slot` SHALL be a valid resource specification
+including a `label` key, the value of which may be used to reference the
+named task slot during tasks definition. The `label` provided SHALL be local
+to the namespace of the current job specification.
 
 A task slot SHALL have at least one edge specified using `with`:, and the
 resources associated with a slot SHALL be exclusively allocated to the
-program described in the jobspec.
+program described in the job specification.
 
 ##### V1-Specific Resource Graph Restrictions
 
@@ -1249,13 +1249,13 @@ the application demands.
 Attributes in the `system` dictionary are additional parameters that
 affect program execution, scheduling, etc. All attributes in `system` are
 reserved words, however unrecognized words SHALL trigger no more than a
-warning. This permits jobspec reuse between schedulers which may be
+warning. This permits job specification reuse between schedulers which may be
 configured differently and recognize different sets of attributes.
 
 Most system attributes are optional. Schedulers SHALL provide reasonable
 defaults for any system attributes that they recognize when at all
 possible. Most system attributes are optional, but the duration attribute
-is required in jobspec V1.
+is required in job specification V1.
 
 Some common system attributes are:
 
@@ -1547,7 +1547,7 @@ jex = jpsi.JobExectorFactory.get_instance('slurm')
 
 def make_job():
     job = jpsi.Job()
-    spec = jpsi.JobSpecification()
+    spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.specification = spec
