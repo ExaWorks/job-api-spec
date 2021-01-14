@@ -3,7 +3,7 @@
     padding-top: 24pt;
     padding-bottom: 8pt;
 	padding-right: 8pt;
-	
+
     border: 0.5pt solid #b0b040;
     border-radius: 4pt;
     background-color: #ffffef;
@@ -20,4 +20,68 @@
 
 .markdown-body .imp-note .highlight pre, .markdown-body .imp-note pre, .imp-note .editor-colors {
     background-color: #f6f8e8;
+}
+
+[type=radio] {
+    width: 0pt;
+}
+
+[type=radio] + label {
+    z-index: 1;
+    cursor: pointer;
+
+    display: inline-block;
+    position: relative;
+    top: 2pt;
+
+    width: 80pt;
+    height: 16pt;
+
+    font-size: 90%;
+    padding: 4pt;
+    padding-top: 3pt;
+
+
+    background-color: #e5e5e5;
+    border: thin solid #808080;
+    border-bottom: thin solid #808080;
+    border-radius: 3pt 3pt 0 0;
+}
+
+[type=radio]:checked + label {
+    z-index: 3;
+
+    top: 0pt;
+
+    background-color: #f5f5f5;
+    border: thin solid #808080;
+    border-bottom: thin solid #f5f5f5;
+}
+
+.lang-tabs pre {
+    z-index: 2;
+
+    display: none;
+    position: relative;
+    top: -1pt;
+
+    width: 100%;
+
+    border: thin solid #808080;
+    border-radius: 3pt;
+}
+
+.lang-tabs [type=radio]:checked:nth-of-type(1) ~ pre:nth-of-type(1),
+.lang-tabs [type=radio]:checked:nth-of-type(2) ~ pre:nth-of-type(2),
+.lang-tabs [type=radio]:checked:nth-of-type(3) ~ pre:nth-of-type(3),
+.lang-tabs [type=radio]:checked:nth-of-type(4) ~ pre:nth-of-type(4),
+.lang-tabs [type=radio]:checked:nth-of-type(5) ~ pre:nth-of-type(5),
+.lang-tabs [type=radio]:checked:nth-of-type(6) ~ pre:nth-of-type(6),
+.lang-tabs [type=radio]:checked:nth-of-type(7) ~ pre:nth-of-type(7) {
+    display: block;
+}
+
+.lang-tabs {
+    position: relative;
+    width: 94%;
 }

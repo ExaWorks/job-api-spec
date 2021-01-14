@@ -303,11 +303,24 @@ subclasses of `JobExecutor` implement the specific mechanisms. The
 subclasses can then be instantiated either directly, using a factory
 pattern, or any other reasonable mechanism. For example:
 
+	<div class="lang-tabs">
+	<input type="radio" id="ex-je-init-1-1" name="ex-je-init-1" checked>
+	<label for="ex-je-init-1-1">Java</label>
+	<input type="radio" id="ex-je-init-1-2" name="ex-je-init-1" checked>
+	<label for="ex-je-init-1-2">Python</label>
+
     ```java
     JobExecutor executor = new PBSJobExecutor();
 	Job job = ...
 	executor.submit(job);
 	```
+	```python
+    executor = PBSJobExecutor()
+	Job job = ...
+	executor.submit(job)
+	```
+
+	</div>
 
     or
 
