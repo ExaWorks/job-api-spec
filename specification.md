@@ -1,5 +1,4 @@
 <link rel="stylesheet" href="extras.css">
-<script type="text/javascript" src="extras.js"></script>
 
 # A Portable Submission Interface for Jobs (J/PSI)
 *Mihael Hategan [add your name here]*
