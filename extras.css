@@ -22,66 +22,61 @@
     background-color: #f6f8e8;
 }
 
-[type=radio] {
-    width: 0pt;
-}
-
-[type=radio] + label {
-    z-index: 1;
-    cursor: pointer;
-
-    display: inline-block;
-    position: relative;
-    top: 2pt;
-
-    width: 80pt;
-    height: 16pt;
-
-    font-size: 90%;
-    padding: 4pt;
-    padding-top: 3pt;
-
-
-    background-color: #e5e5e5;
-    border: thin solid #808080;
-    border-bottom: thin solid #808080;
-    border-radius: 3pt 3pt 0 0;
-}
-
-[type=radio]:checked + label {
-    z-index: 3;
-
-    top: 0pt;
-
-    background-color: #f5f5f5;
-    border: thin solid #808080;
-    border-bottom: thin solid #f5f5f5;
-}
-
-.lang-tabs pre {
-    z-index: 2;
-
-    display: none;
-    position: relative;
-    top: -1pt;
-
-    width: 100%;
-
-    border: thin solid #808080;
-    border-radius: 3pt;
-}
-
-.lang-tabs [type=radio]:checked:nth-of-type(1) ~ pre:nth-of-type(1),
-.lang-tabs [type=radio]:checked:nth-of-type(2) ~ pre:nth-of-type(2),
-.lang-tabs [type=radio]:checked:nth-of-type(3) ~ pre:nth-of-type(3),
-.lang-tabs [type=radio]:checked:nth-of-type(4) ~ pre:nth-of-type(4),
-.lang-tabs [type=radio]:checked:nth-of-type(5) ~ pre:nth-of-type(5),
-.lang-tabs [type=radio]:checked:nth-of-type(6) ~ pre:nth-of-type(6),
-.lang-tabs [type=radio]:checked:nth-of-type(7) ~ pre:nth-of-type(7) {
-    display: block;
-}
-
 .lang-tabs {
-    position: relative;
-    width: 94%;
+	position: relative;
+	width: 94%;
+}
+
+.lang-tab-radio {
+	width: 0;
+}
+
+.lang-tab-label {
+	cursor: pointer;
+	
+	font-size: 94%;
+	
+	z-index: 1;
+	display: inline-block;
+	position: relative;
+	min-width: 80pt;
+	
+	padding: 3pt;
+	padding-left: 4pt;
+	top: 2pt;
+	height: 16pt;
+	
+	background-color: #d8d8d8;
+	border: thin solid #808080;
+	border-radius: 3pt 3pt 0 0;
+}
+
+.lang-tabs > div {
+	z-index: 2;
+	display: none;
+	position: relative;
+	top: -1pt;
+	border: thin solid #808080;
+	border-radius: 3pt;
+	
+	background-color: #f6f8fa;
+}
+
+.lang-tab-radio:checked + .lang-tab-label {
+	z-index: 3;
+	top: 0pt;
+	background-color: #f6f8fa;
+	border-bottom: thin solid #f6f8fa;
+}
+
+.lang-tab-radio:nth-of-type(1):checked ~ div:nth-of-type(1),
+.lang-tab-radio:nth-of-type(2):checked ~ div:nth-of-type(2),
+.lang-tab-radio:nth-of-type(3):checked ~ div:nth-of-type(3),
+.lang-tab-radio:nth-of-type(4):checked ~ div:nth-of-type(4),
+.lang-tab-radio:nth-of-type(5):checked ~ div:nth-of-type(5),
+.lang-tab-radio:nth-of-type(6):checked ~ div:nth-of-type(6),
+.lang-tab-radio:nth-of-type(7):checked ~ div:nth-of-type(7),
+.lang-tab-radio:nth-of-type(8):checked ~ div:nth-of-type(8),
+.lang-tab-radio:nth-of-type(9):checked ~ div:nth-of-type(9) {
+	display: block;
 }
