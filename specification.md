@@ -774,14 +774,6 @@ debugging purposes, but which should not, in general, be presented to an
 end-user.
 
 
-<a name="invalidjobexception-getjob"></a>
-```java
-Job getJob()
-```
-
-Returns the [`Job`](#job) associated with this exception.
-
-
 
 ### SubmitException
 
