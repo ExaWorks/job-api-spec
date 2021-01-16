@@ -202,38 +202,6 @@ future, and the rough functionality will be X, Y, Z
 - TBD
 
 
-## Interaction with LRMs and Scalability
-
-Implementations must use bulk status operations when interacting with
-LRMs. Regularly invoking, for example, qstat for each job in a set of
-many jobs can quickly overwhelm a LRM. The solution is to subscribe to
-asynchronous notifications from the LRM, if supported, or instead use bulk
-query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
-extract the information about the relevant jobs from the result.
-
-
-
-
-## State Consistency
-
-Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems, ordering of events on one system cannot be guaranteed on another.
-For example, an application on System 1 can, in quick succession, open a
-TCP connection to System 2 and transmit, on each connection, the messages
-"A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e., it uses separate threads for each connection),
-it is entirely possible that some user code that monitors messages on
-System 2 receives the message "B" before "A". In terms of jobs,
-this may make it appear as if seemingly impossible things are happening,
-such as a job starting to run after it has completed. Implementations
-must ensure that client code does not receive events in orders that are
-clearly impossible. The specifics of how this must be handled by
-implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
-[`JobState`](#jobstate).
-
-
-
-
 
 ## The Job API; Layer 0
 
@@ -289,6 +257,40 @@ not required to do so.
 - getters/setters can be replaced by properties, depending on what is
 customary in the language in which the library is implemented
 
+
+<div class="imp-note">
+
+#### Interaction with LRMs and Scalability
+
+Implementations must use bulk status operations when interacting with
+LRMs. Regularly invoking, for example, qstat for each job in a set of
+many jobs can quickly overwhelm a LRM. The solution is to subscribe to
+asynchronous notifications from the LRM, if supported, or instead use bulk
+query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
+extract the information about the relevant jobs from the result.
+
+</div>
+
+<div class="imp-note">
+
+#### State Consistency
+
+Perhaps less relevant for Layer 0, but when dealing with concurrent
+systems, ordering of events on one system cannot be guaranteed on another.
+For example, an application on System 1 can, in quick succession, open a
+TCP connection to System 2 and transmit, on each connection, the messages
+"A" and "B", respectively. If System 2 does not serialize
+connection handling (i.e., it uses separate threads for each connection),
+it is entirely possible that some user code that monitors messages on
+System 2 receives the message "B" before "A". In terms of jobs,
+this may make it appear as if seemingly impossible things are happening,
+such as a job starting to run after it has completed. Implementations
+must ensure that client code does not receive events in orders that are
+clearly impossible. The specifics of how this must be handled by
+implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
+[`JobState`](#jobstate).
+
+</div>
 
 
 ### JobExecutor
@@ -1063,13 +1065,18 @@ void setCustomAttribute(String name, Object value);
 Object? getCustomAttribute(String name);
 ```
 
-Allows setting/querying of custom attributes. Implementations are
-encouraged to make sensible decisions on whether to store some or all of
-the fixed attributes in the same structure as the custom attributes or
-not. It is, therefore, entirely possible for
+Allows setting/querying of custom attributes.
+
+<div class="imp-note">
+
+Implementations are encouraged to make sensible decisions on whether to
+store some or all of the fixed attributes in the same structure as the
+custom attributes or not. It is, therefore, entirely possible for
 `getCustomAttribute("duration")` to return a value passed earlier to
 `setDuration()`, although the specific custom attribute name need not be
 `"duration"`.
+
+</div>
 
 ### TimeInterval
 
