@@ -646,13 +646,13 @@ List<String>? getArguments()
 ```
 
 Sets/gets the argument list to be passed to the executable. Unlike with
-`execve()`, the first element of the list will correspond to `argv[1]` when
-accessed by the invoked executable. If no previous call to `setArguments` was
-made, `getArguments` will return `null`. The setter does not create a copy of
-the list. Therefore, it is possible to add arguments to the list by invoking
-`setArguments()` with a mutable list, then invoking `getArguments().add()`. The
-strings in the argument list are subject to environment variable expansion, as
-described in
+`execve()`, the first element of the list will correspond to `argv[1]`
+when accessed by the invoked executable. If no previous call to
+`setArguments` was made, `getArguments` will return `null`. The setter
+does not create a copy of the list. Therefore, it is possible to add
+arguments to the list by invoking `setArguments()` with a mutable list,
+then invoking `getArguments().add()`. The strings in the argument list
+are subject to environment variable expansion, as described in
 [`JobSpecification.setEnvironment`](#jobspecification-setenvironment).
 
 
@@ -1638,4 +1638,3 @@ The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
 "Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
-
