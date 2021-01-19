@@ -1,11 +1,17 @@
 <link rel="stylesheet" href="extras.css">
+<script
+  src="https://code.jquery.com/jquery-3.5.1.min.js"
+  integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+  crossorigin="anonymous"></script>
+
+<script src="extras.js"></script>
 
 # A Portable Submission Interface for Jobs (J/PSI)
 *Mihael Hategan [add your name here]*
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [A Job Management API](#a-job-management-api)
+- [A Job Management API](#a-job-management-api2)
 	- [STATUS: EARLY DRAFT](#status-early-draft)
 	- [TODO](#todo)
 	- [Introduction](#introduction)
@@ -24,7 +30,7 @@
 					- [Exceptions:](#exceptions)
 		- [Job](#job)
 			- [Methods](#methods)
-		- [JobSpecification](#jobspecification)
+		- [JobSpec](#jobspec)
 			- [Methods](#methods)
 		- [JobStatus](#jobstatus)
 			- [Methods](#methods)
@@ -34,13 +40,11 @@
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
 			- [Methods](#methods)
-		- [InvalidJobListException](#invalidjoblistexception)
-			- [Methods](#methods)
 		- [FaultDetail](#faultdetail)
 			- [Methods](#methods)
-		- [ResourcesSpec](#resourcesspec)
+		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
-		- [ResourceSpecV1](#resourcespecv1)
+		- [ResourceSpec](#resourcespecv1)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
 			- [Methods](#methods)
@@ -49,7 +53,7 @@
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
 	- [Appendices](#appendices)
-		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - JobSpec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
@@ -69,82 +73,6 @@
 <!-- /TOC -->
 
 ## STATUS: EARLY DRAFT
-
-
-
-
-## TODO
-
-
-- [ ] add examples of how one would use this API (and please, if you have
-    any "how do you do x?", please add here)
-
-    - [ ] Submit a malformed or unsatisfiable job, then check for the error
-    and print it out
-
-    - [ ] Construct a job that uses all the various "knobs" of the resource
-    and job specifications (with some verbose comments thrown in)
-
-- [ ] Consider adding further exceptions to submit() in order to
-distinguish between EAGAIN types of errors and others.
-
-- [ ] think more about env var expansion in arguments and other places.
-The important issue is how much of a burden this is on implementations if
-we mandate it.
-
-- [ ] we need to go through the resource spec; many common things
-supported by other JM APIs are not supported by Flux Jobspec V1, such as
-queue/project/reservation, memory and/or storage requirements
-
-- [ ] we need to discuss launchers (srun, mpirun, etc.); this is absent
-from the public API and from this document entirely, but chances are that
-we cannot entirely avoid this issue, so we might need to define an
-abstraction over various launchers. This could, in principle, be hidden
-in the adapters, but experience suggests that it's often (1)
-insufficient and (2) the reason why libraries like these are hard to work
-with (they never quite get the launching part right).
-
-    - the public API need only reflect that the user could pick a
-    non-default launcher by name
-
-    - canonical implementation should have a nice way of abstracting over
-    launchers
-
-- [ ] add a section giving an overview of the API components
-
-- [ ] add some clarification about the correspondence between JobSpec and
-exec/popen.
-
-- [ ] add some text about pilot jobs / reslicing
-
-- [ ] Add assumptions/goals/etc.
-
-    Things we could include in no particular order..
-
-    - That we aim to make a minimal interface; advanced functionality is
-    beyond the scope of this API
-
-    - We would like the interface to be general and applicable to
-    commonly deployed LRMs, cloud systems, etc. (I know some of this is
-    said above)
-
-    - We are focused on executing a process (e.g., popen rather than
-    function call)
-
-    - That we intend for this interface to be used by various workflow
-    systems and directly by applications
-
-    - That we base the API on lessons learned with SAGA, DRMAA, Globus,
-    and others
-
-    - Do we want to set any goals about performance/scale? Presumably we
-    want ot aim to address exascale workloads and exascale machines
-    (thousands of nodes)
-
-    - We consider allocation at the unit of a single job, no intention to
-    dynamically update jobs
-
-
 
 
 
@@ -274,46 +202,44 @@ future, and the rough functionality will be X, Y, Z
 - TBD
 
 
-## Interaction with LRMs and Scalability
-
-Implementations must use bulk status operations when interacting with
-LRMs. Regularly invoking, for example, qstat for each job in a set of
-many jobs can quickly overwhelm a LRM. The solution is to subscribe to
-asynchronous notifications from the LRM, if supported, or instead use bulk
-query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
-extract the information about the relevant jobs from the result.
-
-
-
-
-## State Consistency
-
-Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems, ordering of events on one system cannot be guaranteed on another.
-For example, an application on System 1 can, in quick succession, open a
-TCP connection to System 2 and transmit, on each connection, the messages
-"A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e., it uses separate threads for each connection),
-it is entirely possible that some user code that monitors messages on
-System 2 receives the message "B" before "A". In terms of jobs,
-this may make it appear as if seemingly impossible things are happening,
-such as a job starting to run after it has completed. Implementations
-must ensure that client code does not receive events in orders that are
-clearly impossible. The specifics of how this must be handled by
-implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
-[`JobState`](#jobstate).
-
-
-
-
 
 ## The Job API; Layer 0
 
-This section describes the basic local API.
+This section describes the most basic form of J/PSI API, namely one in
+which the location of the backend is either implicit or local. The main
+components of the API are shown below:
+
+<img width="100%" src="diagrams/class_diagram.svg" alt="Async Jobs Timing Diagram"/>
+
+The components of the API can be divided into a passive set, describing
+jobs and their state, and an active set, the
+[`JobExecutor`](#job-executor) connectors, which translates job
+information and interacts with specific backends. In other words, the API
+is designed such that all backend-specific logic can be contained in
+`JobExecutor` connectors. Consequently, all actions, such as `submit()`
+and `cancel()` as well as job status updates belong to the `JobExecutor`
+(although convenience methods also allow the job status to be directly
+retrievable from [`Job`](#job) objects).
+
+The passive set of components has the [`Job`](#job) class at the top. A
+`Job` object has a [`JobSpecification`](#jobspecification), which
+describes the high-level details of the job. Here, "high-level" is meant
+to track the capabilities of what can typically be achieved with
+`fork/exec` calls, namely specifying the executable and its arguments,
+the environment of the job, its working directory, and the location of
+input and output streams. Additional information that is specific to
+queuing systems is specified using both the
+[`JobAttributes`](#jobattributes) class, as well as the [`ResourcesSpec`]
+class. The `ResourcesSpec` class and its concrete sub-classes, of which
+only [`ResourceSpecV1`](#resourcespecv1) is specified at this time, can
+be used to describe the resources required to run the job, whereas the
+`JobAttributes` class is used to specify any other job information that
+is not conceptually part of the resource specification.
 
 
 
-###Implementation Notes
+
+### Implementation Notes
 
 The API specification is to be understood as a guideline that informs the
 implementation in a given language to the extent that the resulting
@@ -332,8 +258,101 @@ not required to do so.
 customary in the language in which the library is implemented
 
 
+<div class="imp-note">
+
+#### Interaction with LRMs and Scalability
+
+Implementations must use bulk status operations when interacting with
+LRMs. Regularly invoking, for example, qstat for each job in a set of
+many jobs can quickly overwhelm a LRM. The solution is to subscribe to
+asynchronous notifications from the LRM, if supported, or instead use bulk
+query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
+extract the information about the relevant jobs from the result.
+
+</div>
+
+<div class="imp-note">
+
+#### State Consistency
+
+Perhaps less relevant for Layer 0, but when dealing with concurrent
+systems, ordering of events on one system cannot be guaranteed on another.
+For example, an application on System 1 can, in quick succession, open a
+TCP connection to System 2 and transmit, on each connection, the messages
+"A" and "B", respectively. If System 2 does not serialize
+connection handling (i.e., it uses separate threads for each connection),
+it is entirely possible that some user code that monitors messages on
+System 2 receives the message "B" before "A". In terms of jobs,
+this may make it appear as if seemingly impossible things are happening,
+such as a job starting to run after it has completed. Implementations
+must ensure that client code does not receive events in orders that are
+clearly impossible. The specifics of how this must be handled by
+implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
+[`JobState`](#jobstate).
+
+</div>
+
 
 ### JobExecutor
+
+The `JobExecutor` represents one or more concrete mechanisms for
+executing jobs. It contains all the operations that are specific to a
+particular such mechanism. Specifically, it knows how to start a job
+through the `submit()` call, query the status of jobs and inform client
+API of any updates through callbacks, and can `cancel()` a running job.
+
+Client code interacts with a concrete job execution mechanism by invoking
+methods on objects declared (in a strictly-typed language) as
+`JobExecutor`. This leaves a number of possible ways to structure an
+implementation of this API. We list two:
+
+1. Treat `JobExecutor` as an abstract base class and have concrete
+subclasses of `JobExecutor` implement the specific mechanisms. The
+subclasses can then be instantiated either directly, using a factory
+pattern, or any other reasonable mechanism. For example:
+
+	<div class="lang-tabs">
+	Java:
+
+	```java
+	JobExecutor executor = new PBSJobExecutor();
+	Job job = ...
+	executor.submit(job);
+	```
+	Python:
+
+	```python
+	executor = PBSJobExecutor()
+	Job job = ...
+	executor.submit(job)
+	```
+	</div>
+
+    or
+
+	```java
+    JobExecutor executor = JobExecutorFactory.getInstance("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
+
+
+2. Treat `JobExecutor` as a frontend class, which can possibly be
+instantiated in a way that allows the selection of the particular
+concrete job submission mechanism and manage jobs by directly invoking
+methods of the `JobExecutor` class. For example:
+
+    ```java
+	JobExecutor executor = new JobExecutor("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
+
+A precise choice is not specified in this document. However, in order to
+promote source-level compatibility between implementations, it may be
+specified at a later time and/or in a language-specific document.
+
+
 
 #### Methods
 
@@ -437,6 +456,20 @@ the native job ID used by the LRM backend.
 
 ### Job
 
+The `Job` class encapsulates all of the information needed to run a job
+as well as the job's state. Instances of this class are created by user
+code and populated with information describing what to run as part of the
+job (e.g., the executable path, the arguments, etc.) as well as how the
+job is to be run, where applicable. The later involves specifying, for
+example, the number of CPU cores desired or other such requirements. Once
+all relevant information is provided, the job may be sent to an
+underlying implementation using the [`submit()`](#jobexecutor-submit)
+call of a [`JobExecutor`](#jobexecutor) instance. The executor then takes
+care of updating the status of the job, which is accessible synchronously
+through the [`Job.getStatus()`](#job-getstatus) call or, asynchronously,
+through callbacks. Implementations of job executors must ensure that the
+following state model is adhered to.
+
 #### State Model
 
 Job instances are, in this API, stateful objects.  A job's state can be
@@ -459,7 +492,7 @@ a library error of any kind.  The `FAILED` state is final.
 At any point in time (until the job is final), the job can enter the `CANCELED`
 state as reaction to the `job.cancel()` call.  Note that the transition to
 `CANCELED` is not immediate when calling that method, but the state transition
-only occurs once the backend is enacting that request.  
+only occurs once the backend is enacting that request.
 
 The `ACTIVE` state is the only state where the job will consume resources.
 
@@ -509,13 +542,13 @@ with the LRM out-of-band, and also to later re-attach to the job with
 `Job j = executor.attach(native_job_id)`.
 
 
-<a name="job-setspecification"></a>
+<a name="job-setspec"></a>
 ```java
-void setSpecification(JobSpec spec)
-JobSpec? getSpecification()
+void setSpec(JobSpec spec)
+JobSpec? getSpec()
 ```
 
-Sets/retrieves the [job specification](#jobspecification) for this job. A
+Sets/retrieves the [job specification](#jobspec) for this job. A
 valid job requires a non-null specification.
 
 
@@ -585,12 +618,12 @@ callback, call this method with a `null` argument.
 
 
 
-### JobSpecification
+### JobSpec
 
 #### Methods
 
 
-<a name="jobspecification-setname"></a>
+<a name="jobspec-setname"></a>
 ```java
 void setName(String name)
 String? getName()
@@ -604,7 +637,7 @@ For example, the job should appear with this name in the output of a
 potential `qstat` LRM command.
 
 
-<a name="jobspecification-setdirectory"></a>
+<a name="jobspec-setdirectory"></a>
 ```java
 void setDirectory(Path directory)
 Path? getDirectory()
@@ -621,7 +654,7 @@ writable. Clients should also note that directories valid on the submit
 side are not necessarily valid on the machine that runs the job.
 
 
-<a name="jobspecification-setexecutable"></a>
+<a name="jobspec-setexecutable"></a>
 ```java
 void setExecutable(Path executable)
 Path? getExecutable()
@@ -630,10 +663,10 @@ Path? getExecutable()
 Sets/gets the path to the executable file to be launched. A relative path
 is considered relative to the job directory (if specified, or the default
 job directory, as indicated in the description of
-[setDirectory()](#jobspecification-setdirectory)).
+[setDirectory()](#jobspec-setdirectory)).
 
 
-<a name="jobspecification-setarguments"></a>
+<a name="jobspec-setarguments"></a>
 ```java
 void setArguments(List<String> arguments)
 List<String>? getArguments()
@@ -648,7 +681,7 @@ arguments to the list by invoking `setArguments()` with a mutable list,
 then invoking `getArguments().add()`.
 
 
-<a name="jobspecification-setoverrideenvironment"></a>
+<a name="jobspec-setoverrideenvironment"></a>
 ```java
 void setOverrideEnvironment(boolean clearEnvironment)
 boolean getOverrideEnvironment()
@@ -665,7 +698,7 @@ applications, such as the location of a scratch directory in `$SCRATCH`,
 while still allowing clients to define unrelated environment variables.
 
 
-<a name="jobspecification-setenvironment"></a>
+<a name="jobspec-setenvironment"></a>
 ```java
 void setEnvironment(Map<String, String> environment)
 Map<String, String>? getEnvironment()
@@ -680,9 +713,9 @@ extending path lists, such as `PATH` or `LD_LIBRARY_PATH`. The setter
 stores the map as passed by client code and does not make a copy of it.
 
 
-<a name="jobspecification-setstdinpath"></a>
-<a name="jobspecification-setstdoutpath"></a>
-<a name="jobspecification-setstderrpath"></a>
+<a name="jobspec-setstdinpath"></a>
+<a name="jobspec-setstdoutpath"></a>
+<a name="jobspec-setstderrpath"></a>
 ```java
 void setStdinPath(Path stdin)
 Path? getStdinPath()
@@ -695,18 +728,18 @@ Path? getStderrPath()
 Set/get the paths to the standard stream files.
 
 
-<a name="jobspecification-setresources"></a>
+<a name="jobspec-setresources"></a>
 ```java
-void setResources(ResourcesSpec resources)
-ResourcesSpec? getResources()
+void setResources(ResourceSpec resources)
+ResourceSpec? getResources()
 ```
 
-Gets/sets the [resource requirements](#resourcesspec) of this job. The
+Gets/sets the [resource requirements](#resourcespec) of this job. The
 resource requirements specify the details of how the job is to be run on
 a cluster, such as the number and type of compute nodes used, etc.
 
 
-<a name="jobspecification-setattributes"></a>
+<a name="jobspec-setattributes"></a>
 ```java
 void setAttributes(JobAttributes attributes)
 JobAttributes getAttributes()
@@ -722,6 +755,17 @@ terminating a job.
 
 
 ### JobStatus
+
+The `JobStatus` class contains details about job transitions to new
+states. Specifically, it contains the new state, a timestamp at which the
+transition occurred, as well as optional metadata about the new state.
+
+<span class="imp-note">
+Implementations should, if possible, use timestamps provided by the
+underlying job execution mechanism and, if such timestamps are not
+available, provide timestamps that are as close as possible to the time
+when the actual transition occurred.
+</span>
 
 #### Methods
 
@@ -847,6 +891,9 @@ used for lengthy processing.
 
 ### InvalidJobException
 
+An exception describing a problem with the information contained in a
+[`Job`](#job) object.
+
 #### Methods
 
 <a name="invalidjobexception-getdetail"></a>
@@ -886,11 +933,11 @@ Returns the [`Job`](#job) associated with this exception.
 
 
 
-### ResourcesSpec
+### ResourceSpec
 
-The `ResourcesSpec` class is a base abstract class that describes job
+The `ResourceSpec` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
-[`ResourceSpecV1`](#resourcespecv1).
+[`ResourceSpec`](#resourcespecv1).
 
 #### Methods
 
@@ -899,10 +946,10 @@ int getVersion()
 ```
 
 Returns the version of the class implementing the resource specification.
-For example, `ResourceSpecV1.getVersion()` would return `1`.
+For example, `ResourceSpec.getVersion()` would return `1`.
 
 
-### ResourceSpecV1
+### ResourceSpec
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
@@ -981,6 +1028,9 @@ signifies to the LRM that GPU nodes are being requested.
 
 ### JobAttributes
 
+A class containing ancillary job information that describes how a job is to be
+run.
+
 #### Methods
 
 <a name="jobattributes-setduration"></a>
@@ -1041,13 +1091,18 @@ void setCustomAttribute(String name, Object value);
 Object? getCustomAttribute(String name);
 ```
 
-Allows setting/querying of custom attributes. Implementations are
-encouraged to make sensible decisions on whether to store some or all of
-the fixed attributes in the same structure as the custom attributes or
-not. It is, therefore, entirely possible for
+Allows setting/querying of custom attributes.
+
+<div class="imp-note">
+
+Implementations are encouraged to make sensible decisions on whether to
+store some or all of the fixed attributes in the same structure as the
+custom attributes or not. It is, therefore, entirely possible for
 `getCustomAttribute("duration")` to return a value passed earlier to
 `setDuration()`, although the specific custom attribute name need not be
 `"duration"`.
+
+</div>
 
 ### TimeInterval
 
@@ -1109,7 +1164,7 @@ format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_1
 A jobspec V1 YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
-Each of the listed jobspec keys SHALL meet the form and requirements
+Each of the listed job specification keys SHALL meet the form and requirements
 listed in detail in the sections below.
 
 #### Resources
@@ -1146,9 +1201,9 @@ be a dictionary conforming to the resource vertex specification.
 **label**
 
 The `label` key SHALL be a string that may be used to reference this
-resource vertex from other locations within the same jobspec. `label`
-SHALL be local to the namespace of the current jobspec, and each label in
-the current jobspec must be unique. `label` SHALL be mandatory in
+resource vertex from other locations within the same job specification. `label`
+SHALL be local to the namespace of the current job specification, and each label
+in the current job specification must be unique. `label` SHALL be mandatory in
 resource vertices of type `slot`.
 
 ##### Reserved Resource Types
@@ -1156,14 +1211,14 @@ resource vertices of type `slot`.
 **slot**
 
 A resource type of `type: slot` SHALL indicate a grouping of resources
-into a named task slot. A `slot` SHALL be a valid resource spec including
-a `label` key, the value of which may be used to reference the named task
-slot during tasks definition. The `label` provided SHALL be local to the
-namespace of the current jobspec.
+into a named task slot. A `slot` SHALL be a valid resource specification
+including a `label` key, the value of which may be used to reference the
+named task slot during tasks definition. The `label` provided SHALL be local
+to the namespace of the current job specification.
 
 A task slot SHALL have at least one edge specified using `with`:, and the
 resources associated with a slot SHALL be exclusively allocated to the
-program described in the jobspec.
+program described in the job specification.
 
 ##### V1-Specific Resource Graph Restrictions
 
@@ -1244,13 +1299,13 @@ the application demands.
 Attributes in the `system` dictionary are additional parameters that
 affect program execution, scheduling, etc. All attributes in `system` are
 reserved words, however unrecognized words SHALL trigger no more than a
-warning. This permits jobspec reuse between schedulers which may be
+warning. This permits job specification reuse between schedulers which may be
 configured differently and recognize different sets of attributes.
 
 Most system attributes are optional. Schedulers SHALL provide reasonable
 defaults for any system attributes that they recognize when at all
 possible. Most system attributes are optional, but the duration attribute
-is required in jobspec V1.
+is required in job specification V1.
 
 Some common system attributes are:
 
@@ -1542,7 +1597,7 @@ jex = jpsi.JobExectorFactory.get_instance('slurm')
 
 def make_job():
     job = jpsi.Job()
-    spec = jpsi.JobSpecification()
+    spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.specification = spec
