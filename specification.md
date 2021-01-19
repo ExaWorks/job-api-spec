@@ -1553,7 +1553,7 @@ optimize the throughput of connections to particular services.
 
 
 
-### Appendix C - examples
+### Appendix C - Examples
 
 This Appendix contains some examples of how the API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, which
@@ -1584,7 +1584,7 @@ for i in range(N):
     jex.submit(job)
 
 for i in range(N):
-    jobs[i].wait_for()
+    jobs[i].wait()
 ```
 
 
@@ -1603,22 +1603,22 @@ class ThrottledSubmitter:
         self.jex = jpsi.JobExecutorFactory.get_instance('torque', '>= 0.2')
         # keep track of completed jobs so that we can submit the rest
         self.jex.set_status_callback(self.callback)
-        self.crt = 0
+        self.count = 0
 
     def make_job(self):
         ...
 
     def submit_next():
-        if self.crt < N:
-            jex.submit(self.jobs[self.crt])
-            self.crt += 1
+        if self.count < N:
+            jex.submit(self.jobs[self.count])
+            self.count += 1
 
     def start(self)
         # create list of jobs
         self.jobs = [self.make_job() for i in range(N)]
 
         # submit initial M jobs
-        while self.crt < M:
+        while self.count < M:
             submit_next()
 
     def callback(self, job, status):
@@ -1629,6 +1629,168 @@ class ThrottledSubmitter:
 
 ThrottleSubmitter().start()
 ```
+
+
+#### Submit a malformed or unsatisfiable job
+
+Use the exception types to distinguish between re-triable or not
+
+```python
+import jpsi
+
+jex = jpsi.JobExector()
+job_1 = jpsi.Job()
+job_2 = jpsi.Job()
+
+spec_1 = jpsi.JobSpec()
+spec_2 = jpsi.JobSpec()
+
+spec_1.executable = '/bin/true'
+spec_2.executable = True   # type error
+
+job_1.specification = spec_1
+job_2.specification = spec_2
+
+try:
+    jex.submit(job_1)
+except jpsi.InvalidJobException:
+    # this should not happen
+    assert(True)
+except jpsi.SubmitException:
+    # this *can* happen, dependent on backend state and policies
+    print('could not submit job - try again later')
+
+try:
+    jex.submit(job_2)
+except jpsi.InvalidJobException as e:
+    print('submission failed: %s' % e)
+else:
+    assert(True)  # the above should have raised an `InvalidJobException`
+
+job_1.wait()
+```
+
+
+#### Run a job with P total processes where each process gets C cpus and G gpus
+
+```python
+import jpsi
+
+jex = jpsi.JobExector()
+job = jpsi.Job()
+
+P = 10
+C = 4
+G = 1
+
+res_spec = jpsi.ResourceSpecification({
+              'process_count'    : P,
+              'cores_per_process': C,
+              'gpus_per_process' : G,
+           })
+job_spec = jpsi.JobSpecification({
+              'executable': 'workload.py',
+              'arguments' : ['foo', 'bar', 'buz']
+              'directory' : '/tmp/',
+              'stdin'     : '/dev/null',
+              'stdout'    : 'work.out',
+              'stderr'    : 'work.err',
+              'resources' : res_spec,
+           })
+
+job.specification = spec
+
+jex.submit(job)
+job.wait()
+```
+
+
+#### N exclusive nodes, each with P processes
+
+This example will place a job across 5 nodes with 3 ranks per node.
+The remaining cores of the node will remain idle as the job requests
+exclusive access to the nodes.
+
+```python
+import jpsi
+
+jex = jpsi.JobExector()
+job = jpsi.Job()
+
+res_spec = jpsi.ResourceSpecification({
+              'exclusive_nodes'    : true,
+              'process_count'      : 10,
+              'processes__per_node':  2,
+           })
+job_spec = jpsi.JobSpecification({
+              'executable': 'workload.py',
+              'arguments' : ['foo', 'bar', 'buz']
+              'resources' : res_spec,
+           })
+
+job.specification = spec
+
+jex.submit(job)
+job.wait()
+```
+
+
+
+#### Construct a job that uses all the various “knobs” of the resource and job specifications
+
+```python
+import jpsi
+
+jex = jpsi.JobExector()
+job = jpsi.Job()
+
+res_spec = jpsi.ResourceSpecification({
+              # other jobs can run on unused resources of the job's nodes
+              'exclusive_nodes': false,
+              # run a total of 10 ranks
+              'process_count': 10,
+              # place 3 ranks per node (last rank will be placed alone)
+              'processes__per_node': 3,
+              # each rank obtains 4 cores
+              'cores_per_process': 4,
+              # … and 2 GPUs
+              'gpus_per_process': 4,
+           })
+job_spec = jpsi.JobSpecification({
+              # common name to identify job
+              'name'      : 'jpsi_example',
+              # workdir to run the job in (will be created)
+              'workdir'   : '/tmp/foo',
+              # executable or script to run
+              'executable': 'workload.py',
+              # arguments to pass
+              'arguments' : ['foo', 'bar', 'buz']
+              # environment to set
+              'environment' : {'FOO': 'foo',
+                               'BAR': 'bar'},
+              # keep the default environment - the above will be set
+              # additionally to the default user environment
+              'override_environment': False,
+              # resources to allocate (see above)
+              'resources' : res_spec,
+           })
+
+
+job.specification = spec
+# expected job runtime in seconds
+job.duration = 1000
+# batch queue to submit to
+job.queue = 'debug'
+# project allocation to use
+job.project = 'jpsi_devel'
+# reservation ID to use
+job.reservation = 'R123_456'
+
+
+jex.submit(job)
+job.wait()
+```
+
 
 
 ### Appendix D - Naming
