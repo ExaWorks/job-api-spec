@@ -91,10 +91,10 @@ Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
-Nontraditionally, job management is also provided by execution managers, which
-provided capabilities similar to LRMs but operate in user space, on a limited
-subset of resources, such as within a job's allocation.  The job management API
-aims to also transparently abstract such execution managers.
+Job management is sometimes also provided by execution managers, with
+capabilities similar to LRMs but operating in user space, on a limited
+subset of resources such as within a job's allocation.  This job
+management API aims to also transparently abstract such execution managers.
 
 
 ### A Note About Code Samples
@@ -139,7 +139,7 @@ C](#bulk-submission).
 ## Layers
 
 There are at least three major ways in which a job management API can be
-implemented:
+used
 
 - **Local**: the relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
@@ -760,9 +760,10 @@ Return the state of the job.
 Timestamp getTime()
 ```
 Returns the time at which the job has entered this state. The `Timestamp` class
-is expected to be provided by the standard library of the language in which the
-library is implemented. If such a class is not provided, implementations have
-the discretion of implementing a relevant `Timestamp` class.
+is expected to be provided by the standard library of the language in
+which the library is implemented. If such a class is not provided,
+implementations have the discretion of implementing a relevant
+`Timestamp` class.
 
 
 <a name="jobstatus-getmetdadata"></a>
