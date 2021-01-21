@@ -1707,7 +1707,7 @@ job.wait()
 
 #### N exclusive nodes, each with P processes
 
-This example will place a job across 5 nodes with 3 ranks per node.
+This example will place a job across 5 nodes with 2 ranks per node.
 The remaining cores of the node will remain idle as the job requests
 exclusive access to the nodes.
 
