@@ -902,7 +902,7 @@ end-user.
 
 This exception is thrown when the
 [`JobExecutor.submit()`](#jobexecutor-submit) call fails for a reason
-that is independent of the job being submitted.
+that is independent of the job that is being submitted.
 
 #### Methods
 
