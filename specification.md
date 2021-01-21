@@ -1689,7 +1689,7 @@ res_spec = jpsi.ResourceSpecification({
               'gpus_per_process' : G,
            })
 job_spec = jpsi.JobSpecification({
-              'executable': 'workload.py',
+              'executable': 'echo',
               'arguments' : ['foo', 'bar', 'buz']
               'directory' : '/tmp/',
               'stdin'     : '/dev/null',
