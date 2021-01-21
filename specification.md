@@ -1655,7 +1655,7 @@ try:
     jex.submit(job_1)
 except jpsi.InvalidJobException:
     # this should not happen
-    assert(True)
+    assert(False)
 except jpsi.SubmitException:
     # this *can* happen, dependent on backend state and policies
     print('could not submit job - try again later')
@@ -1665,7 +1665,7 @@ try:
 except jpsi.InvalidJobException as e:
     print('submission failed: %s' % e)
 else:
-    assert(True)  # the above should have raised an `InvalidJobException`
+    assert(False)  # the above should have raised an `InvalidJobException`
 
 job_1.wait()
 ```
