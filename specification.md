@@ -906,13 +906,6 @@ that is independent of the job that is being submitted.
 
 #### Methods
 
-<a name="submitexception-getdetail"></a>
-```java
-FaultDetail getDetail()
-```
-
-Returns the details about the failure.
-
 <a name="submitexception-getmessage"></a>
 ```java
 String getMessage()
