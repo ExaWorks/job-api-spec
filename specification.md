@@ -1754,7 +1754,7 @@ res_spec = jpsi.ResourceSpecification({
               # each rank obtains 4 cores
               'cores_per_process': 4,
               # … and 2 GPUs
-              'gpus_per_process': 4,
+              'gpus_per_process': 2,
            })
 job_spec = jpsi.JobSpecification({
               # common name to identify job
