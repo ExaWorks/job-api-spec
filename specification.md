@@ -40,6 +40,8 @@
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
 			- [Methods](#methods)
+		- [SubmitException](#submitexception)
+			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
