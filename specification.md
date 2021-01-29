@@ -40,6 +40,8 @@
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
 			- [Methods](#methods)
+		- [SubmitException](#submitexception)
+			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
@@ -391,16 +393,21 @@ status notifications about the job will be fired.
 ###### Exceptions:
 
 - `InvalidJobException`:
-    Thrown if the job specification cannot be understood. In principle,
-    the underlying implementation / LRM is the entity ultimately
-    responsible for interpreting a specification and reporting any errors
-    associated with it. However, in many cases, this reporting may come
-    after a significant delay. In the interest of failing fast, library
+    Thrown if the job specification cannot be understood. This exception
+	is fatal in that submitting another job with the exact same details
+	will also fail with an `InvalidJobException`. In principle, the
+	underlying implementation / LRM is the entity ultimately responsible
+	for interpreting a specification and reporting any errors associated
+	with it. However, in many cases, this reporting may come after a
+	significant delay. In the interest of failing fast, library
     implementations should make an effort of validating specifications
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`: Thrown if the request cannot be sent to the underlying implementation
+- `SubmitException`: 
+	Thrown if the request cannot be sent to the underlying
+	implementation. Unlike `InvalidJobException`, this exception can
+	occur for reasons that are transient.
 
 
 
@@ -921,6 +928,28 @@ Exception? getException()
 Returns an optional underlying exception that can potentially be used for
 debugging purposes, but which should not, in general, be presented to an
 end-user.
+
+
+<a name="submitexception-istransient"></a>
+```java
+boolean isTransient()
+```
+
+Returns `true` if the underlying condition that triggered this exception
+is transient. Jobs that cannot be submitted due to a transient
+exceptional condition have chance of being successfully re-submitted at a
+later time, which is a suggestion to client code that it could re-attempt
+the operation that triggered this exception. However, the exact chances
+of success depend on many factors and are not guaranteed in any
+particular case. For example, a DNS resolution failure while attempting
+to connect to a remote service is a transient error since it can be
+reasonably assumed that DNS resolution is a persistent feature of an
+Internet-connected network. By contrast, an authentication failure due to
+an invalid username/password combination would not be a transient
+failure. While it may be possible for a temporary defect in a service to
+cause such a failure, under normal operating conditions such an error
+would persist across subsequent re-tries until correct credentials are
+used.
 
 
 
