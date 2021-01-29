@@ -659,10 +659,10 @@ arguments to the list by invoking `setArguments()` with a mutable list,
 then invoking `getArguments().add()`.
 
 
-<a name="jobspec-setoverrideenvironment"></a>
+<a name="jobspec-setinheritenvironment"></a>
 ```java
-void setOverrideEnvironment(boolean clearEnvironment)
-boolean getOverrideEnvironment()
+void setInheritEnvironment(boolean inheritEnvironment)
+boolean getInheritEnvironment()
 ```
 
 If this flag is set to `false`, the job starts with an empty environment.
