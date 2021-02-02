@@ -42,6 +42,8 @@
 			- [Methods](#methods)
 		- [SubmitException](#submitexception)
 			- [Methods](#methods)
+		- [UnreachableStateException](#unreachablestateexception)
+			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
@@ -113,10 +115,10 @@ Specifically, the following aspects have informed the design in a significant
 fashion:
 
 - The proposed API is **asynchronous**. A detailed discussion about the choice
-between synchronous and asynchronous APIs can be found in
-[Appendix B](#synchronous-vs-asynchronous-api). In short, the implementation of
-a synchronous API would not scale well in most languages. Additionally, if so
-needed, the API provides a [`waitFor()`](#job-waitfor) method that allows
+between synchronous and asynchronous APIs can be found in [Appendix
+B](#synchronous-vs-asynchronous-api). In short, the implementation of a
+synchronous API would not scale well in most languages. Additionally, if
+so needed, the API provides a [`wait()`](#job-wait) method that allows
 client code to trivially implement a synchronous wrapper around the API.
 
 - Bulk versions of calls have been considered. The main reason for having bulk
@@ -423,14 +425,14 @@ implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
 cancelation is reflected in a change of status of the respective job to
 `JobState.CANCELED`. User code can synchronously wait until the
-`CANCELED` state is reached using `job.waitFor(JobState.CANCELED)` or
-even `job.waitFor()`, since the latter would wait for all terminal
+`CANCELED` state is reached using `job.wait(JobState.CANCELED)` or
+even `job.wait()`, since the latter would wait for all final
 states, including `JobState.CANCELED`. In fact, it is recommended that
-`job.waitFor()` be used because it is entirely possible for the job to
+`job.wait()` be used because it is entirely possible for the job to
 complete before the cancelation is communicated to the underlying
 implementation and before the client code receives the completion
 notification. In such a case, the job will never enter the `CANCELED`
-state and `job.waitFor(JobState.CANCELED)` would hang indefinitely.
+state and `job.wait(JobState.CANCELED)` would hang indefinitely.
 
 <a name="jobexecutor-setjobstatuscallback"></a>
 ```java
@@ -551,37 +553,64 @@ from a `QUEUED` state to a `COMPLETED` state. However, implementations
 can introduce a synthetic `ACTIVE` state change.
 
 
-<a name="job-waitfor"></a>
+<a name="job-wait"></a>
+<a name="job-wait_timeinterval-jobstate@"></a>
 ```java
-JobStatus waitFor(TimeInterval? timeout, JobState targetStates...)
+JobStatus wait(TimeInterval? timeout, JobState targetStates...)
+    throws UnreachableStateException
 ```
 
 Waits until the job reaches either of the `targetStates` or until an
 amount of time indicated by the timeout parameter passes. Returns the
 [JobStatus](#jobstatus) object that has one of the desired `targetStates`
-or `null` if the timeout is reached.
+or `null` if the timeout is reached. If none of the states in
+`targetStates` can be reached (such as, for example, because the job has
+entered the `FAILED` state while `targetStates` consists of `COMPLETED`),
+this method throws an
+[`UnreachableStateException`](#unreachablestateexception).
 
+<div class="imp-note">
+Implementations are encouraged to throw the `UnreachableStateException`
+as soon as it can be determined that the `targetStates` are unreachable
+and not necessarily when the job reaches a final state. However, whether
+it is possible to make such a determination before a final state is
+reached depends on the precise state model and on the exact time when
+this method is called.
+</div>
+
+<div class="imp-note">
+In certain languages (e.g., Java), the `wait` method is a final method of
+every object and cannot be overridden by user code. In such cases,
+implementations are advised to use an appropriate alternative name for
+this method. In particular, many Java libraries have adopted the name
+`waitFor`.
+</div>
+
+
+<a name="job-wait_jobstate@"></a>
 ```java
-JobStatus waitFor(JobState targetStates...)
+JobStatus wait(JobState targetStates...)
 ```
 
-Equivalent to `waitFor(null, targetStates)`.
+Equivalent to `wait(null, targetStates)`.
 
+<a name="job-wait_timeinterval"></a>
 ```java
-JobStatus waitFor(TimeInterval? timeout)
+JobStatus wait(TimeInterval? timeout)
 ```
 
-Waits for the job to complete for a certain amount of time, or
+Waits for the job to enter a final state for a certain amount of time, or
 indefinitely if `timeout` is `null`. Returns a [JobStatus](#jobstatus)
 object that represents the status of the job at termination or `null` if
-the timeout is reached. Equivalent to `waitFor(timeout,
-JobState.COMPLETED, JobState.FAILED, JobState.CANCELED)`.
+the timeout is reached. Unlike `wait(JobState targetStates...)`, this
+version cannot throw an `UnreachableStateException`.
 
+<a name="job-wait_void"></a>
 ```java
-JobStatus waitFor()
+JobStatus wait()
 ```
 
-Equivalent to `waitFor(null)`, which waits indefinitely for the job to
+Equivalent to `wait(null)`, which waits indefinitely for the job to
 complete.
 
 
@@ -950,6 +979,27 @@ failure. While it may be possible for a temporary defect in a service to
 cause such a failure, under normal operating conditions such an error
 would persist across subsequent re-tries until correct credentials are
 used.
+
+
+
+### UnreachableStateException
+
+This exception is thrown when the [`Job.wait`](#job-wait) method is
+called with a set of states that cannot be reached by the job when the
+call is made.
+
+
+#### Methods
+
+<a name="unreachablestateexception-getStatus"></a>
+```java
+String getStatus()
+```
+
+Returns the job status that has caused an implementation to determine
+that the desired states passed to the [`Job.wait`](#job-wait) method
+cannot be reached.
+
 
 
 
