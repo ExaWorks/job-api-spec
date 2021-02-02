@@ -574,8 +574,7 @@ Implementations are encouraged to throw the `UnreachableStateException`
 as soon as it can be determined that the `targetStates` are unreachable
 and not necessarily when the job reaches a final state. However, whether
 it is possible to make such a determination before a final state is
-reached depends on the precise state model and on the exact time when
-this method is called.
+reached depends on the exact time when this method is called.
 </div>
 
 <div class="imp-note">
