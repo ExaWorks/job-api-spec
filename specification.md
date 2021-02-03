@@ -1676,30 +1676,24 @@ job_1.wait()
 ```python
 import jpsi
 
-jex = jpsi.JobExector()
+res_spec = jpsi.ResourceSpec()
+res_spec.process_count     = 10
+res_spec.cores_per_process = 4
+res_spec.gpus_per_process  = 1
+
+job_spec = jpsi.JobSpec()
+job_spec.executable = 'echo'
+job_spec.arguments  = ['foo', 'bar', 'buz']
+job_spec.directory  = '/tmp/'
+job_spec.stdin      = '/dev/null'
+job_spec.stdout     = 'work.out'
+job_spec.stderr     = 'work.err'
+job_spec.resources' = res_spec
+
 job = jpsi.Job()
-
-P = 10
-C = 4
-G = 1
-
-res_spec = jpsi.ResourceSpecification({
-              'process_count'    : P,
-              'cores_per_process': C,
-              'gpus_per_process' : G,
-           })
-job_spec = jpsi.JobSpecification({
-              'executable': 'echo',
-              'arguments' : ['foo', 'bar', 'buz']
-              'directory' : '/tmp/',
-              'stdin'     : '/dev/null',
-              'stdout'    : 'work.out',
-              'stderr'    : 'work.err',
-              'resources' : res_spec,
-           })
-
 job.specification = spec
 
+jex = jpsi.JobExector()
 jex.submit(job)
 job.wait()
 ```
@@ -1714,22 +1708,20 @@ exclusive access to the nodes.
 ```python
 import jpsi
 
-jex = jpsi.JobExector()
+res_spec = jpsi.ResourceSpec()
+res_spec.exclusive_nodes = true
+res_spec.process_count = 10
+res_spec.processes__per_node = 2
+
+job_spec = jpsi.JobSpec()
+job_spec.executable = 'workload.py'
+job_spec.arguments  = ['foo', 'bar', 'buz']
+job_spec.resources  = res_spec
+
 job = jpsi.Job()
-
-res_spec = jpsi.ResourceSpecification({
-              'exclusive_nodes'    : true,
-              'process_count'      : 10,
-              'processes__per_node':  2,
-           })
-job_spec = jpsi.JobSpecification({
-              'executable': 'workload.py',
-              'arguments' : ['foo', 'bar', 'buz']
-              'resources' : res_spec,
-           })
-
 job.specification = spec
 
+jex = jpsi.JobExector()
 jex.submit(job)
 job.wait()
 ```
@@ -1741,52 +1733,35 @@ job.wait()
 ```python
 import jpsi
 
-jex = jpsi.JobExector()
+res_spec = jpsi.ResourceSpec()
+res_spec.exclusive_nodes     = false  # other jobs can run on the job's nodes
+res_spec.process_count       = 10     # run a total of 10 ranks
+res_spec.processes__per_node = 3      # place 3 ranks per node
+res_spec.cores_per_process   = 4      # each rank obtains 4 cores
+res_spec.gpus_per_process    = 2      # … and 2 GPUs
+
+job_spec = jpsi.JobSpec()
+job_spec.name       : 'jpsi_example'         # common name to identify job
+job_spec.workdir    : '/tmp/foo'             # dir to create for the job
+job_spec.executable : 'workload.py'          # executable or script to run
+job_spec.arguments  : ['foo', 'bar', 'buz']  # arguments to pass
+job_spec.resources  : res_spec               # resources to allocate (see above)
+
+
+# we use the default environment - but also set some
+# additional environment variables
+job_spec.override_environment: False
+job_spec.environment: {'FOO': 'foo',
+                       'BAR': 'bar'}
+
 job = jpsi.Job()
-
-res_spec = jpsi.ResourceSpecification({
-              # other jobs can run on unused resources of the job's nodes
-              'exclusive_nodes': false,
-              # run a total of 10 ranks
-              'process_count': 10,
-              # place 3 ranks per node (last rank will be placed alone)
-              'processes__per_node': 3,
-              # each rank obtains 4 cores
-              'cores_per_process': 4,
-              # … and 2 GPUs
-              'gpus_per_process': 2,
-           })
-job_spec = jpsi.JobSpecification({
-              # common name to identify job
-              'name'      : 'jpsi_example',
-              # workdir to run the job in (will be created)
-              'workdir'   : '/tmp/foo',
-              # executable or script to run
-              'executable': 'workload.py',
-              # arguments to pass
-              'arguments' : ['foo', 'bar', 'buz']
-              # environment to set
-              'environment' : {'FOO': 'foo',
-                               'BAR': 'bar'},
-              # keep the default environment - the above will be set
-              # additionally to the default user environment
-              'override_environment': False,
-              # resources to allocate (see above)
-              'resources' : res_spec,
-           })
-
-
 job.specification = spec
-# expected job runtime in seconds
-job.duration = 1000
-# batch queue to submit to
-job.queue = 'debug'
-# project allocation to use
-job.project = 'jpsi_devel'
-# reservation ID to use
-job.reservation = 'R123_456'
+job.duration      = 1000          # expected job runtime in seconds
+job.queue         = 'debug'       # batch queue to submit to
+job.project       = 'jpsi_devel'  # project allocation to use
+job.reservation   = 'R123_456'    # reservation ID to use
 
-
+jex = jpsi.JobExector()
 jex.submit(job)
 job.wait()
 ```
@@ -1799,3 +1774,4 @@ The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
 "Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
+
