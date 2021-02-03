@@ -11,9 +11,8 @@
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [A Job Management API](#a-job-management-api2)
+- [A Portable Submission Interface for Jobs (J/PSI)](#a-portable-submission-interface-for-jobs-jpsi)
 	- [STATUS: EARLY DRAFT](#status-early-draft)
-	- [TODO](#todo)
 	- [Introduction](#introduction)
 		- [A Note About Code Samples](#a-note-about-code-samples)
 	- [Motivation and Design Goals](#motivation-and-design-goals)
@@ -21,14 +20,15 @@
 		- [Layer 0 (local)](#layer-0-local)
 		- [Layer 1 (remote)](#layer-1-remote)
 		- [Layer 2 (nested)](#layer-2-nested)
-	- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
-	- [State Consistency](#state-consistency)
 	- [The Job API; Layer 0](#the-job-api-layer-0)
 		- [Implementation Notes](#implementation-notes)
+			- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
+			- [State Consistency](#state-consistency)
 		- [JobExecutor](#jobexecutor)
 			- [Methods](#methods)
 					- [Exceptions:](#exceptions)
 		- [Job](#job)
+			- [State Model](#state-model)
 			- [Methods](#methods)
 		- [JobSpec](#jobspec)
 			- [Methods](#methods)
@@ -40,11 +40,13 @@
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
 			- [Methods](#methods)
-		- [FaultDetail](#faultdetail)
+		- [SubmitException](#submitexception)
+			- [Methods](#methods)
+		- [UnreachableStateException](#unreachablestateexception)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
-		- [ResourceSpec](#resourcespecv1)
+		- [ResourceSpec](#resourcespec)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
 			- [Methods](#methods)
@@ -53,7 +55,7 @@
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
 	- [Appendices](#appendices)
-		- [Appendix A - JobSpec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
@@ -67,7 +69,6 @@
 		- [Appendix C - examples](#appendix-c-examples)
 			- [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
 			- [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
-			- [Have N jobs compete in the queue and keep only the winner](#have-n-jobs-compete-in-the-queue-and-keep-only-the-winner)
 		- [Appendix D - Naming](#appendix-d-naming)
 
 <!-- /TOC -->
@@ -114,10 +115,10 @@ Specifically, the following aspects have informed the design in a significant
 fashion:
 
 - The proposed API is **asynchronous**. A detailed discussion about the choice
-between synchronous and asynchronous APIs can be found in
-[Appendix B](#synchronous-vs-asynchronous-api). In short, the implementation of
-a synchronous API would not scale well in most languages. Additionally, if so
-needed, the API provides a [`waitFor()`](#job-waitfor) method that allows
+between synchronous and asynchronous APIs can be found in [Appendix
+B](#synchronous-vs-asynchronous-api). In short, the implementation of a
+synchronous API would not scale well in most languages. Additionally, if
+so needed, the API provides a [`wait()`](#job-wait) method that allows
 client code to trivially implement a synchronous wrapper around the API.
 
 - Bulk versions of calls have been considered. The main reason for having bulk
@@ -394,16 +395,21 @@ status notifications about the job will be fired.
 ###### Exceptions:
 
 - `InvalidJobException`:
-    Thrown if the job specification cannot be understood. In principle,
-    the underlying implementation / LRM is the entity ultimately
-    responsible for interpreting a specification and reporting any errors
-    associated with it. However, in many cases, this reporting may come
-    after a significant delay. In the interest of failing fast, library
+    Thrown if the job specification cannot be understood. This exception
+	is fatal in that submitting another job with the exact same details
+	will also fail with an `InvalidJobException`. In principle, the
+	underlying implementation / LRM is the entity ultimately responsible
+	for interpreting a specification and reporting any errors associated
+	with it. However, in many cases, this reporting may come after a
+	significant delay. In the interest of failing fast, library
     implementations should make an effort of validating specifications
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`: Thrown if the request cannot be sent to the underlying implementation
+- `SubmitException`: 
+	Thrown if the request cannot be sent to the underlying
+	implementation. Unlike `InvalidJobException`, this exception can
+	occur for reasons that are transient.
 
 
 
@@ -419,14 +425,14 @@ implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
 cancelation is reflected in a change of status of the respective job to
 `JobState.CANCELED`. User code can synchronously wait until the
-`CANCELED` state is reached using `job.waitFor(JobState.CANCELED)` or
-even `job.waitFor()`, since the latter would wait for all terminal
+`CANCELED` state is reached using `job.wait(JobState.CANCELED)` or
+even `job.wait()`, since the latter would wait for all final
 states, including `JobState.CANCELED`. In fact, it is recommended that
-`job.waitFor()` be used because it is entirely possible for the job to
+`job.wait()` be used because it is entirely possible for the job to
 complete before the cancelation is communicated to the underlying
 implementation and before the client code receives the completion
 notification. In such a case, the job will never enter the `CANCELED`
-state and `job.waitFor(JobState.CANCELED)` would hang indefinitely.
+state and `job.wait(JobState.CANCELED)` would hang indefinitely.
 
 <a name="jobexecutor-setjobstatuscallback"></a>
 ```java
@@ -547,37 +553,63 @@ from a `QUEUED` state to a `COMPLETED` state. However, implementations
 can introduce a synthetic `ACTIVE` state change.
 
 
-<a name="job-waitfor"></a>
+<a name="job-wait"></a>
+<a name="job-wait_timeinterval-jobstate@"></a>
 ```java
-JobStatus waitFor(TimeInterval? timeout, JobState targetStates...)
+JobStatus wait(TimeInterval? timeout, JobState targetStates...)
+    throws UnreachableStateException
 ```
 
 Waits until the job reaches either of the `targetStates` or until an
 amount of time indicated by the timeout parameter passes. Returns the
 [JobStatus](#jobstatus) object that has one of the desired `targetStates`
-or `null` if the timeout is reached.
+or `null` if the timeout is reached. If none of the states in
+`targetStates` can be reached (such as, for example, because the job has
+entered the `FAILED` state while `targetStates` consists of `COMPLETED`),
+this method throws an
+[`UnreachableStateException`](#unreachablestateexception).
 
+<div class="imp-note">
+Implementations are encouraged to throw the `UnreachableStateException`
+as soon as it can be determined that the `targetStates` are unreachable
+and not necessarily when the job reaches a final state. However, whether
+it is possible to make such a determination before a final state is
+reached depends on the exact time when this method is called.
+</div>
+
+<div class="imp-note">
+In certain languages (e.g., Java), the `wait` method is a final method of
+every object and cannot be overridden by user code. In such cases,
+implementations are advised to use an appropriate alternative name for
+this method. In particular, many Java libraries have adopted the name
+`waitFor`.
+</div>
+
+
+<a name="job-wait_jobstate@"></a>
 ```java
-JobStatus waitFor(JobState targetStates...)
+JobStatus wait(JobState targetStates...)
 ```
 
-Equivalent to `waitFor(null, targetStates)`.
+Equivalent to `wait(null, targetStates)`.
 
+<a name="job-wait_timeinterval"></a>
 ```java
-JobStatus waitFor(TimeInterval? timeout)
+JobStatus wait(TimeInterval? timeout)
 ```
 
-Waits for the job to complete for a certain amount of time, or
+Waits for the job to enter a final state for a certain amount of time, or
 indefinitely if `timeout` is `null`. Returns a [JobStatus](#jobstatus)
 object that represents the status of the job at termination or `null` if
-the timeout is reached. Equivalent to `waitFor(timeout,
-JobState.COMPLETED, JobState.FAILED, JobState.CANCELED)`.
+the timeout is reached. Unlike `wait(JobState targetStates...)`, this
+version cannot throw an `UnreachableStateException`.
 
+<a name="job-wait_void"></a>
 ```java
-JobStatus waitFor()
+JobStatus wait()
 ```
 
-Equivalent to `waitFor(null)`, which waits indefinitely for the job to
+Equivalent to `wait(null)`, which waits indefinitely for the job to
 complete.
 
 
@@ -655,10 +687,10 @@ arguments to the list by invoking `setArguments()` with a mutable list,
 then invoking `getArguments().add()`.
 
 
-<a name="jobspec-setoverrideenvironment"></a>
+<a name="jobspec-setinheritenvironment"></a>
 ```java
-void setOverrideEnvironment(boolean clearEnvironment)
-boolean getOverrideEnvironment()
+void setInheritEnvironment(boolean inheritEnvironment)
+boolean getInheritEnvironment()
 ```
 
 If this flag is set to `false`, the job starts with an empty environment.
@@ -897,12 +929,75 @@ debugging purposes, but which should not, in general, be presented to an
 end-user.
 
 
-<a name="invalidjobexception-getjob"></a>
+
+### SubmitException
+
+This exception is thrown when the
+[`JobExecutor.submit()`](#jobexecutor-submit) call fails for a reason
+that is independent of the job that is being submitted.
+
+#### Methods
+
+<a name="submitexception-getmessage"></a>
 ```java
-Job getJob()
+String getMessage()
 ```
 
-Returns the [`Job`](#job) associated with this exception.
+Retrieves the message associated with this exception. This should be a
+descriptive message that is sufficiently clear to be presented to an
+end-user.
+
+
+<a name="submitexception-getexception"></a>
+```java
+Exception? getException()
+```
+
+Returns an optional underlying exception that can potentially be used for
+debugging purposes, but which should not, in general, be presented to an
+end-user.
+
+
+<a name="submitexception-istransient"></a>
+```java
+boolean isTransient()
+```
+
+Returns `true` if the underlying condition that triggered this exception
+is transient. Jobs that cannot be submitted due to a transient
+exceptional condition have chance of being successfully re-submitted at a
+later time, which is a suggestion to client code that it could re-attempt
+the operation that triggered this exception. However, the exact chances
+of success depend on many factors and are not guaranteed in any
+particular case. For example, a DNS resolution failure while attempting
+to connect to a remote service is a transient error since it can be
+reasonably assumed that DNS resolution is a persistent feature of an
+Internet-connected network. By contrast, an authentication failure due to
+an invalid username/password combination would not be a transient
+failure. While it may be possible for a temporary defect in a service to
+cause such a failure, under normal operating conditions such an error
+would persist across subsequent re-tries until correct credentials are
+used.
+
+
+
+### UnreachableStateException
+
+This exception is thrown when the [`Job.wait`](#job-wait) method is
+called with a set of states that cannot be reached by the job when the
+call is made.
+
+
+#### Methods
+
+<a name="unreachablestateexception-getStatus"></a>
+```java
+String getStatus()
+```
+
+Returns the job status that has caused an implementation to determine
+that the desired states passed to the [`Job.wait`](#job-wait) method
+cannot be reached.
 
 
 
