@@ -612,6 +612,13 @@ JobStatus wait()
 Equivalent to `wait(null)`, which waits indefinitely for the job to
 complete.
 
+<a name="job-cancel"></a>
+```java
+void cancel() throws SubmitException
+```
+
+Cancels this job by calling [`JobExecutor.cancel()`](#jobexecutor-cancel)
+on the job executor that was used to submit this job.
 
 <a name="job-setstatuscallback"></a>
 ```java
