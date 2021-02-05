@@ -29,26 +29,37 @@
 					- [Exceptions:](#exceptions)
 		- [Job](#job)
 			- [State Model](#state-model)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobSpec](#jobspec)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobStatus](#jobstatus)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobState](#jobstate)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobStatusCallback](#jobstatuscallback)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [SubmitException](#submitexception)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [UnreachableStateException](#unreachablestateexception)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [TimeInterval](#timeinterval)
 			- [Constructors](#constructors)
@@ -508,6 +519,27 @@ MAY be available on certain state transitions, in certain implementations - See
 the `JobStatus` definition for additional information on such meta data.
 
 
+#### Constructors
+
+<a name="job-"></a>
+<a name="job-_void"></a>
+```java
+Job()
+```
+
+Constructs an empty `Job` object. Upon construction, the job will be in
+the `NEW` state.
+
+
+<a name="job-_jobspec"></a>
+```java
+Job(JobSpec spec)
+```
+
+Constructs a `Job` object with the given [`JobSpec`](#jobspec). As with
+the above constructor, the job will be in the `NEW` state.
+
+
 #### Methods
 
 <a name="job-getid"></a>
@@ -632,6 +664,16 @@ callback, call this method with a `null` argument.
 
 
 ### JobSpec
+
+#### Constructors
+
+<a name="jobspec-"></a>
+<a name="jobspec-_void"></a>
+```java
+JobSpec()
+```
+
+Constructs an empty `JobSpec`.
 
 #### Methods
 
@@ -780,6 +822,10 @@ available, provide timestamps that are as close as possible to the time
 when the actual transition occurred.
 </span>
 
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
+
 #### Methods
 
 
@@ -842,6 +888,10 @@ A convenience wrapper for
 An enumeration holding the possible job states, which are: `NEW`,
 `QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
+#### Constructors
+
+This class represents an enumeration and has no public constructors.
+
 #### Methods
 
 <a name="jobstate-isgreaterthan"></a>
@@ -882,6 +932,10 @@ reached. The final states are `COMPLETED`, `FAILED`, and `CANCELED`.
 
 An interface used to listen to job status change events.
 
+#### Constructors
+
+This is an interface/abstract class and has no specified public constructors.
+
 #### Methods
 
 <a name="jobstatuscallback-jobstatuschanged"></a>
@@ -906,6 +960,10 @@ used for lengthy processing.
 
 An exception describing a problem with the information contained in a
 [`Job`](#job) object.
+
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
 
 #### Methods
 
@@ -942,6 +1000,10 @@ end-user.
 This exception is thrown when the
 [`JobExecutor.submit()`](#jobexecutor-submit) call fails for a reason
 that is independent of the job that is being submitted.
+
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
 
 #### Methods
 
@@ -994,6 +1056,9 @@ This exception is thrown when the [`Job.wait`](#job-wait) method is
 called with a set of states that cannot be reached by the job when the
 call is made.
 
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
 
 #### Methods
 
@@ -1015,6 +1080,10 @@ The `ResourceSpec` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
 [`ResourceSpec`](#resourcespecv1).
 
+#### Constructors
+
+This is an abstract class without a specified public constructor.
+
 #### Methods
 
 ```java
@@ -1029,6 +1098,16 @@ For example, `ResourceSpec.getVersion()` would return `1`.
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
+
+#### Constructors
+
+<a name="resourcespecv1-_void"></a>
+<a name="resourcespecv1-"></a>
+```java
+ResourceSpecV1()
+```
+
+Constructs an empty `ResourceSpecV1` object.
 
 #### Methods
 
@@ -1106,6 +1185,16 @@ signifies to the LRM that GPU nodes are being requested.
 
 A class containing ancillary job information that describes how a job is to be
 run.
+
+#### Constructors
+
+<a name="jobattributes-"></a>
+<a name="jobattributes-_void"></a>
+```java
+JobAttributes()
+```
+
+Constructs an empty `JobAttributes` object.
 
 #### Methods
 
