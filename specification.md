@@ -1091,10 +1091,10 @@ int getVersion()
 ```
 
 Returns the version of the class implementing the resource specification.
-For example, `ResourceSpec.getVersion()` would return `1`.
+For example, `ResourceSpecV1.getVersion()` would return `1`.
 
 
-### ResourceSpec
+### ResourceSpecV1
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
