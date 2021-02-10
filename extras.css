@@ -26,9 +26,9 @@
     background-color: #f6f8e8;
 }
 
-.lang-tabs {
+.lang-tabs, .lang-bindings {
 	position: relative;
-	width: 94%;
+	width: 100%;
 }
 
 .lang-tab-radio {
