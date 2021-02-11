@@ -324,14 +324,15 @@ subclasses can then be instantiated either directly, using a factory
 pattern, or any other reasonable mechanism. For example:
 
 	<div class="lang-tabs">
-	Java:
+
+    __Java__:
 
 	```java
 	JobExecutor executor = new PBSJobExecutor();
 	Job job = ...
 	executor.submit(job);
 	```
-	Python:
+	__Python__:
 
 	```python
 	executor = PBSJobExecutor()
@@ -342,11 +343,23 @@ pattern, or any other reasonable mechanism. For example:
 
     or
 
+    <div class="lang-tabs">
+
+    __Java__:
+
 	```java
     JobExecutor executor = JobExecutorFactory.getInstance("PBS");
 	Job job = ...
 	executor.submit(job);
 	```
+    __Python__:
+
+    ```python
+    executor = JobExecutorFactory.get_instance("PBS")
+	Job job = ...
+	executor.submit(job)
+	```
+    </div>
 
 
 2. Treat `JobExecutor` as a frontend class, which can possibly be
@@ -815,12 +828,14 @@ The `JobStatus` class contains details about job transitions to new
 states. Specifically, it contains the new state, a timestamp at which the
 transition occurred, as well as optional metadata about the new state.
 
-<span class="imp-note">
+<div class="imp-note">
+
 Implementations should, if possible, use timestamps provided by the
 underlying job execution mechanism and, if such timestamps are not
 available, provide timestamps that are as close as possible to the time
 when the actual transition occurred.
-</span>
+
+</div>
 
 #### Constructors
 
