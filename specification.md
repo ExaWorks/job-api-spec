@@ -692,7 +692,7 @@ Constructs an empty `JobSpec`.
 
 __Python__:
 
-In Python, the following additional constructor is defined:
+In Python, the default constructor is replaced with the following constructor:
 
 <a name="jobspec-_**"></a>
 ```python
@@ -1150,7 +1150,7 @@ Constructs an empty `ResourceSpecV1` object.
 
 __Python__:
 
-In Python, the following additional constructor is defined:
+In Python, the default constructor is replaced with the following constructor:
 
 <a name="resourcespecv1-_**"></a>
 ```python
