@@ -1347,9 +1347,10 @@ listed in detail in the sections below.
 
 #### Resources
 
-The value of the resources key SHALL be a strict list which MUST define
-either node or slot as the first and only resource. Each list element
-SHALL represent a **resource vertex** (described below).
+The `resources` key of the J/PSI jobspec contains the data from the
+`ResourceSpec` class.  The value of the resources key SHALL be a strict list
+which MUST define either node or slot as the first and only resource. Each list
+element SHALL represent a **resource vertex** (described below).
 
 A resource vertex SHALL contain only the following keys:
 
@@ -1422,8 +1423,10 @@ graphs is:
 
 #### Tasks
 
-The value of the `tasks` key SHALL be a strict list which MUST define
-exactly one task. The list element SHALL be a dictionary representing a
+The `task` key contains the `executable` and `arguments` values from the
+`Jobspec` class and the `processCount` and `processesPerNode` values from the
+`ResourceSpec`.  The value of the `tasks` key SHALL be a strict list which MUST
+define exactly one task. The list element SHALL be a dictionary representing a
 task to run as part of the program. A task descriptor SHALL contain the
 following keys:
 
@@ -1461,9 +1464,12 @@ site-specific extensions.
 
 #### Attributes
 
-The value of the `attributes` key SHALL be a dictionary of dictionaries.
-The `attributes` dictionary MAY contain one or both of the following keys
-which, if present, must have values. Values MAY have any valid YAML type.
+The `attributes` key of the J/PSI jobpsec contains the data from the
+`JobAttributes` class and the data from the `JobSpec` class not already covered
+by the `tasks` key.  The value of the `attributes` key SHALL be a dictionary of
+dictionaries.  The `attributes` dictionary MAY contain one or both of the
+following keys which, if present, must have values. Values MAY have any valid
+YAML type.
 
 
 **user**
