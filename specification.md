@@ -23,7 +23,6 @@
 	- [The Job API; Layer 0](#the-job-api-layer-0)
 		- [Implementation Notes](#implementation-notes)
 			- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
-			- [State Consistency](#state-consistency)
 		- [JobExecutor](#jobexecutor)
 			- [Methods](#methods)
 					- [Exceptions:](#exceptions)
@@ -280,27 +279,6 @@ many jobs can quickly overwhelm a LRM. The solution is to subscribe to
 asynchronous notifications from the LRM, if supported, or instead use bulk
 query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
 extract the information about the relevant jobs from the result.
-
-</div>
-
-<div class="imp-note">
-
-#### State Consistency
-
-Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems, ordering of events on one system cannot be guaranteed on another.
-For example, an application on System 1 can, in quick succession, open a
-TCP connection to System 2 and transmit, on each connection, the messages
-"A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e., it uses separate threads for each connection),
-it is entirely possible that some user code that monitors messages on
-System 2 receives the message "B" before "A". In terms of jobs,
-this may make it appear as if seemingly impossible things are happening,
-such as a job starting to run after it has completed. Implementations
-must ensure that client code does not receive events in orders that are
-clearly impossible. The specifics of how this must be handled by
-implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
-[`JobState`](#jobstate).
 
 </div>
 
