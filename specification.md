@@ -922,7 +922,7 @@ transitive.  The order is:
   - `ACTIVE    > QUEUED`
   - `COMPLETED > ACTIVE`
   - `FAILED    > ACTIVE`
-  - `CANCELLED > ACTIVE`
+  - `CANCELED > ACTIVE`
 
 The relevance of the partial ordering is that the system guarantees that
 no transition that would violate this ordering can occur. For example, no
