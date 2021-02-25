@@ -698,9 +698,9 @@ In Python, the default constructor is replaced with the following constructor:
 ```python
 JobSpec(name: str = None, executable: str = None,
         arguments: List[str] = None, directory: Path = None,
-        inheritEnvironment: bool = True,
-        environment: Dict[str, str] = None, stdinPath: Path = None,
-        stdoutPath: Path = None, stderrPath: Path = None,
+        inherit_environment: bool = True,
+        environment: Dict[str, str] = None, stdin_path: Path = None,
+        stdout_path: Path = None, stderr_path: Path = None,
         resources: ResourceSpec = None,
         attributes: JobAttributes = None)
 ```
@@ -1154,9 +1154,9 @@ In Python, the default constructor is replaced with the following constructor:
 
 <a name="resourcespecv1-_**"></a>
 ```python
-ResourceSpecV1(nodeCount: int = 1, exclusiveNodeUse: boolean = False,
-               processCount: int = 1, processesPerNode: int = 1,
-               cpuCoresPerProcess: int = 1, gpuCoresPerProcess: int = 0)
+ResourceSpecV1(node_count: int = 1, exclusive_node_use: boolean = False,
+               process_count: int = 1, processes_per_node: int = 1,
+               cpu_cores_per_process: int = 1, gpu_cores_per_process: int = 0)
 ```
 
 A constructor for `ResourceSpecV1` which allows properties to be
