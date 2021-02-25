@@ -986,12 +986,6 @@ This specification does not mandate a public constructor for this class.
 
 #### Methods
 
-<a name="invalidjobexception-getdetail"></a>
-```java
-FaultDetail getDetail()
-```
-
-Returns the details about the failure.
 
 <a name="invalidjobexception-getmessage"></a>
 ```java
