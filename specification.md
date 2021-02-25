@@ -852,10 +852,14 @@ JobState getState()
 Return the state of the job.
 
 
-<a name="jobstatus-gettime"></a> ```java Timestamp getTime() ``` Returns
-the time at which the job has entered this state. The `Timestamp` class
-is expected to be provided by the standard library of the language in
-which the library is implemented. If such a class is not provided,
+<a name="jobstatus-gettime"></a>
+```java
+Timestamp getTime()
+```
+
+Returns the time at which the job has entered this state. The `Timestamp`
+class is expected to be provided by the standard library of the language
+in which the library is implemented. If such a class is not provided,
 implementations have the discretion of implementing a relevant
 `Timestamp` class.
 
