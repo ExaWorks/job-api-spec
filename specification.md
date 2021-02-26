@@ -666,8 +666,30 @@ JobSpec()
 
 Constructs an empty `JobSpec`.
 
-#### Methods
+<div class="lang-bindings">
 
+__Python__:
+
+In Python, the default constructor is replaced with the following constructor:
+
+<a name="jobspec-_**"></a>
+```python
+JobSpec(name: str = None, executable: str = None,
+        arguments: List[str] = None, directory: Path = None,
+        inherit_environment: bool = True,
+        environment: Dict[str, str] = None, stdin_path: Path = None,
+        stdout_path: Path = None, stderr_path: Path = None,
+        resources: ResourceSpec = None,
+        attributes: JobAttributes = None)
+```
+
+A constructor for `JobSpec` which allows properties to be initialized
+through keyword arguments.
+
+</div>
+
+
+#### Methods
 
 <a name="jobspec-setname"></a>
 ```java
@@ -1099,6 +1121,25 @@ ResourceSpecV1()
 ```
 
 Constructs an empty `ResourceSpecV1` object.
+
+<div class="lang-bindings">
+
+__Python__:
+
+In Python, the default constructor is replaced with the following constructor:
+
+<a name="resourcespecv1-_**"></a>
+```python
+ResourceSpecV1(node_count: int = 1, exclusive_node_use: boolean = False,
+               process_count: int = 1, processes_per_node: int = 1,
+               cpu_cores_per_process: int = 1, gpu_cores_per_process: int = 0)
+```
+
+A constructor for `ResourceSpecV1` which allows properties to be
+initialized through keyword arguments.
+
+</div>
+
 
 #### Methods
 
