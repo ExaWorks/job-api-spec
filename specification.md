@@ -65,7 +65,7 @@
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
 	- [Appendices](#appendices)
-		- [Appendix A - Job Specification V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - Job Specification Serialization Format](#appendix-a-job-specification-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
@@ -1306,18 +1306,16 @@ Represents a time unit and must have at least the following units:
 
 ## Appendices
 
-### Appendix A - Job Specification V1 Serialization Format
+### Appendix A - Job Specification Serialization Format
 
 A domain specific language based on YAML is defined to express the
-resource requirements and other attributes of one or more programs
-submitted for execution. This describes the version 1 of the job
-specification, which represents a request to run exactly one program.
-This version is based heavily on [Flux's Jobspec
+resource requirements and other attributes of one program
+submitted for execution. This version is based heavily on [Flux's Jobspec
 V1](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_25.html),
 which is itself a simplified version of the [canonical Flux jobspec
 format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_14.html).
 
-A jobspec V1 YAML document SHALL consist of a dictionary defining the
+A J/PSI jobspec YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
 Each of the listed job specification keys SHALL meet the form and requirements
@@ -1325,16 +1323,17 @@ listed in detail in the sections below.
 
 #### Resources
 
-The value of the resources key SHALL be a strict list which MUST define
-either node or slot as the first and only resource. Each list element
-SHALL represent a **resource vertex** (described below).
+The `resources` key of the J/PSI jobspec contains the data from the
+`ResourceSpec` class.  The value of the resources key SHALL be a strict list
+which MUST define either node or slot as the first and only resource. Each list
+element SHALL represent a **resource vertex** (described below).
 
 A resource vertex SHALL contain only the following keys:
 
 **type**
 
 The `type` key for a resource SHALL indicate the type of resource to be
-matched. In V1, only four resource types are valid: `[node, slot, core,
+matched. Only four resource types are valid: `[node, slot, core,
 and gpu]`. `slot` types are described in the **Reserved Resource Types**
 section below.
 
@@ -1376,18 +1375,18 @@ A task slot SHALL have at least one edge specified using `with`:, and the
 resources associated with a slot SHALL be exclusively allocated to the
 program described in the job specification.
 
-##### V1-Specific Resource Graph Restrictions
+##### Resource Graph Restrictions
 
-In V1, the `resources` list MUST contain exactly one element, which MUST
+The `resources` list MUST contain exactly one element, which MUST
 be either `node` or `slot`. Additionally, the resource graph MUST contain
 the `core` type.
 
-In V1, there are also restrictions on which resources can have `out`
+There are also restrictions on which resources can have `out`
 edges to other resources. Specifically, a `node` can have an out edge to
 a `slot`, and a `slot` can have an out edge to a `core`. If a `slot` has
 an out edge to a `core`, it can also, optionally, have an out edge to a
 `gpu` as well. Therefore, the complete enumeration of valid resource
-graphs in V1 is:
+graphs is:
 
 - slot>core
 
@@ -1400,8 +1399,10 @@ graphs in V1 is:
 
 #### Tasks
 
-The value of the `tasks` key SHALL be a strict list which MUST define
-exactly one task. The list element SHALL be a dictionary representing a
+The `task` key contains the `executable` and `arguments` values from the
+`Jobspec` class and the `processCount` and `processesPerNode` values from the
+`ResourceSpec`.  The value of the `tasks` key SHALL be a strict list which MUST
+define exactly one task. The list element SHALL be a dictionary representing a
 task to run as part of the program. A task descriptor SHALL contain the
 following keys:
 
@@ -1439,9 +1440,12 @@ site-specific extensions.
 
 #### Attributes
 
-The value of the `attributes` key SHALL be a dictionary of dictionaries.
-The `attributes` dictionary MAY contain one or both of the following keys
-which, if present, must have values. Values MAY have any valid YAML type.
+The `attributes` key of the J/PSI jobpsec contains the data from the
+`JobAttributes` class and the data from the `JobSpec` class not already covered
+by the `tasks` key.  The value of the `attributes` key SHALL be a dictionary of
+dictionaries.  The `attributes` dictionary MAY contain one or both of the
+following keys which, if present, must have values. Values MAY have any valid
+YAML type.
 
 
 **user**
@@ -1461,7 +1465,7 @@ configured differently and recognize different sets of attributes.
 Most system attributes are optional. Schedulers SHALL provide reasonable
 defaults for any system attributes that they recognize when at all
 possible. Most system attributes are optional, but the duration attribute
-is required in job specification V1.
+is required.
 
 Some common system attributes are:
 
@@ -1503,6 +1507,11 @@ use:
     The name key contains the name of the job. The default name of a job
     is the first argument of the command run by the user, or it can be
     set by the user to an arbitrary value.
+
+#### Version
+
+The version key SHALL contain the value 1.  Larger versions are reserved for any
+potential expansions of or changes to the J/PSI jobspec.
 
 ### Appendix B - Synchronous vs. Asynchronous API
 
