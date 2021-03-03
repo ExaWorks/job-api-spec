@@ -796,8 +796,6 @@ Path? getStderrPath()
 Set/get the paths to the standard stream files.
 
 <a name="jobspec-setprelaunch"></a>
-<a name="jobspec-setpreexec"></a>
-<a name="jobspec-setpostexec"></a>
 <a name="jobspec-setpostlaunch"></a>
 ```java
 void setPreLaunch(Path script)
