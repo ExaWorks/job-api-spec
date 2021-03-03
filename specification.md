@@ -826,8 +826,14 @@ to the rest of the job.
 
 <div class="note user">
 
+Since the `PreLaunch` script is sourced before the parallel launch, it is only
+sourced by a single process. This process may be running on the login node or
+on a batch node, depending on the system and J/PSI implementation. In the case
+where code needs to run on every node or rank of a parallel job, it is
+advisable to instead use a wrapper script around the `executable`.
+
 Some environment changes can cause parallel launchers to malfunction.  For
-example, loading a module that changes out the interpreter for python or lua. In
+example, loading a module that changes the interpreter for python or lua. In
 this case, `PreLaunch` may cause parallel launcher failures and accomplishing
 these environmental changes would be better done with a wrapper script around
 the `executable`.
