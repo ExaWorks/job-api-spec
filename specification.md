@@ -795,6 +795,63 @@ Path? getStderrPath()
 
 Set/get the paths to the standard stream files.
 
+<a name="jobspec-setprelaunch"></a>
+<a name="jobspec-setpostlaunch"></a>
+```java
+void setPreLaunch(Path script)
+Path? getPreLaunch()
+void setPostLaunch(Path script)
+Path? getPostLaunch()
+```
+
+Set/get the paths to the pre/post launch scripts.
+
+The `PreLaunch` script is sourced by the main process of the job before it uses
+the parallel launcher to execute the `executable`.  This script is intended for
+setting up the environment via external systems like `lmod` and `virtualenv` as
+well as for performing actions that should only be done once at the start of a
+job (e.g., creating a results directory).
+
+<div class="note impl">
+
+"Sourcing" the script means to execute the commands contained in the `PreLaunch`
+script within the current environment.  This is equivalent to the `dot` command
+as defined by POSIX.2. Any environment variables set or changed by the
+`PreLaunch` script SHALL be made available to the launcher. The parallel
+launcher should be configured to forward the environment from the calling
+process to ensure that environment variables set by `PreLaunch` are propagated
+to the rest of the job.
+
+</div>
+
+<div class="note user">
+
+Since the `PreLaunch` script is sourced before the parallel launch, it is only
+sourced by a single process. This process may be running on the login node or
+on a batch node, depending on the system and J/PSI implementation. In the case
+where code needs to run on every node or rank of a parallel job, it is
+advisable to instead use a wrapper script around the `executable`.
+
+Some environment changes can cause parallel launchers to malfunction.  For
+example, loading a module that changes the interpreter for python or lua. In
+this case, `PreLaunch` may cause parallel launcher failures and accomplishing
+these environmental changes would be better done with a wrapper script around
+the `executable`.
+
+</div>
+
+
+The `PostLaunch` script is sourced by the process of the job that sourced the
+`PreLaunch` script. An explicit synchronization SHALL occur so that `PostLaunch`
+is sourced only after the exit of the `executable` on every rank of the job.
+The `PostLaunch` script may fail to run if the job walltime expires or if a
+single rank process hangs.
+
+<div class="note user">
+
+The `PreLaunch` and `PostLaunch` scripts SHALL be POSIX-compliant shell scripts.
+
+</div>
 
 <a name="jobspec-setresources"></a>
 ```java
