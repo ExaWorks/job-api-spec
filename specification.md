@@ -23,6 +23,8 @@
   - [The Job API; Layer 0](#the-job-api-layer-0)
     - [Implementation Notes](#implementation-notes)
       - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
+    - [Behavior](#behavior)
+      - [Logging](#logging)
     - [JobExecutor](#jobexecutor)
       - [Methods](#methods)
           - [Exceptions:](#exceptions)
@@ -288,6 +290,15 @@ query interfaces (e.g.,  `qstat -a`) to get the status of all jobs and
 extract the information about the relevant jobs from the result.
 
 </div>
+
+
+### Behavior
+
+#### Logging
+
+Implementations must not perform any logging that cannot be configured and
+disabled by users. Users may perform their own job-state logging by using the
+`addJobStatusCallback` methods of `JobExecutor` and `Job`.
 
 
 ### JobExecutor
