@@ -533,17 +533,6 @@ the above constructor, the job will be in the `NEW` state.
 
 #### Methods
 
-<a name="job-getid"></a>
-```java
-String getId()
-```
-
-Returns this job's ID. The ID is assigned automatically by the
-implementation when the Job object is constructed. The ID is guaranteed
-to be unique on the client machine. The ID does not have to match the ID
-of the underlying LRM job, but is used to identify `Job` instances as
-seen by a client application.
-
 
 <a name="job-setspec"></a>
 ```java
