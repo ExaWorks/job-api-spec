@@ -64,6 +64,7 @@
 			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
+        - [Path](#path)
 	- [Appendices](#appendices)
 		- [Appendix A - Job Specification Serialization Format](#appendix-a-job-specification-serialization-format)
 			- [Resources](#resources)
@@ -1401,6 +1402,13 @@ nearest integer value.
 Represents a time unit and must have at least the following units:
 `SECOND`, `MINUTE`, `HOUR`.
 
+### Path
+
+A class that allows users to specify a filesystem path in various formats.
+Implementations are encouraged to use standard library classes if available
+instead of re-implementing a custom `Path` class. If standard library classes
+are not available to represent filesystem paths, then the `String` class MAY
+be used instead.
 
 ## Appendices
 
