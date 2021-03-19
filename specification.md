@@ -1967,6 +1967,28 @@ else:
 job_1.wait()
 ```
 
+#### Submit a job, wait for queued event, cancel then, and then wait for the final event
+
+```python
+import jpsi
+
+def make_job():
+    job = jpsi.Job()
+    spec = jpsi.JobSpec()
+    spec.executable = '/bin/sleep'
+    spec.arguments = ['10']
+    job.specification = spec
+    return job
+
+jex = jpsi.JobExectorFactory.get_instance('slurm')
+
+job = make_job()
+jex.submit(job)
+job.wait(JobState.QUEUED)
+job.cancel()
+job.wait()
+```
+
 
 #### Run a job with P total processes where each process gets C cpus and G gpus
 
@@ -2063,6 +2085,42 @@ jex.submit(job)
 job.wait()
 ```
 
+#### Submit a job, check for transient error, retry if one occurred
+
+```python
+import time
+import math
+import random
+
+import jpsi
+
+def make_job():
+    job = jpsi.Job()
+    spec = jpsi.JobSpec()
+    spec.executable = '/bin/sleep'
+    spec.arguments = ['10']
+    job.specification = spec
+    return job
+
+def submit_with_exponential_backoff(jex, job):
+    times_attempted = 0
+    while(True):
+        try:
+            jex.submit(job)
+        except jpsi.SubmitException as se:
+            if not se.isTransient():
+                raise # re-raise to let caller see and handle it
+            times_attempted += 1
+            # https://en.wikipedia.org/wiki/Exponential_backoff
+            time.sleep(random.randint(0, math.pow(2, times_attempted) - 1))
+        else:
+            break
+
+jex = jpsi.JobExectorFactory.get_instance('slurm')
+job = make_job()
+submit_with_exponential_backoff(jex, job)
+job.wait()
+```
 
 
 ### Appendix D - Naming
