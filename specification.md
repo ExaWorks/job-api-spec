@@ -409,7 +409,7 @@ status notifications about the job will be fired.
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`: 
+- `SubmitException`:
 	Thrown if the request cannot be sent to the underlying
 	implementation. Unlike `InvalidJobException`, this exception can
 	occur for reasons that are transient.
@@ -449,34 +449,53 @@ an individual job status callback or not. To remove the callback, set it
 to `null`.
 
 
+
 <a name="jobexecutor-list"></a>
 ```java
 List<String> list()
 ```
 
-Return a list of native job IDs which are known to this executor instance.  The
-returned list MAY contain IDs of jobs which were not submitted via this
+Return a list of native job IDs which are known to this executor instance.  
+The returned list MAY contain IDs of jobs which were not submitted via this
 instance, and MAY be missing IDs of jobs which have been submitted by this
-instance but are finalized and purged already.  IDs for any job which has been
-submitted via this instance and which is not yet in a final state MUST be
-returned.  The returned IDs can be used to (re-)attach a job instance to the job
-via the `executor.attach(id)` call.  This implies that the call SHALL only
-return those IDs to which the callee can attach with under currently used
+instance but are finalized and purged already.  The returned job IDs MUST be
+uniquely identify job in the scope of the `JobExecutor` instance and thus in the
+scope of the backend that `JobExecutor` is bound to, but should not be assumed
+to be unique beyond that scope.
+
+IDs for any job which has been submitted via this instance and which is not yet
+in a final state MUST be returned.  Information for jobs in final state may get
+purged by the backend, and the implementation MAY purge that information also.
+The native IDs for those jobs thus MAY NOT be returned by this call, even if the
+application still holds handles to those jobs (and could thus retrieve the
+native job ID directly).
+
+
+The returned IDs can be used to re-attach a `Job` instance to the backend job
+via the `executor.attach(job, nativeJobID)` call.  This implies that the call
+SHALL only return those IDs to which the callee can attach under currently used
 authorization.
+
 
 
 <a name="jobexecutor-attach"></a>
 ```java
-Job attach(String jobID)
+Job attach(Job job, String nativeJobID)
 ```
 
-Return a job which is attached to the backend job identified by the specified
-ID.  The returned job instance MAY have an `UNKNOWN` state until the
-implementation asynchronously obtained information about the actual job state.
-The method MUST raise an `InvalidJobException` if the job ID cannot be used to
-uniquely identify a job.  The `jobID` can either refer to the ID returned by
-`Job.getID()`, which represents the ID used by the J/PSI implementation, or to
-the native job ID used by the LRM backend.
+This method will accept a job instance in `NEW` state and a native job ID.  The
+executor will attach the Job instance to the backend job identified by that
+native (backend) job ID.  The method will return immediately, the `JobExecutor`
+will collect job state and meta data asynchronously.  A callback registered on
+the Job MUST NOT fire before the implementation completed the attachement -- at
+that point the job will have a valid `JobStatus`.  If the
+implementation is not able to attach the job (because it cannot verify
+the job ID, or the job information has been purged, etc), the job will
+be moved into `FAILED` state.
+
+The method will raise an [`InvalidJobException`](#invalidjobexception)
+if the passed job is not in `NEW` state.  Any job status, resource spec
+etc. which are set on the passed `Job` instance will be discarded.
 
 
 ### Job
