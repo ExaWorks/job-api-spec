@@ -151,7 +151,7 @@ C](#bulk-submission).
 ## Layers
 
 There are at least three major ways in which a job management API can be
-used
+used:
 
 - **Local**: the relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
