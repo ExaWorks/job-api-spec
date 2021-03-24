@@ -11,9 +11,8 @@
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [A Job Management API](#a-job-management-api2)
+- [A Portable Submission Interface for Jobs (J/PSI)](#a-portable-submission-interface-for-jobs-jpsi)
 	- [STATUS: EARLY DRAFT](#status-early-draft)
-	- [TODO](#todo)
 	- [Introduction](#introduction)
 		- [A Note About Code Samples](#a-note-about-code-samples)
 	- [Motivation and Design Goals](#motivation-and-design-goals)
@@ -21,39 +20,53 @@
 		- [Layer 0 (local)](#layer-0-local)
 		- [Layer 1 (remote)](#layer-1-remote)
 		- [Layer 2 (nested)](#layer-2-nested)
-	- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
-	- [State Consistency](#state-consistency)
 	- [The Job API; Layer 0](#the-job-api-layer-0)
 		- [Implementation Notes](#implementation-notes)
+			- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
 		- [JobExecutor](#jobexecutor)
 			- [Methods](#methods)
 					- [Exceptions:](#exceptions)
 		- [Job](#job)
+			- [State Model](#state-model)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobSpec](#jobspec)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobStatus](#jobstatus)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobState](#jobstate)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobStatusCallback](#jobstatuscallback)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [InvalidJobException](#invalidjobexception)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
-		- [FaultDetail](#faultdetail)
+		- [SubmitException](#submitexception)
+			- [Constructors](#constructors)
+			- [Methods](#methods)
+		- [UnreachableStateException](#unreachablestateexception)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [ResourceSpec](#resourcespec)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
-		- [ResourceSpec](#resourcespecv1)
+		- [ResourceSpec](#resourcespec)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [JobAttributes](#jobattributes)
+			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [TimeInterval](#timeinterval)
 			- [Constructors](#constructors)
 			- [Methods](#methods)
 		- [TimeUnit](#timeunit)
+        - [Path](#path)
 	- [Appendices](#appendices)
-		- [Appendix A - JobSpec V1 Serialization Format](#appendix-a-job-specification-v1-serialization-format)
+		- [Appendix A - Job Specification Serialization Format](#appendix-a-job-specification-serialization-format)
 			- [Resources](#resources)
 				- [Reserved Resource Types](#reserved-resource-types)
 				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
@@ -67,7 +80,6 @@
 		- [Appendix C - examples](#appendix-c-examples)
 			- [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
 			- [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
-			- [Have N jobs compete in the queue and keep only the winner](#have-n-jobs-compete-in-the-queue-and-keep-only-the-winner)
 		- [Appendix D - Naming](#appendix-d-naming)
 
 <!-- /TOC -->
@@ -118,10 +130,10 @@ Specifically, the following aspects have informed the design in a significant
 fashion:
 
 - The proposed API is **asynchronous**. A detailed discussion about the choice
-between synchronous and asynchronous APIs can be found in
-[Appendix B](#synchronous-vs-asynchronous-api). In short, the implementation of
-a synchronous API would not scale well in most languages. Additionally, if so
-needed, the API provides a [`waitFor()`](#job-waitfor) method that allows
+between synchronous and asynchronous APIs can be found in [Appendix
+B](#synchronous-vs-asynchronous-api). In short, the implementation of a
+synchronous API would not scale well in most languages. Additionally, if
+so needed, the API provides a [`wait()`](#job-wait) method that allows
 client code to trivially implement a synchronous wrapper around the API.
 
 - Bulk versions of calls have been considered. The main reason for having bulk
@@ -275,27 +287,6 @@ extract the information about the relevant jobs from the result.
 
 </div>
 
-<div class="imp-note">
-
-#### State Consistency
-
-Perhaps less relevant for Layer 0, but when dealing with concurrent
-systems, ordering of events on one system cannot be guaranteed on another.
-For example, an application on System 1 can, in quick succession, open a
-TCP connection to System 2 and transmit, on each connection, the messages
-"A" and "B", respectively. If System 2 does not serialize
-connection handling (i.e., it uses separate threads for each connection),
-it is entirely possible that some user code that monitors messages on
-System 2 receives the message "B" before "A". In terms of jobs,
-this may make it appear as if seemingly impossible things are happening,
-such as a job starting to run after it has completed. Implementations
-must ensure that client code does not receive events in orders that are
-clearly impossible. The specifics of how this must be handled by
-implementations is detailed in [`Job.getStatus()`](#job-getstatus) and
-[`JobState`](#jobstate).
-
-</div>
-
 
 ### JobExecutor
 
@@ -316,14 +307,15 @@ subclasses can then be instantiated either directly, using a factory
 pattern, or any other reasonable mechanism. For example:
 
 	<div class="lang-tabs">
-	Java:
+
+    __Java__:
 
 	```java
 	JobExecutor executor = new PBSJobExecutor();
 	Job job = ...
 	executor.submit(job);
 	```
-	Python:
+	__Python__:
 
 	```python
 	executor = PBSJobExecutor()
@@ -334,11 +326,23 @@ pattern, or any other reasonable mechanism. For example:
 
     or
 
+    <div class="lang-tabs">
+
+    __Java__:
+
 	```java
     JobExecutor executor = JobExecutorFactory.getInstance("PBS");
 	Job job = ...
 	executor.submit(job);
 	```
+    __Python__:
+
+    ```python
+    executor = JobExecutorFactory.get_instance("PBS")
+	Job job = ...
+	executor.submit(job)
+	```
+    </div>
 
 
 2. Treat `JobExecutor` as a frontend class, which can possibly be
@@ -398,16 +402,21 @@ status notifications about the job will be fired.
 ###### Exceptions:
 
 - `InvalidJobException`:
-    Thrown if the job specification cannot be understood. In principle,
-    the underlying implementation / LRM is the entity ultimately
-    responsible for interpreting a specification and reporting any errors
-    associated with it. However, in many cases, this reporting may come
-    after a significant delay. In the interest of failing fast, library
+    Thrown if the job specification cannot be understood. This exception
+	is fatal in that submitting another job with the exact same details
+	will also fail with an `InvalidJobException`. In principle, the
+	underlying implementation / LRM is the entity ultimately responsible
+	for interpreting a specification and reporting any errors associated
+	with it. However, in many cases, this reporting may come after a
+	significant delay. In the interest of failing fast, library
     implementations should make an effort of validating specifications
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`: Thrown if the request cannot be sent to the underlying implementation
+- `SubmitException`:
+	Thrown if the request cannot be sent to the underlying
+	implementation. Unlike `InvalidJobException`, this exception can
+	occur for reasons that are transient.
 
 
 
@@ -423,14 +432,14 @@ implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
 cancelation is reflected in a change of status of the respective job to
 `JobState.CANCELED`. User code can synchronously wait until the
-`CANCELED` state is reached using `job.waitFor(JobState.CANCELED)` or
-even `job.waitFor()`, since the latter would wait for all terminal
+`CANCELED` state is reached using `job.wait(JobState.CANCELED)` or
+even `job.wait()`, since the latter would wait for all final
 states, including `JobState.CANCELED`. In fact, it is recommended that
-`job.waitFor()` be used because it is entirely possible for the job to
+`job.wait()` be used because it is entirely possible for the job to
 complete before the cancelation is communicated to the underlying
 implementation and before the client code receives the completion
 notification. In such a case, the job will never enter the `CANCELED`
-state and `job.waitFor(JobState.CANCELED)` would hang indefinitely.
+state and `job.wait(JobState.CANCELED)` would hang indefinitely.
 
 <a name="jobexecutor-setjobstatuscallback"></a>
 ```java
@@ -506,6 +515,27 @@ MAY be available on certain state transitions, in certain implementations - See
 the `JobStatus` definition for additional information on such meta data.
 
 
+#### Constructors
+
+<a name="job-"></a>
+<a name="job-_void"></a>
+```java
+Job()
+```
+
+Constructs an empty `Job` object. Upon construction, the job will be in
+the `NEW` state.
+
+
+<a name="job-_jobspec"></a>
+```java
+Job(JobSpec spec)
+```
+
+Constructs a `Job` object with the given [`JobSpec`](#jobspec). As with
+the above constructor, the job will be in the `NEW` state.
+
+
 #### Methods
 
 <a name="job-getid"></a>
@@ -551,39 +581,72 @@ from a `QUEUED` state to a `COMPLETED` state. However, implementations
 can introduce a synthetic `ACTIVE` state change.
 
 
-<a name="job-waitfor"></a>
+<a name="job-wait"></a>
+<a name="job-wait_timeinterval-jobstate@"></a>
 ```java
-JobStatus waitFor(TimeInterval? timeout, JobState targetStates...)
+JobStatus wait(TimeInterval? timeout, JobState targetStates...)
+    throws UnreachableStateException
 ```
 
 Waits until the job reaches either of the `targetStates` or until an
 amount of time indicated by the timeout parameter passes. Returns the
 [JobStatus](#jobstatus) object that has one of the desired `targetStates`
-or `null` if the timeout is reached.
+or `null` if the timeout is reached. If none of the states in
+`targetStates` can be reached (such as, for example, because the job has
+entered the `FAILED` state while `targetStates` consists of `COMPLETED`),
+this method throws an
+[`UnreachableStateException`](#unreachablestateexception).
 
+<div class="imp-note">
+Implementations are encouraged to throw the `UnreachableStateException`
+as soon as it can be determined that the `targetStates` are unreachable
+and not necessarily when the job reaches a final state. However, whether
+it is possible to make such a determination before a final state is
+reached depends on the exact time when this method is called.
+</div>
+
+<div class="imp-note">
+In certain languages (e.g., Java), the `wait` method is a final method of
+every object and cannot be overridden by user code. In such cases,
+implementations are advised to use an appropriate alternative name for
+this method. In particular, many Java libraries have adopted the name
+`waitFor`.
+</div>
+
+
+<a name="job-wait_jobstate@"></a>
 ```java
-JobStatus waitFor(JobState targetStates...)
+JobStatus wait(JobState targetStates...)
 ```
 
-Equivalent to `waitFor(null, targetStates)`.
+Equivalent to `wait(null, targetStates)`.
 
+<a name="job-wait_timeinterval"></a>
 ```java
-JobStatus waitFor(TimeInterval? timeout)
+JobStatus wait(TimeInterval? timeout)
 ```
 
-Waits for the job to complete for a certain amount of time, or
+Waits for the job to enter a final state for a certain amount of time, or
 indefinitely if `timeout` is `null`. Returns a [JobStatus](#jobstatus)
 object that represents the status of the job at termination or `null` if
-the timeout is reached. Equivalent to `waitFor(timeout,
-JobState.COMPLETED, JobState.FAILED, JobState.CANCELED)`.
+the timeout is reached. Unlike `wait(JobState targetStates...)`, this
+version cannot throw an `UnreachableStateException`.
 
+<a name="job-wait_void"></a>
 ```java
-JobStatus waitFor()
+JobStatus wait()
 ```
 
-Equivalent to `waitFor(null)`, which waits indefinitely for the job to
+Equivalent to `wait(null)`, which waits indefinitely for the job to
 complete.
 
+<a name="job-cancel"></a>
+```java
+void cancel() throws SubmitException
+```
+
+Cancels this job by calling [`JobExecutor.cancel()`](#jobexecutor-cancel)
+on the job executor that was used to submit this job.
 
 <a name="job-setstatuscallback"></a>
 ```java
@@ -598,8 +661,40 @@ callback, call this method with a `null` argument.
 
 ### JobSpec
 
-#### Methods
+#### Constructors
 
+<a name="jobspec-"></a>
+<a name="jobspec-_void"></a>
+```java
+JobSpec()
+```
+
+Constructs an empty `JobSpec`.
+
+<div class="lang-bindings">
+
+__Python__:
+
+In Python, the default constructor is replaced with the following constructor:
+
+<a name="jobspec-_**"></a>
+```python
+JobSpec(name: str = None, executable: str = None,
+        arguments: List[str] = None, directory: Path = None,
+        inherit_environment: bool = True,
+        environment: Dict[str, str] = None, stdin_path: Path = None,
+        stdout_path: Path = None, stderr_path: Path = None,
+        resources: ResourceSpec = None,
+        attributes: JobAttributes = None)
+```
+
+A constructor for `JobSpec` which allows properties to be initialized
+through keyword arguments.
+
+</div>
+
+
+#### Methods
 
 <a name="jobspec-setname"></a>
 ```java
@@ -659,10 +754,10 @@ arguments to the list by invoking `setArguments()` with a mutable list,
 then invoking `getArguments().add()`.
 
 
-<a name="jobspec-setoverrideenvironment"></a>
+<a name="jobspec-setinheritenvironment"></a>
 ```java
-void setOverrideEnvironment(boolean clearEnvironment)
-boolean getOverrideEnvironment()
+void setInheritEnvironment(boolean inheritEnvironment)
+boolean getInheritEnvironment()
 ```
 
 If this flag is set to `false`, the job starts with an empty environment.
@@ -705,6 +800,63 @@ Path? getStderrPath()
 
 Set/get the paths to the standard stream files.
 
+<a name="jobspec-setprelaunch"></a>
+<a name="jobspec-setpostlaunch"></a>
+```java
+void setPreLaunch(Path script)
+Path? getPreLaunch()
+void setPostLaunch(Path script)
+Path? getPostLaunch()
+```
+
+Set/get the paths to the pre/post launch scripts.
+
+The `PreLaunch` script is sourced by the main process of the job before it uses
+the parallel launcher to execute the `executable`.  This script is intended for
+setting up the environment via external systems like `lmod` and `virtualenv` as
+well as for performing actions that should only be done once at the start of a
+job (e.g., creating a results directory).
+
+<div class="note impl">
+
+"Sourcing" the script means to execute the commands contained in the `PreLaunch`
+script within the current environment.  This is equivalent to the `dot` command
+as defined by POSIX.2. Any environment variables set or changed by the
+`PreLaunch` script SHALL be made available to the launcher. The parallel
+launcher should be configured to forward the environment from the calling
+process to ensure that environment variables set by `PreLaunch` are propagated
+to the rest of the job.
+
+</div>
+
+<div class="note user">
+
+Since the `PreLaunch` script is sourced before the parallel launch, it is only
+sourced by a single process. This process may be running on the login node or
+on a batch node, depending on the system and J/PSI implementation. In the case
+where code needs to run on every node or rank of a parallel job, it is
+advisable to instead use a wrapper script around the `executable`.
+
+Some environment changes can cause parallel launchers to malfunction.  For
+example, loading a module that changes the interpreter for python or lua. In
+this case, `PreLaunch` may cause parallel launcher failures and accomplishing
+these environmental changes would be better done with a wrapper script around
+the `executable`.
+
+</div>
+
+
+The `PostLaunch` script is sourced by the process of the job that sourced the
+`PreLaunch` script. An explicit synchronization SHALL occur so that `PostLaunch`
+is sourced only after the exit of the `executable` on every rank of the job.
+The `PostLaunch` script may fail to run if the job walltime expires or if a
+single rank process hangs.
+
+<div class="note user">
+
+The `PreLaunch` and `PostLaunch` scripts SHALL be POSIX-compliant shell scripts.
+
+</div>
 
 <a name="jobspec-setresources"></a>
 ```java
@@ -738,12 +890,18 @@ The `JobStatus` class contains details about job transitions to new
 states. Specifically, it contains the new state, a timestamp at which the
 transition occurred, as well as optional metadata about the new state.
 
-<span class="imp-note">
+<div class="imp-note">
+
 Implementations should, if possible, use timestamps provided by the
 underlying job execution mechanism and, if such timestamps are not
 available, provide timestamps that are as close as possible to the time
 when the actual transition occurred.
-</span>
+
+</div>
+
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
 
 #### Methods
 
@@ -755,13 +913,15 @@ JobState getState()
 
 Return the state of the job.
 
+
 <a name="jobstatus-gettime"></a>
 ```java
 Timestamp getTime()
 ```
-Returns the time at which the job has entered this state. The `Timestamp` class
-is expected to be provided by the standard library of the language in
-which the library is implemented. If such a class is not provided,
+
+Returns the time at which the job has entered this state. The `Timestamp`
+class is expected to be provided by the standard library of the language
+in which the library is implemented. If such a class is not provided,
 implementations have the discretion of implementing a relevant
 `Timestamp` class.
 
@@ -813,6 +973,10 @@ A convenience wrapper for
 An enumeration holding the possible job states, which are: `NEW`,
 `QUEUED`, `ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
+#### Constructors
+
+This class represents an enumeration and has no public constructors.
+
 #### Methods
 
 <a name="jobstate-isgreaterthan"></a>
@@ -828,7 +992,7 @@ transitive.  The order is:
   - `ACTIVE    > QUEUED`
   - `COMPLETED > ACTIVE`
   - `FAILED    > ACTIVE`
-  - `CANCELLED > ACTIVE`
+  - `CANCELED > ACTIVE`
 
 The relevance of the partial ordering is that the system guarantees that
 no transition that would violate this ordering can occur. For example, no
@@ -852,6 +1016,10 @@ reached. The final states are `COMPLETED`, `FAILED`, and `CANCELED`.
 ### JobStatusCallback
 
 An interface used to listen to job status change events.
+
+#### Constructors
+
+This is an interface/abstract class and has no specified public constructors.
 
 #### Methods
 
@@ -878,14 +1046,12 @@ used for lengthy processing.
 An exception describing a problem with the information contained in a
 [`Job`](#job) object.
 
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
+
 #### Methods
 
-<a name="invalidjobexception-getdetail"></a>
-```java
-FaultDetail getDetail()
-```
-
-Returns the details about the failure.
 
 <a name="invalidjobexception-getmessage"></a>
 ```java
@@ -907,12 +1073,82 @@ debugging purposes, but which should not, in general, be presented to an
 end-user.
 
 
-<a name="invalidjobexception-getjob"></a>
+
+### SubmitException
+
+This exception is thrown when the
+[`JobExecutor.submit()`](#jobexecutor-submit) call fails for a reason
+that is independent of the job that is being submitted.
+
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
+
+#### Methods
+
+<a name="submitexception-getmessage"></a>
 ```java
-Job getJob()
+String getMessage()
 ```
 
-Returns the [`Job`](#job) associated with this exception.
+Retrieves the message associated with this exception. This should be a
+descriptive message that is sufficiently clear to be presented to an
+end-user.
+
+
+<a name="submitexception-getexception"></a>
+```java
+Exception? getException()
+```
+
+Returns an optional underlying exception that can potentially be used for
+debugging purposes, but which should not, in general, be presented to an
+end-user.
+
+
+<a name="submitexception-istransient"></a>
+```java
+boolean isTransient()
+```
+
+Returns `true` if the underlying condition that triggered this exception
+is transient. Jobs that cannot be submitted due to a transient
+exceptional condition have chance of being successfully re-submitted at a
+later time, which is a suggestion to client code that it could re-attempt
+the operation that triggered this exception. However, the exact chances
+of success depend on many factors and are not guaranteed in any
+particular case. For example, a DNS resolution failure while attempting
+to connect to a remote service is a transient error since it can be
+reasonably assumed that DNS resolution is a persistent feature of an
+Internet-connected network. By contrast, an authentication failure due to
+an invalid username/password combination would not be a transient
+failure. While it may be possible for a temporary defect in a service to
+cause such a failure, under normal operating conditions such an error
+would persist across subsequent re-tries until correct credentials are
+used.
+
+
+
+### UnreachableStateException
+
+This exception is thrown when the [`Job.wait`](#job-wait) method is
+called with a set of states that cannot be reached by the job when the
+call is made.
+
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
+
+#### Methods
+
+<a name="unreachablestateexception-getStatus"></a>
+```java
+String getStatus()
+```
+
+Returns the job status that has caused an implementation to determine
+that the desired states passed to the [`Job.wait`](#job-wait) method
+cannot be reached.
 
 
 
@@ -923,6 +1159,10 @@ The `ResourceSpec` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
 [`ResourceSpec`](#resourcespecv1).
 
+#### Constructors
+
+This is an abstract class without a specified public constructor.
+
 #### Methods
 
 ```java
@@ -930,13 +1170,42 @@ int getVersion()
 ```
 
 Returns the version of the class implementing the resource specification.
-For example, `ResourceSpec.getVersion()` would return `1`.
+For example, `ResourceSpecV1.getVersion()` would return `1`.
 
 
-### ResourceSpec
+### ResourceSpecV1
 
 This class represents the simplest resource specification available. It
 assumes that jobs and resources are homogeneous.
+
+#### Constructors
+
+<a name="resourcespecv1-_void"></a>
+<a name="resourcespecv1-"></a>
+```java
+ResourceSpecV1()
+```
+
+Constructs an empty `ResourceSpecV1` object.
+
+<div class="lang-bindings">
+
+__Python__:
+
+In Python, the default constructor is replaced with the following constructor:
+
+<a name="resourcespecv1-_**"></a>
+```python
+ResourceSpecV1(node_count: int = 1, exclusive_node_use: boolean = False,
+               process_count: int = 1, processes_per_node: int = 1,
+               cpu_cores_per_process: int = 1, gpu_cores_per_process: int = 0)
+```
+
+A constructor for `ResourceSpecV1` which allows properties to be
+initialized through keyword arguments.
+
+</div>
+
 
 #### Methods
 
@@ -1014,6 +1283,16 @@ signifies to the LRM that GPU nodes are being requested.
 
 A class containing ancillary job information that describes how a job is to be
 run.
+
+#### Constructors
+
+<a name="jobattributes-"></a>
+<a name="jobattributes-_void"></a>
+```java
+JobAttributes()
+```
+
+Constructs an empty `JobAttributes` object.
 
 #### Methods
 
@@ -1131,21 +1410,26 @@ nearest integer value.
 Represents a time unit and must have at least the following units:
 `SECOND`, `MINUTE`, `HOUR`.
 
+### Path
+
+A class that allows users to specify a filesystem path in various formats.
+Implementations are encouraged to use standard library classes if available
+instead of re-implementing a custom `Path` class. If standard library classes
+are not available to represent filesystem paths, then the `String` class MAY
+be used instead.
 
 ## Appendices
 
-### Appendix A - Job Specification V1 Serialization Format
+### Appendix A - Job Specification Serialization Format
 
 A domain specific language based on YAML is defined to express the
-resource requirements and other attributes of one or more programs
-submitted for execution. This describes the version 1 of the job
-specification, which represents a request to run exactly one program.
-This version is based heavily on [Flux's Jobspec
+resource requirements and other attributes of one program
+submitted for execution. This version is based heavily on [Flux's Jobspec
 V1](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_25.html),
 which is itself a simplified version of the [canonical Flux jobspec
 format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_14.html).
 
-A jobspec V1 YAML document SHALL consist of a dictionary defining the
+A J/PSI jobspec YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
 Each of the listed job specification keys SHALL meet the form and requirements
@@ -1153,16 +1437,17 @@ listed in detail in the sections below.
 
 #### Resources
 
-The value of the resources key SHALL be a strict list which MUST define
-either node or slot as the first and only resource. Each list element
-SHALL represent a **resource vertex** (described below).
+The `resources` key of the J/PSI jobspec contains the data from the
+`ResourceSpec` class.  The value of the resources key SHALL be a strict list
+which MUST define either node or slot as the first and only resource. Each list
+element SHALL represent a **resource vertex** (described below).
 
 A resource vertex SHALL contain only the following keys:
 
 **type**
 
 The `type` key for a resource SHALL indicate the type of resource to be
-matched. In V1, only four resource types are valid: `[node, slot, core,
+matched. Only four resource types are valid: `[node, slot, core,
 and gpu]`. `slot` types are described in the **Reserved Resource Types**
 section below.
 
@@ -1204,18 +1489,18 @@ A task slot SHALL have at least one edge specified using `with`:, and the
 resources associated with a slot SHALL be exclusively allocated to the
 program described in the job specification.
 
-##### V1-Specific Resource Graph Restrictions
+##### Resource Graph Restrictions
 
-In V1, the `resources` list MUST contain exactly one element, which MUST
+The `resources` list MUST contain exactly one element, which MUST
 be either `node` or `slot`. Additionally, the resource graph MUST contain
 the `core` type.
 
-In V1, there are also restrictions on which resources can have `out`
+There are also restrictions on which resources can have `out`
 edges to other resources. Specifically, a `node` can have an out edge to
 a `slot`, and a `slot` can have an out edge to a `core`. If a `slot` has
 an out edge to a `core`, it can also, optionally, have an out edge to a
 `gpu` as well. Therefore, the complete enumeration of valid resource
-graphs in V1 is:
+graphs is:
 
 - slot>core
 
@@ -1228,8 +1513,10 @@ graphs in V1 is:
 
 #### Tasks
 
-The value of the `tasks` key SHALL be a strict list which MUST define
-exactly one task. The list element SHALL be a dictionary representing a
+The `task` key contains the `executable` and `arguments` values from the
+`Jobspec` class and the `processCount` and `processesPerNode` values from the
+`ResourceSpec`.  The value of the `tasks` key SHALL be a strict list which MUST
+define exactly one task. The list element SHALL be a dictionary representing a
 task to run as part of the program. A task descriptor SHALL contain the
 following keys:
 
@@ -1267,9 +1554,12 @@ site-specific extensions.
 
 #### Attributes
 
-The value of the `attributes` key SHALL be a dictionary of dictionaries.
-The `attributes` dictionary MAY contain one or both of the following keys
-which, if present, must have values. Values MAY have any valid YAML type.
+The `attributes` key of the J/PSI jobpsec contains the data from the
+`JobAttributes` class and the data from the `JobSpec` class not already covered
+by the `tasks` key.  The value of the `attributes` key SHALL be a dictionary of
+dictionaries.  The `attributes` dictionary MAY contain one or both of the
+following keys which, if present, must have values. Values MAY have any valid
+YAML type.
 
 
 **user**
@@ -1289,7 +1579,7 @@ configured differently and recognize different sets of attributes.
 Most system attributes are optional. Schedulers SHALL provide reasonable
 defaults for any system attributes that they recognize when at all
 possible. Most system attributes are optional, but the duration attribute
-is required in job specification V1.
+is required.
 
 Some common system attributes are:
 
@@ -1331,6 +1621,11 @@ use:
     The name key contains the name of the job. The default name of a job
     is the first argument of the command run by the user, or it can be
     set by the user to an arbitrary value.
+
+#### Version
+
+The version key SHALL contain the value 1.  Larger versions are reserved for any
+potential expansions of or changes to the J/PSI jobspec.
 
 ### Appendix B - Synchronous vs. Asynchronous API
 
@@ -1563,7 +1858,7 @@ optimize the throughput of connections to particular services.
 
 
 
-### Appendix C - examples
+### Appendix C - Examples
 
 This Appendix contains some examples of how the API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, which
@@ -1594,7 +1889,7 @@ for i in range(N):
     jex.submit(job)
 
 for i in range(N):
-    jobs[i].wait_for()
+    jobs[i].wait()
 ```
 
 
@@ -1613,22 +1908,22 @@ class ThrottledSubmitter:
         self.jex = jpsi.JobExecutorFactory.get_instance('torque', '>= 0.2')
         # keep track of completed jobs so that we can submit the rest
         self.jex.set_status_callback(self.callback)
-        self.crt = 0
+        self.count = 0
 
     def make_job(self):
         ...
 
     def submit_next():
-        if self.crt < N:
-            jex.submit(self.jobs[self.crt])
-            self.crt += 1
+        if self.count < N:
+            jex.submit(self.jobs[self.count])
+            self.count += 1
 
     def start(self)
         # create list of jobs
         self.jobs = [self.make_job() for i in range(N)]
 
         # submit initial M jobs
-        while self.crt < M:
+        while self.count < M:
             submit_next()
 
     def callback(self, job, status):
@@ -1641,9 +1936,205 @@ ThrottleSubmitter().start()
 ```
 
 
+#### Submit a malformed or unsatisfiable job
+
+Use the exception types to distinguish between re-triable or not
+
+```python
+import jpsi
+
+jex = jpsi.JobExector()
+job_1 = jpsi.Job()
+job_2 = jpsi.Job()
+
+spec_1 = jpsi.JobSpec()
+spec_2 = jpsi.JobSpec()
+
+spec_1.executable = '/bin/true'
+spec_2.executable = True   # type error
+
+job_1.specification = spec_1
+job_2.specification = spec_2
+
+try:
+    jex.submit(job_1)
+except jpsi.InvalidJobException:
+    # this should not happen
+    assert(False)
+except jpsi.SubmitException:
+    # this *can* happen, dependent on backend state and policies
+    print('could not submit job - try again later')
+
+try:
+    jex.submit(job_2)
+except jpsi.InvalidJobException as e:
+    print('submission failed: %s' % e)
+else:
+    assert(False)  # the above should have raised an `InvalidJobException`
+
+job_1.wait()
+```
+
+#### Submit a job, wait for queued event, cancel then, and then wait for the final event
+
+```python
+import jpsi
+
+def make_job():
+    job = jpsi.Job()
+    spec = jpsi.JobSpec()
+    spec.executable = '/bin/sleep'
+    spec.arguments = ['10']
+    job.specification = spec
+    return job
+
+jex = jpsi.JobExectorFactory.get_instance('slurm')
+
+job = make_job()
+jex.submit(job)
+job.wait(JobState.QUEUED)
+job.cancel()
+job.wait()
+```
+
+
+#### Run a job with P total processes where each process gets C cpus and G gpus
+
+```python
+import jpsi
+
+res_spec = jpsi.ResourceSpec()
+res_spec.process_count     = 10
+res_spec.cores_per_process = 4
+res_spec.gpus_per_process  = 1
+
+job_spec = jpsi.JobSpec()
+job_spec.executable = 'echo'
+job_spec.arguments  = ['foo', 'bar', 'buz']
+job_spec.directory  = '/tmp/'
+job_spec.stdin      = '/dev/null'
+job_spec.stdout     = 'work.out'
+job_spec.stderr     = 'work.err'
+job_spec.resources' = res_spec
+
+job = jpsi.Job()
+job.specification = spec
+
+jex = jpsi.JobExector()
+jex.submit(job)
+job.wait()
+```
+
+
+#### N exclusive nodes, each with P processes
+
+This example will place a job across 5 nodes with 2 ranks per node.
+The remaining cores of the node will remain idle as the job requests
+exclusive access to the nodes.
+
+```python
+import jpsi
+
+res_spec = jpsi.ResourceSpec()
+res_spec.exclusive_nodes = true
+res_spec.process_count = 10
+res_spec.processes__per_node = 2
+
+job_spec = jpsi.JobSpec()
+job_spec.executable = 'workload.py'
+job_spec.arguments  = ['foo', 'bar', 'buz']
+job_spec.resources  = res_spec
+
+job = jpsi.Job()
+job.specification = spec
+
+jex = jpsi.JobExector()
+jex.submit(job)
+job.wait()
+```
+
+
+
+#### Construct a job that uses all the various “knobs” of the resource and job specifications
+
+```python
+import jpsi
+
+res_spec = jpsi.ResourceSpec()
+res_spec.exclusive_nodes     = false  # other jobs can run on the job's nodes
+res_spec.process_count       = 10     # run a total of 10 ranks
+res_spec.processes__per_node = 3      # place 3 ranks per node
+res_spec.cores_per_process   = 4      # each rank obtains 4 cores
+res_spec.gpus_per_process    = 2      # … and 2 GPUs
+
+job_spec = jpsi.JobSpec()
+job_spec.name       : 'jpsi_example'         # common name to identify job
+job_spec.workdir    : '/tmp/foo'             # dir to create for the job
+job_spec.executable : 'workload.py'          # executable or script to run
+job_spec.arguments  : ['foo', 'bar', 'buz']  # arguments to pass
+job_spec.resources  : res_spec               # resources to allocate (see above)
+
+
+# we use the default environment - but also set some
+# additional environment variables
+job_spec.override_environment: False
+job_spec.environment: {'FOO': 'foo',
+                       'BAR': 'bar'}
+
+job = jpsi.Job()
+job.specification = spec
+job.duration      = 1000          # expected job runtime in seconds
+job.queue         = 'debug'       # batch queue to submit to
+job.project       = 'jpsi_devel'  # project allocation to use
+job.reservation   = 'R123_456'    # reservation ID to use
+
+jex = jpsi.JobExector()
+jex.submit(job)
+job.wait()
+```
+
+#### Submit a job, check for transient error, retry if one occurred
+
+```python
+import time
+import math
+import random
+
+import jpsi
+
+def make_job():
+    job = jpsi.Job()
+    spec = jpsi.JobSpec()
+    spec.executable = '/bin/sleep'
+    spec.arguments = ['10']
+    job.specification = spec
+    return job
+
+def submit_with_exponential_backoff(jex, job):
+    times_attempted = 0
+    while(True):
+        try:
+            jex.submit(job)
+        except jpsi.SubmitException as se:
+            if not se.isTransient():
+                raise # re-raise to let caller see and handle it
+            times_attempted += 1
+            # https://en.wikipedia.org/wiki/Exponential_backoff
+            time.sleep(random.randint(0, math.pow(2, times_attempted) - 1))
+        else:
+            break
+
+jex = jpsi.JobExectorFactory.get_instance('slurm')
+job = make_job()
+submit_with_exponential_backoff(jex, job)
+job.wait()
+```
+
+
 ### Appendix D - Naming
 
 The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
 "Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
+
