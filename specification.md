@@ -951,9 +951,9 @@ If the job has exited, returns the exit code, otherwise `null`.
 Map<String, Any>? getContext()
 ```
 
-Returns additional, backend specific meta data associated with this status, if
+Returns additional, backend specific metadata associated with this status, if
 any.  Those metadata may include details on the state transition, backend
-native job IDs, or other, non-standardized pieces of information.  An
+native job IDs, or other non-standardized pieces of information.  An
 implementation MAY specify a subset of information expected to be included in
 the returned map.
 
@@ -2137,4 +2137,3 @@ The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
 "Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
-
