@@ -484,12 +484,12 @@ authorization.
 
 <a name="jobexecutor-attach"></a>
 ```java
-Job attach(Job job, String nativeJobID)
+void attach(Job job, String nativeJobID)
 ```
 
 This method will accept a job instance in `NEW` state and a native job ID.  The
 executor will attach the Job instance to the backend job identified by that
-native (backend) job ID.  The method will return immediately, the `JobExecutor`
+native (backend) job ID.  The method will return immediately and the `JobExecutor`
 will collect job state and meta data asynchronously.  A callback registered on
 the Job MUST NOT fire before the implementation completed the attachement -- at
 that point the job will have a valid `JobStatus`.  If the
@@ -497,9 +497,10 @@ implementation is not able to attach the job (because it cannot verify
 the job ID, or the job information has been purged, etc), the job will
 be moved into `FAILED` state.
 
-The method will raise an [`InvalidJobException`](#invalidjobexception)
+The method MUST raise an [`InvalidJobException`](#invalidjobexception)
 if the passed job is not in `NEW` state.  Any job status, resource spec
-etc. which are set on the passed `Job` instance will be discarded.
+etc. which are set on the passed `Job` instance MUST be discarded by the
+implementation.
 
 
 ### Job
@@ -594,9 +595,8 @@ String getId()
 Returns this job's ID. The ID is assigned automatically by the
 implementation when the Job object is constructed. The ID is guaranteed
 to be unique on the client machine. The ID does not have to match the ID
-of the underlying LRM job, but is used to identify `Job` instances as
-seen by a client application.  The ID can be used to later re-attach to the
-job with `Job j = executor.attach(native_job_id)`.
+of the underlying LRM job, but is used to identify `Job` object instances as
+seen by a client application.  
 
 
 <a name="job-getnativeid"></a>
@@ -608,7 +608,7 @@ Returns this job's native ID as assigned by the underlying LRM.  The ID will
 only be available once the job has entered the `QUEUED` state - the returned
 value will be `null` otherwise.  The returned ID can be used to communicate
 with the LRM out-of-band, and also to later re-attach to the job with
-`Job j = executor.attach(native_job_id)`.
+[`JobExecutor.attach()`](#jobexecutor-attach).
 
 
 <a name="job-setspec"></a>
