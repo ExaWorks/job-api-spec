@@ -87,6 +87,7 @@
 ## STATUS: EARLY DRAFT
 
 
+
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
@@ -102,11 +103,6 @@ Traditionally, job management is implemented on supercomputers by Local
 Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
-
-Job management is sometimes also provided by execution managers, with
-capabilities similar to LRMs but operating in user space, on a limited
-subset of resources such as within a job's allocation.  This job
-management API aims to also transparently abstract such execution managers.
 
 
 ### A Note About Code Samples
@@ -166,7 +162,7 @@ using either a remote or local job management library; application jobs
 are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
-as well as those used to run the application and remote job management
+as well as those used to run the application l and remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
@@ -278,7 +274,7 @@ customary in the language in which the library is implemented
 
 #### Interaction with LRMs and Scalability
 
-Implementations should use bulk status operations when interacting with
+Implementations must use bulk status operations when interacting with
 LRMs. Regularly invoking, for example, qstat for each job in a set of
 many jobs can quickly overwhelm a LRM. The solution is to subscribe to
 asynchronous notifications from the LRM, if supported, or instead use bulk
@@ -426,7 +422,7 @@ status notifications about the job will be fired.
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`:
+- `SubmitException`: 
 	Thrown if the request cannot be sent to the underlying
     implementation. Unlike `InvalidJobException`, this exception can
 	occur for reasons that are transient.
@@ -1020,16 +1016,12 @@ int? getExitCode()
 If the job has exited, returns the exit code, otherwise `null`.
 
 
-<a name="jobstatus-getcontext"></a>
+<a name="jobstatus-getmessage"></a>
 ```java
-Map<String, Any>? getContext()
+String? getMessage()
 ```
 
-Returns additional, backend specific metadata associated with this status, if
-any.  Those metadata may include details on the state transition, backend
-native job IDs, or other non-standardized pieces of information.  An
-implementation MAY specify a subset of information expected to be included in
-the returned map.
+Returns the message associated with this status, if any.
 
 
 <a name="jobstatus-isfinal"></a>
@@ -2211,3 +2203,4 @@ The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
 "Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
+
