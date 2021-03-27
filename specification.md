@@ -454,6 +454,55 @@ to `null`.
 
 
 
+<a name="jobexecutor-list"></a>
+```java
+List<String> list()
+```
+
+Return a list of native job IDs which are known to this executor instance.  
+The returned list MAY contain IDs of jobs which were not submitted via this
+instance, and MAY be missing IDs of jobs which have been submitted by this
+instance but are finalized and purged already.  The returned job IDs MUST be
+uniquely identify job in the scope of the `JobExecutor` instance and thus in the
+scope of the backend that `JobExecutor` is bound to, but should not be assumed
+to be unique beyond that scope.
+
+IDs for any job which has been submitted via this instance and which is not yet
+in a final state MUST be returned.  Information for jobs in final state may get
+purged by the backend, and the implementation MAY purge that information also.
+The native IDs for those jobs thus MAY NOT be returned by this call, even if the
+application still holds handles to those jobs (and could thus retrieve the
+native job ID directly).
+
+
+The returned IDs can be used to re-attach a `Job` instance to the backend job
+via the `executor.attach(job, nativeJobID)` call.  This implies that the call
+SHALL only return those IDs to which the callee can attach under currently used
+authorization.
+
+
+
+<a name="jobexecutor-attach"></a>
+```java
+void attach(Job job, String nativeJobID)
+```
+
+This method will accept a job instance in `NEW` state and a native job ID.  The
+executor will attach the Job instance to the backend job identified by that
+native (backend) job ID.  The method will return immediately and the `JobExecutor`
+will collect job state and meta data asynchronously.  A callback registered on
+the Job MUST NOT fire before the implementation completed the attachement -- at
+that point the job will have a valid `JobStatus`.  If the
+implementation is not able to attach the job (because it cannot verify
+the job ID, or the job information has been purged, etc), the job will
+be moved into `FAILED` state.
+
+The method MUST raise an [`InvalidJobException`](#invalidjobexception)
+if the passed job is not in `NEW` state.  Any job status, resource spec
+etc. which are set on the passed `Job` instance MUST be discarded by the
+implementation.
+
+
 ### Job
 
 The `Job` class encapsulates all of the information needed to run a job
@@ -546,8 +595,20 @@ String getId()
 Returns this job's ID. The ID is assigned automatically by the
 implementation when the Job object is constructed. The ID is guaranteed
 to be unique on the client machine. The ID does not have to match the ID
-of the underlying LRM job, but is used to identify `Job` instances as
-seen by a client application.
+of the underlying LRM job, but is used to identify `Job` object instances as
+seen by a client application.  
+
+
+<a name="job-getnativeid"></a>
+```java
+String? getNativeId()
+```
+
+Returns this job's native ID as assigned by the underlying LRM.  The ID will
+only be available once the job has entered the `QUEUED` state - the returned
+value will be `null` otherwise.  The returned ID can be used to communicate
+with the LRM out-of-band, and also to later re-attach to the job with
+[`JobExecutor.attach()`](#jobexecutor-attach).
 
 
 <a name="job-setspec"></a>
