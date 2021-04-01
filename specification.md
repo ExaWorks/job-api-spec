@@ -2053,7 +2053,7 @@ jex = jpsi.JobExecutor.get_instance('slurm')
 
 job = make_job()
 jex.submit(job)
-job.wait(jpsi.JobState.QUEUED)
+job.wait([jpsi.JobState.QUEUED])
 job.cancel()
 job.wait()
 ```
