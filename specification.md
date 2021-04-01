@@ -331,14 +331,14 @@ pattern, or any other reasonable mechanism. For example:
     __Java__:
 
 	```java
-    JobExecutor executor = JobExecutorFactory.getInstance("PBS");
+    JobExecutor executor = JobExecutor.getInstance("PBS");
 	Job job = ...
 	executor.submit(job);
 	```
     __Python__:
 
     ```python
-    executor = JobExecutorFactory.get_instance("PBS")
+    executor = JobExecutor.get_instance("PBS")
 	Job job = ...
 	executor.submit(job)
 	```
@@ -1933,14 +1933,14 @@ complete.
 ```python
 import jpsi
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 
 def make_job():
     job = jpsi.Job()
     spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
-    job.specification = spec
+    job.spec = spec
     return job
 
 jobs = []
@@ -1966,9 +1966,9 @@ import jpsi
 
 class ThrottledSubmitter:
     def __init__(self):
-        self.jex = jpsi.JobExecutorFactory.get_instance('torque', '>= 0.2')
+        self.jex = jpsi.JobExecutor.get_instance('torque', '>= 0.2')
         # keep track of completed jobs so that we can submit the rest
-        self.jex.set_status_callback(self.callback)
+        self.jex.set_job_status_callback(self.callback)
         self.count = 0
 
     def make_job(self):
@@ -1976,7 +1976,7 @@ class ThrottledSubmitter:
 
     def submit_next():
         if self.count < N:
-            jex.submit(self.jobs[self.count])
+            self.jex.submit(self.jobs[self.count])
             self.count += 1
 
     def start(self)
@@ -1985,7 +1985,7 @@ class ThrottledSubmitter:
 
         # submit initial M jobs
         while self.count < M:
-            submit_next()
+            self.submit_next()
 
     def callback(self, job, status):
         if status.final:
@@ -2004,7 +2004,7 @@ Use the exception types to distinguish between re-triable or not
 ```python
 import jpsi
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 job_1 = jpsi.Job()
 job_2 = jpsi.Job()
 
@@ -2014,8 +2014,8 @@ spec_2 = jpsi.JobSpec()
 spec_1.executable = '/bin/true'
 spec_2.executable = True   # type error
 
-job_1.specification = spec_1
-job_2.specification = spec_2
+job_1.spec = spec_1
+job_2.spec = spec_2
 
 try:
     jex.submit(job_1)
@@ -2046,14 +2046,14 @@ def make_job():
     spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
-    job.specification = spec
+    job.spec = spec
     return job
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 
 job = make_job()
 jex.submit(job)
-job.wait(JobState.QUEUED)
+job.wait([jpsi.JobState.QUEUED])
 job.cancel()
 job.wait()
 ```
@@ -2079,9 +2079,9 @@ job_spec.stderr     = 'work.err'
 job_spec.resources' = res_spec
 
 job = jpsi.Job()
-job.specification = spec
+job.spec = spec
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2107,9 +2107,9 @@ job_spec.arguments  = ['foo', 'bar', 'buz']
 job_spec.resources  = res_spec
 
 job = jpsi.Job()
-job.specification = spec
+job.spec = spec
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2143,13 +2143,13 @@ job_spec.environment: {'FOO': 'foo',
                        'BAR': 'bar'}
 
 job = jpsi.Job()
-job.specification = spec
+job.spec = spec
 job.duration      = 1000          # expected job runtime in seconds
 job.queue         = 'debug'       # batch queue to submit to
 job.project       = 'jpsi_devel'  # project allocation to use
 job.reservation   = 'R123_456'    # reservation ID to use
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2168,7 +2168,7 @@ def make_job():
     spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
-    job.specification = spec
+    job.spec = spec
     return job
 
 def submit_with_exponential_backoff(jex, job):
@@ -2185,7 +2185,7 @@ def submit_with_exponential_backoff(jex, job):
         else:
             break
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 job = make_job()
 submit_with_exponential_backoff(jex, job)
 job.wait()
