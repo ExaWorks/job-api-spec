@@ -331,14 +331,14 @@ pattern, or any other reasonable mechanism. For example:
     __Java__:
 
 	```java
-    JobExecutor executor = JobExecutorFactory.getInstance("PBS");
+    JobExecutor executor = JobExecutor.getInstance("PBS");
 	Job job = ...
 	executor.submit(job);
 	```
     __Python__:
 
     ```python
-    executor = JobExecutorFactory.get_instance("PBS")
+    executor = JobExecutor.get_instance("PBS")
 	Job job = ...
 	executor.submit(job)
 	```
@@ -1933,7 +1933,7 @@ complete.
 ```python
 import jpsi
 
-jex = jpsi.JobExector.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 
 def make_job():
     job = jpsi.Job()
@@ -2004,7 +2004,7 @@ Use the exception types to distinguish between re-triable or not
 ```python
 import jpsi
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 job_1 = jpsi.Job()
 job_2 = jpsi.Job()
 
@@ -2049,7 +2049,7 @@ def make_job():
     job.spec = spec
     return job
 
-jex = jpsi.JobExector.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 
 job = make_job()
 jex.submit(job)
@@ -2081,7 +2081,7 @@ job_spec.resources' = res_spec
 job = jpsi.Job()
 job.spec = spec
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2109,7 +2109,7 @@ job_spec.resources  = res_spec
 job = jpsi.Job()
 job.spec = spec
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2149,7 +2149,7 @@ job.queue         = 'debug'       # batch queue to submit to
 job.project       = 'jpsi_devel'  # project allocation to use
 job.reservation   = 'R123_456'    # reservation ID to use
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2185,7 +2185,7 @@ def submit_with_exponential_backoff(jex, job):
         else:
             break
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 job = make_job()
 submit_with_exponential_backoff(jex, job)
 job.wait()
