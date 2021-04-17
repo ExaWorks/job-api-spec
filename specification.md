@@ -329,19 +329,19 @@ or
 
     __Java__:
 
-    ```java
-    JobExecutor executor = JobExecutorFactory.getInstance("PBS");
-    Job job = ...
-    executor.submit(job);
-    ```
+	```java
+    JobExecutor executor = JobExecutor.getInstance("PBS");
+	Job job = ...
+	executor.submit(job);
+	```
 
     __Python__:
 
     ```python
-    executor = JobExecutorFactory.get_instance("PBS")
-    job = ...
-    executor.submit(job)
-    ```
+    executor = JobExecutor.get_instance("PBS")
+	Job job = ...
+	executor.submit(job)
+	```
 </div>
 
 
@@ -467,6 +467,55 @@ to `null`.
 
 
 
+<a name="jobexecutor-list"></a>
+```java
+List<String> list()
+```
+
+Return a list of native job IDs which are known to this executor instance.  
+The returned list MAY contain IDs of jobs which were not submitted via this
+instance, and MAY be missing IDs of jobs which have been submitted by this
+instance but are finalized and purged already.  The returned job IDs MUST be
+uniquely identify job in the scope of the `JobExecutor` instance and thus in the
+scope of the backend that `JobExecutor` is bound to, but should not be assumed
+to be unique beyond that scope.
+
+IDs for any job which has been submitted via this instance and which is not yet
+in a final state MUST be returned.  Information for jobs in final state may get
+purged by the backend, and the implementation MAY purge that information also.
+The native IDs for those jobs thus MAY NOT be returned by this call, even if the
+application still holds handles to those jobs (and could thus retrieve the
+native job ID directly).
+
+
+The returned IDs can be used to re-attach a `Job` instance to the backend job
+via the `executor.attach(job, nativeJobID)` call.  This implies that the call
+SHALL only return those IDs to which the callee can attach under currently used
+authorization.
+
+
+
+<a name="jobexecutor-attach"></a>
+```java
+void attach(Job job, String nativeJobID)
+```
+
+This method will accept a job instance in `NEW` state and a native job ID.  The
+executor will attach the Job instance to the backend job identified by that
+native (backend) job ID.  The method will return immediately and the `JobExecutor`
+will collect job state and meta data asynchronously.  A callback registered on
+the Job MUST NOT fire before the implementation completed the attachement -- at
+that point the job will have a valid `JobStatus`.  If the
+implementation is not able to attach the job (because it cannot verify
+the job ID, or the job information has been purged, etc), the job will
+be moved into `FAILED` state.
+
+The method MUST raise an [`InvalidJobException`](#invalidjobexception)
+if the passed job is not in `NEW` state.  Any job status, resource spec
+etc. which are set on the passed `Job` instance MUST be discarded by the
+implementation.
+
+
 ### Job
 
 The `Job` class encapsulates all of the information needed to run a job
@@ -559,8 +608,20 @@ String getId()
 Returns this job's ID. The ID is assigned automatically by the
 implementation when the Job object is constructed. The ID is guaranteed
 to be unique on the client machine. The ID does not have to match the ID
-of the underlying LRM job, but is used to identify `Job` instances as
-seen by a client application.
+of the underlying LRM job, but is used to identify `Job` object instances as
+seen by a client application.  
+
+
+<a name="job-getnativeid"></a>
+```java
+String? getNativeId()
+```
+
+Returns this job's native ID as assigned by the underlying LRM.  The ID will
+only be available once the job has entered the `QUEUED` state - the returned
+value will be `null` otherwise.  The returned ID can be used to communicate
+with the LRM out-of-band, and also to later re-attach to the job with
+[`JobExecutor.attach()`](#jobexecutor-attach).
 
 
 <a name="job-setspec"></a>
@@ -1885,14 +1946,14 @@ complete.
 ```python
 import jpsi
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 
 def make_job():
     job = jpsi.Job()
     spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
-    job.specification = spec
+    job.spec = spec
     return job
 
 jobs = []
@@ -1918,9 +1979,9 @@ import jpsi
 
 class ThrottledSubmitter:
     def __init__(self):
-        self.jex = jpsi.JobExecutorFactory.get_instance('torque', '>= 0.2')
+        self.jex = jpsi.JobExecutor.get_instance('torque', '>= 0.2')
         # keep track of completed jobs so that we can submit the rest
-        self.jex.set_status_callback(self.callback)
+        self.jex.set_job_status_callback(self.callback)
         self.count = 0
 
     def make_job(self):
@@ -1928,7 +1989,7 @@ class ThrottledSubmitter:
 
     def submit_next():
         if self.count < N:
-            jex.submit(self.jobs[self.count])
+            self.jex.submit(self.jobs[self.count])
             self.count += 1
 
     def start(self)
@@ -1937,7 +1998,7 @@ class ThrottledSubmitter:
 
         # submit initial M jobs
         while self.count < M:
-            submit_next()
+            self.submit_next()
 
     def callback(self, job, status):
         if status.final:
@@ -1956,7 +2017,7 @@ Use the exception types to distinguish between re-triable or not
 ```python
 import jpsi
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 job_1 = jpsi.Job()
 job_2 = jpsi.Job()
 
@@ -1966,8 +2027,8 @@ spec_2 = jpsi.JobSpec()
 spec_1.executable = '/bin/true'
 spec_2.executable = True   # type error
 
-job_1.specification = spec_1
-job_2.specification = spec_2
+job_1.spec = spec_1
+job_2.spec = spec_2
 
 try:
     jex.submit(job_1)
@@ -1998,14 +2059,14 @@ def make_job():
     spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
-    job.specification = spec
+    job.spec = spec
     return job
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 
 job = make_job()
 jex.submit(job)
-job.wait(JobState.QUEUED)
+job.wait([jpsi.JobState.QUEUED])
 job.cancel()
 job.wait()
 ```
@@ -2031,9 +2092,9 @@ job_spec.stderr     = 'work.err'
 job_spec.resources' = res_spec
 
 job = jpsi.Job()
-job.specification = spec
+job.spec = spec
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2059,9 +2120,9 @@ job_spec.arguments  = ['foo', 'bar', 'buz']
 job_spec.resources  = res_spec
 
 job = jpsi.Job()
-job.specification = spec
+job.spec = spec
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2095,13 +2156,13 @@ job_spec.environment: {'FOO': 'foo',
                        'BAR': 'bar'}
 
 job = jpsi.Job()
-job.specification = spec
+job.spec = spec
 job.duration      = 1000          # expected job runtime in seconds
 job.queue         = 'debug'       # batch queue to submit to
 job.project       = 'jpsi_devel'  # project allocation to use
 job.reservation   = 'R123_456'    # reservation ID to use
 
-jex = jpsi.JobExector()
+jex = jpsi.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2120,7 +2181,7 @@ def make_job():
     spec = jpsi.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
-    job.specification = spec
+    job.spec = spec
     return job
 
 def submit_with_exponential_backoff(jex, job):
@@ -2137,7 +2198,7 @@ def submit_with_exponential_backoff(jex, job):
         else:
             break
 
-jex = jpsi.JobExectorFactory.get_instance('slurm')
+jex = jpsi.JobExecutor.get_instance('slurm')
 job = make_job()
 submit_with_exponential_backoff(jex, job)
 job.wait()
