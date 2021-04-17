@@ -12,75 +12,75 @@
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [A Portable Submission Interface for Jobs (J/PSI)](#a-portable-submission-interface-for-jobs-jpsi)
-	- [STATUS: EARLY DRAFT](#status-early-draft)
-	- [Introduction](#introduction)
-		- [A Note About Code Samples](#a-note-about-code-samples)
-	- [Motivation and Design Goals](#motivation-and-design-goals)
-	- [Layers](#layers)
-		- [Layer 0 (local)](#layer-0-local)
-		- [Layer 1 (remote)](#layer-1-remote)
-		- [Layer 2 (nested)](#layer-2-nested)
-	- [The Job API; Layer 0](#the-job-api-layer-0)
-		- [Implementation Notes](#implementation-notes)
-			- [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
-		- [JobExecutor](#jobexecutor)
-			- [Methods](#methods)
-					- [Exceptions:](#exceptions)
-		- [Job](#job)
-			- [State Model](#state-model)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [JobSpec](#jobspec)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [JobStatus](#jobstatus)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [JobState](#jobstate)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [JobStatusCallback](#jobstatuscallback)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [InvalidJobException](#invalidjobexception)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [SubmitException](#submitexception)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [UnreachableStateException](#unreachablestateexception)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [ResourceSpec](#resourcespec)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [ResourceSpec](#resourcespec)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [JobAttributes](#jobattributes)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [TimeInterval](#timeinterval)
-			- [Constructors](#constructors)
-			- [Methods](#methods)
-		- [TimeUnit](#timeunit)
+  - [STATUS: EARLY DRAFT](#status-early-draft)
+  - [Introduction](#introduction)
+    - [A Note About Code Samples](#a-note-about-code-samples)
+  - [Motivation and Design Goals](#motivation-and-design-goals)
+  - [Layers](#layers)
+    - [Layer 0 (local)](#layer-0-local)
+    - [Layer 1 (remote)](#layer-1-remote)
+    - [Layer 2 (nested)](#layer-2-nested)
+  - [The Job API; Layer 0](#the-job-api-layer-0)
+    - [Implementation Notes](#implementation-notes)
+      - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
+    - [JobExecutor](#jobexecutor)
+      - [Methods](#methods)
+          - [Exceptions:](#exceptions)
+    - [Job](#job)
+      - [State Model](#state-model)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [JobSpec](#jobspec)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [JobStatus](#jobstatus)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [JobState](#jobstate)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [JobStatusCallback](#jobstatuscallback)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [InvalidJobException](#invalidjobexception)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [SubmitException](#submitexception)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [UnreachableStateException](#unreachablestateexception)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [ResourceSpec](#resourcespec)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [ResourceSpec](#resourcespec)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [JobAttributes](#jobattributes)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [TimeInterval](#timeinterval)
+      - [Constructors](#constructors)
+      - [Methods](#methods)
+    - [TimeUnit](#timeunit)
         - [Path](#path)
-	- [Appendices](#appendices)
-		- [Appendix A - Job Specification Serialization Format](#appendix-a-job-specification-serialization-format)
-			- [Resources](#resources)
-				- [Reserved Resource Types](#reserved-resource-types)
-				- [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
-			- [Tasks](#tasks)
-			- [Attributes](#attributes)
-		- [Appendix B - Synchronous vs. Asynchronous API](#appendix-b-synchronous-vs-asynchronous-api)
-		- [Appendix C - Bulk Submission](#appendix-c-bulk-submission)
-			- [Threaded Submission](#threaded-submission)
-			- [Asynchronous Networking](#asynchronous-networking)
-			- [Connection Multiplexing](#connection-multiplexing)
-		- [Appendix C - examples](#appendix-c-examples)
-			- [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
-			- [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
-		- [Appendix D - Naming](#appendix-d-naming)
+  - [Appendices](#appendices)
+    - [Appendix A - Job Specification Serialization Format](#appendix-a-job-specification-serialization-format)
+      - [Resources](#resources)
+        - [Reserved Resource Types](#reserved-resource-types)
+        - [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
+      - [Tasks](#tasks)
+      - [Attributes](#attributes)
+    - [Appendix B - Synchronous vs. Asynchronous API](#appendix-b-synchronous-vs-asynchronous-api)
+    - [Appendix C - Bulk Submission](#appendix-c-bulk-submission)
+      - [Threaded Submission](#threaded-submission)
+      - [Asynchronous Networking](#asynchronous-networking)
+      - [Connection Multiplexing](#connection-multiplexing)
+    - [Appendix C - examples](#appendix-c-examples)
+      - [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
+      - [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
+    - [Appendix D - Naming](#appendix-d-naming)
 
 <!-- /TOC -->
 
@@ -306,27 +306,26 @@ subclasses of `JobExecutor` implement the specific mechanisms. The
 subclasses can then be instantiated either directly, using a factory
 pattern, or any other reasonable mechanism. For example:
 
-	<div class="lang-tabs">
+<div class="lang-tabs">
 
     __Java__:
 
-	```java
-	JobExecutor executor = new PBSJobExecutor();
-	Job job = ...
-	executor.submit(job);
-	```
-	__Python__:
+    ```java
+    JobExecutor executor = new PBSJobExecutor();
+    Job job = ...
+    executor.submit(job);
+    ```
 
-	```python
-	executor = PBSJobExecutor()
-	Job job = ...
-	executor.submit(job)
-	```
-	</div>
+    __Python__:
 
-    or
-
-    <div class="lang-tabs">
+    ```python
+    executor = PBSJobExecutor()
+    Job job = ...
+    executor.submit(job)
+    ```
+</div>
+or
+<div class="lang-tabs">
 
     __Java__:
 
@@ -335,6 +334,7 @@ pattern, or any other reasonable mechanism. For example:
 	Job job = ...
 	executor.submit(job);
 	```
+
     __Python__:
 
     ```python
@@ -342,7 +342,7 @@ pattern, or any other reasonable mechanism. For example:
 	Job job = ...
 	executor.submit(job)
 	```
-    </div>
+</div>
 
 
 2. Treat `JobExecutor` as a frontend class, which can possibly be
@@ -350,11 +350,24 @@ instantiated in a way that allows the selection of the particular
 concrete job submission mechanism and manage jobs by directly invoking
 methods of the `JobExecutor` class. For example:
 
+<div class="lang-tabs">
+
+    __Java__:
+
     ```java
-	JobExecutor executor = new JobExecutor("PBS");
-	Job job = ...
-	executor.submit(job);
-	```
+    JobExecutor executor = new JobExecutor("PBS");
+    Job job = ...
+    executor.submit(job);
+    ```
+
+    __Python__:
+
+    ```python
+    executor = JobExecutor("PBS");
+    job = ...
+    executor.submit(job);
+    ```
+</div>
 
 A precise choice is not specified in this document. However, in order to
 promote source-level compatibility between implementations, it may be
@@ -403,19 +416,19 @@ status notifications about the job will be fired.
 
 - `InvalidJobException`:
     Thrown if the job specification cannot be understood. This exception
-	is fatal in that submitting another job with the exact same details
-	will also fail with an `InvalidJobException`. In principle, the
-	underlying implementation / LRM is the entity ultimately responsible
-	for interpreting a specification and reporting any errors associated
-	with it. However, in many cases, this reporting may come after a
-	significant delay. In the interest of failing fast, library
+    is fatal in that submitting another job with the exact same details
+    will also fail with an `InvalidJobException`. In principle, the
+    underlying implementation / LRM is the entity ultimately responsible
+    for interpreting a specification and reporting any errors associated
+    with it. However, in many cases, this reporting may come after a
+    significant delay. In the interest of failing fast, library
     implementations should make an effort of validating specifications
     early and throwing this exception as soon as possible if that
     validation fails.
 
 - `SubmitException`:
 	Thrown if the request cannot be sent to the underlying
-	implementation. Unlike `InvalidJobException`, this exception can
+    implementation. Unlike `InvalidJobException`, this exception can
 	occur for reasons that are transient.
 
 
