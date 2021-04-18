@@ -162,7 +162,7 @@ using either a remote or local job management library; application jobs
 are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
-as well as those used to run the application l and remote job management
+as well as those used to run the application remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
@@ -274,7 +274,7 @@ customary in the language in which the library is implemented
 
 #### Interaction with LRMs and Scalability
 
-Implementations must use bulk status operations when interacting with
+Implementations should use bulk status operations when interacting with
 LRMs. Regularly invoking, for example, qstat for each job in a set of
 many jobs can quickly overwhelm a LRM. The solution is to subscribe to
 asynchronous notifications from the LRM, if supported, or instead use bulk
@@ -422,7 +422,7 @@ status notifications about the job will be fired.
     early and throwing this exception as soon as possible if that
     validation fails.
 
-- `SubmitException`: 
+- `SubmitException`:
 	Thrown if the request cannot be sent to the underlying
     implementation. Unlike `InvalidJobException`, this exception can
 	occur for reasons that are transient.
