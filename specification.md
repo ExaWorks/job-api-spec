@@ -825,7 +825,9 @@ when accessed by the invoked executable. If no previous call to
 `setArguments` was made, `getArguments` will return `null`. The setter
 does not create a copy of the list. Therefore, it is possible to add
 arguments to the list by invoking `setArguments()` with a mutable list,
-then invoking `getArguments().add()`.
+then invoking `getArguments().add()`. The strings in the argument list
+are subject to environment variable expansion, as described in
+[`JobSpecification.setEnvironment`](#jobspecification-setenvironment).
 
 
 <a name="jobspec-setinheritenvironment"></a>
