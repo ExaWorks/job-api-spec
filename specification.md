@@ -104,6 +104,12 @@ Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
+Job management is sometimes also provided by execution managers, with
+capabilities similar to LRMs but operating in user space, on a limited
+subset of resources such as within a job's allocation.  This job
+management API aims to also transparently abstract such execution managers.
+
+
 
 ### A Note About Code Samples
 
@@ -162,7 +168,7 @@ using either a remote or local job management library; application jobs
 are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
 systems/LRMs. The requirements for the APIs used to submit the pilot jobs
-as well as those used to run the application remote job management
+as well as those used to run the application and remote job management
 APIs.
 
 While the three usage scenarios share many similarities, there are subtle
