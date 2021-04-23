@@ -87,6 +87,7 @@
 ## STATUS: EARLY DRAFT
 
 
+
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
@@ -107,6 +108,7 @@ Job management is sometimes also provided by execution managers, with
 capabilities similar to LRMs but operating in user space, on a limited
 subset of resources such as within a job's allocation.  This job
 management API aims to also transparently abstract such execution managers.
+
 
 
 ### A Note About Code Samples
@@ -1022,16 +1024,12 @@ int? getExitCode()
 If the job has exited, returns the exit code, otherwise `null`.
 
 
-<a name="jobstatus-getcontext"></a>
+<a name="jobstatus-getmessage"></a>
 ```java
-Map<String, Any>? getContext()
+String? getMessage()
 ```
 
-Returns additional, backend specific metadata associated with this status, if
-any.  Those metadata may include details on the state transition, backend
-native job IDs, or other non-standardized pieces of information.  An
-implementation MAY specify a subset of information expected to be included in
-the returned map.
+Returns the message associated with this status, if any.
 
 
 <a name="jobstatus-isfinal"></a>
@@ -2213,3 +2211,4 @@ The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
 "Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
+
