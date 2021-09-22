@@ -664,14 +664,29 @@ JobStatus wait(TimeInterval? timeout, JobState targetStates...)
     throws UnreachableStateException
 ```
 
-Waits until the job reaches either of the `targetStates` or until an
-amount of time indicated by the timeout parameter passes. Returns the
-[JobStatus](#jobstatus) object that has one of the desired `targetStates`
-or `null` if the timeout is reached. If none of the states in
-`targetStates` can be reached (such as, for example, because the job has
-entered the `FAILED` state while `targetStates` consists of `COMPLETED`),
-this method throws an
-[`UnreachableStateException`](#unreachablestateexception).
+Waits until the job has reached either of the `targetStates`, any state
+that follows one or more of the `targetStates` but not states that are
+not in `targetStates`, or until an amount of time indicated by the
+timeout parameter passes. For example, `wait(timeout, [JobState.ACTIVE])`
+can return successfully if the job is in a `COMPLETED` state, since the
+job being completed means that it must have gone through the `QUEUED`
+state. On the other hand, if the job is in a `FAILED` state, `wait()`
+cannot return successfully since it is possible for the job to have gone
+directly from a `QUEUED` state to a `FAILED` state without ever beeing
+`ACTIVE`. Using the `wait()` method is, in most cases, race-condition
+prone, since it cannot guarantee that job state changes cannot happen
+immediately after `wait()` is invoked, but before the implementation of
+`wait()` checks for the current job state. If reliable tracking of job
+states is needed, status callbacks should be used instead of `wait()`.
+The `wait()` method returns the [JobStatus](#jobstatus) object that has
+caused `wait()` to complete or `null` if the timeout is reached. If none
+of the states in `targetStates` can be reached (such as, for example,
+because the job has entered the `FAILED` state while `targetStates`
+consists of `COMPLETED`), this method throws an
+[`UnreachableStateException`](#unreachablestateexception). If strict
+behavior is desired (that is, if `wait()` is to only return when one of
+the `targetStates` is reached but no other), the returned status can be
+checked for the relevant state.
 
 <div class="imp-note">
 Implementations are encouraged to throw the `UnreachableStateException`
