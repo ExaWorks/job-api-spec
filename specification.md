@@ -669,7 +669,7 @@ that follows one or more of the `targetStates` but not states that are
 not in `targetStates`, or until an amount of time indicated by the
 timeout parameter passes. For example, `wait(timeout, [JobState.ACTIVE])`
 can return successfully if the job is in a `COMPLETED` state, since the
-job being completed means that it must have gone through the `QUEUED`
+job being completed means that it must have gone through the `ACTIVE`
 state. On the other hand, if the job is in a `FAILED` state, `wait()`
 cannot return successfully since it is possible for the job to have gone
 directly from a `QUEUED` state to a `FAILED` state without ever beeing
