@@ -1948,6 +1948,9 @@ import psij
 
 jex = psij.JobExecutor.get_instance('slurm')
 
+# set number of jobs
+N=1
+
 def make_job():
     job = psij.Job()
     spec = psij.JobSpec()
