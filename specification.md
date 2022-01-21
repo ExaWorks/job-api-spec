@@ -11,7 +11,7 @@
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [A Portable Submission Interface for Jobs (J/PSI)](#a-portable-submission-interface-for-jobs-jpsi)
+- [A Portable Submission Interface for Jobs (J/PSI)](#a-portable-submission-interface-for-jobs-psij)
   - [STATUS: EARLY DRAFT](#status-early-draft)
   - [Introduction](#introduction)
     - [A Note About Code Samples](#a-note-about-code-samples)
@@ -1944,13 +1944,16 @@ This example shows how to submit `N` jobs and synchronously wait for them to
 complete.
 
 ```python
-import jpsi
+import psij
 
-jex = jpsi.JobExecutor.get_instance('slurm')
+jex = psij.JobExecutor.get_instance('slurm')
+
+# set number of jobs
+N=1
 
 def make_job():
-    job = jpsi.Job()
-    spec = jpsi.JobSpec()
+    job = psij.Job()
+    spec = psij.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.spec = spec
@@ -1975,11 +1978,11 @@ the [JobExecutor class](#jobexecutor) to submit more jobs as previously
 submitted jobs complete in order to keep the running number of jobs at `M`.
 
 ```python
-import jpsi
+import psij
 
 class ThrottledSubmitter:
     def __init__(self):
-        self.jex = jpsi.JobExecutor.get_instance('torque', '>= 0.2')
+        self.jex = psij.JobExecutor.get_instance('torque', '>= 0.2')
         # keep track of completed jobs so that we can submit the rest
         self.jex.set_job_status_callback(self.callback)
         self.count = 0
@@ -2015,14 +2018,14 @@ ThrottleSubmitter().start()
 Use the exception types to distinguish between re-triable or not
 
 ```python
-import jpsi
+import psij
 
-jex = jpsi.JobExecutor()
-job_1 = jpsi.Job()
-job_2 = jpsi.Job()
+jex = psij.JobExecutor()
+job_1 = psij.Job()
+job_2 = psij.Job()
 
-spec_1 = jpsi.JobSpec()
-spec_2 = jpsi.JobSpec()
+spec_1 = psij.JobSpec()
+spec_2 = psij.JobSpec()
 
 spec_1.executable = '/bin/true'
 spec_2.executable = True   # type error
@@ -2032,16 +2035,16 @@ job_2.spec = spec_2
 
 try:
     jex.submit(job_1)
-except jpsi.InvalidJobException:
+except psij.InvalidJobException:
     # this should not happen
     assert(False)
-except jpsi.SubmitException:
+except psij.SubmitException:
     # this *can* happen, dependent on backend state and policies
     print('could not submit job - try again later')
 
 try:
     jex.submit(job_2)
-except jpsi.InvalidJobException as e:
+except psij.InvalidJobException as e:
     print('submission failed: %s' % e)
 else:
     assert(False)  # the above should have raised an `InvalidJobException`
@@ -2052,21 +2055,21 @@ job_1.wait()
 #### Submit a job, wait for queued event, cancel then, and then wait for the final event
 
 ```python
-import jpsi
+import psij
 
 def make_job():
-    job = jpsi.Job()
-    spec = jpsi.JobSpec()
+    job = psij.Job()
+    spec = psij.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.spec = spec
     return job
 
-jex = jpsi.JobExecutor.get_instance('slurm')
+jex = psij.JobExecutor.get_instance('slurm')
 
 job = make_job()
 jex.submit(job)
-job.wait([jpsi.JobState.QUEUED])
+job.wait([psij.JobState.QUEUED])
 job.cancel()
 job.wait()
 ```
@@ -2075,14 +2078,14 @@ job.wait()
 #### Run a job with P total processes where each process gets C cpus and G gpus
 
 ```python
-import jpsi
+import psij
 
-res_spec = jpsi.ResourceSpec()
+res_spec = psij.ResourceSpec()
 res_spec.process_count     = 10
 res_spec.cores_per_process = 4
 res_spec.gpus_per_process  = 1
 
-job_spec = jpsi.JobSpec()
+job_spec = psij.JobSpec()
 job_spec.executable = 'echo'
 job_spec.arguments  = ['foo', 'bar', 'buz']
 job_spec.directory  = '/tmp/'
@@ -2091,10 +2094,10 @@ job_spec.stdout     = 'work.out'
 job_spec.stderr     = 'work.err'
 job_spec.resources' = res_spec
 
-job = jpsi.Job()
+job = psij.Job()
 job.spec = spec
 
-jex = jpsi.JobExecutor()
+jex = psij.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2107,22 +2110,22 @@ The remaining cores of the node will remain idle as the job requests
 exclusive access to the nodes.
 
 ```python
-import jpsi
+import psij
 
-res_spec = jpsi.ResourceSpec()
+res_spec = psij.ResourceSpec()
 res_spec.exclusive_nodes = true
 res_spec.process_count = 10
 res_spec.processes__per_node = 2
 
-job_spec = jpsi.JobSpec()
+job_spec = psij.JobSpec()
 job_spec.executable = 'workload.py'
 job_spec.arguments  = ['foo', 'bar', 'buz']
 job_spec.resources  = res_spec
 
-job = jpsi.Job()
+job = psij.Job()
 job.spec = spec
 
-jex = jpsi.JobExecutor()
+jex = psij.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2132,17 +2135,17 @@ job.wait()
 #### Construct a job that uses all the various “knobs” of the resource and job specifications
 
 ```python
-import jpsi
+import psij
 
-res_spec = jpsi.ResourceSpec()
+res_spec = psij.ResourceSpec()
 res_spec.exclusive_nodes     = false  # other jobs can run on the job's nodes
 res_spec.process_count       = 10     # run a total of 10 ranks
 res_spec.processes__per_node = 3      # place 3 ranks per node
 res_spec.cores_per_process   = 4      # each rank obtains 4 cores
 res_spec.gpus_per_process    = 2      # … and 2 GPUs
 
-job_spec = jpsi.JobSpec()
-job_spec.name       : 'jpsi_example'         # common name to identify job
+job_spec = psij.JobSpec()
+job_spec.name       : 'psij_example'         # common name to identify job
 job_spec.workdir    : '/tmp/foo'             # dir to create for the job
 job_spec.executable : 'workload.py'          # executable or script to run
 job_spec.arguments  : ['foo', 'bar', 'buz']  # arguments to pass
@@ -2155,14 +2158,14 @@ job_spec.override_environment: False
 job_spec.environment: {'FOO': 'foo',
                        'BAR': 'bar'}
 
-job = jpsi.Job()
+job = psij.Job()
 job.spec = spec
 job.duration      = 1000          # expected job runtime in seconds
 job.queue         = 'debug'       # batch queue to submit to
-job.project       = 'jpsi_devel'  # project allocation to use
+job.project       = 'psij_devel'  # project allocation to use
 job.reservation   = 'R123_456'    # reservation ID to use
 
-jex = jpsi.JobExecutor()
+jex = psij.JobExecutor()
 jex.submit(job)
 job.wait()
 ```
@@ -2174,11 +2177,11 @@ import time
 import math
 import random
 
-import jpsi
+import psij
 
 def make_job():
-    job = jpsi.Job()
-    spec = jpsi.JobSpec()
+    job = psij.Job()
+    spec = psij.JobSpec()
     spec.executable = '/bin/sleep'
     spec.arguments = ['10']
     job.spec = spec
@@ -2189,7 +2192,7 @@ def submit_with_exponential_backoff(jex, job):
     while(True):
         try:
             jex.submit(job)
-        except jpsi.SubmitException as se:
+        except psij.SubmitException as se:
             if not se.isTransient():
                 raise # re-raise to let caller see and handle it
             times_attempted += 1
@@ -2198,7 +2201,7 @@ def submit_with_exponential_backoff(jex, job):
         else:
             break
 
-jex = jpsi.JobExecutor.get_instance('slurm')
+jex = psij.JobExecutor.get_instance('slurm')
 job = make_job()
 submit_with_exponential_backoff(jex, job)
 job.wait()
