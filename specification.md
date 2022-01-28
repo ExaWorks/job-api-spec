@@ -310,40 +310,40 @@ pattern, or any other reasonable mechanism. For example:
 
 <div class="lang-tabs">
 
-    __Java__:
+__Java__:
 
-    ```java
-    JobExecutor executor = new PBSJobExecutor();
-    Job job = ...
-    executor.submit(job);
-    ```
+```java
+JobExecutor executor = new PBSJobExecutor();
+Job job = ...
+executor.submit(job);
+```
 
-    __Python__:
+__Python__:
 
-    ```python
-    executor = PBSJobExecutor()
-    Job job = ...
-    executor.submit(job)
-    ```
+```python
+executor = PBSJobExecutor()
+Job job = ...
+executor.submit(job)
+```
 </div>
 or
 <div class="lang-tabs">
 
-    __Java__:
+__Java__:
 
-	```java
-    JobExecutor executor = JobExecutor.getInstance("PBS");
-	Job job = ...
-	executor.submit(job);
-	```
+```java
+JobExecutor executor = JobExecutor.getInstance("PBS");
+Job job = ...
+executor.submit(job);
+```
 
-    __Python__:
+__Python__:
 
-    ```python
-    executor = JobExecutor.get_instance("PBS")
-	Job job = ...
-	executor.submit(job)
-	```
+```python
+executor = JobExecutor.get_instance("PBS")
+Job job = ...
+executor.submit(job)
+```
 </div>
 
 
@@ -354,21 +354,21 @@ methods of the `JobExecutor` class. For example:
 
 <div class="lang-tabs">
 
-    __Java__:
+__Java__:
 
-    ```java
-    JobExecutor executor = new JobExecutor("PBS");
-    Job job = ...
-    executor.submit(job);
-    ```
+```java
+JobExecutor executor = new JobExecutor("PBS");
+Job job = ...
+executor.submit(job);
+```
 
-    __Python__:
+__Python__:
 
-    ```python
-    executor = JobExecutor("PBS");
-    job = ...
-    executor.submit(job);
-    ```
+```python
+executor = JobExecutor("PBS");
+job = ...
+executor.submit(job);
+```
 </div>
 
 A precise choice is not specified in this document. However, in order to
