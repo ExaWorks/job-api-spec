@@ -25,7 +25,7 @@
       - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
     - [JobExecutor](#jobexecutor)
       - [Methods](#methods)
-          - [Exceptions:](#exceptions)
+          - [Exceptions](#exceptions)
     - [Job](#job)
       - [State Model](#state-model)
       - [Constructors](#constructors)
@@ -72,8 +72,8 @@
         - [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
       - [Tasks](#tasks)
       - [Attributes](#attributes)
-    - [Appendix B - Synchronous vs. Asynchronous API](#appendix-b-synchronous-vs-asynchronous-api)
-    - [Appendix C - Bulk Submission](#appendix-c-bulk-submission)
+    - [Appendix B - Synchronous vs. Asynchronous API](#appendix-b---synchronous-vs-asynchronous-api)
+    - [Appendix C - Bulk Submission](#appendix-c---bulk-submission)
       - [Threaded Submission](#threaded-submission)
       - [Asynchronous Networking](#asynchronous-networking)
       - [Connection Multiplexing](#connection-multiplexing)
@@ -99,8 +99,8 @@ corresponding implementation of a job management API is a job management
 library. A job management library, through its  API,  is invoked by a
 client application.
 
-Traditionally, job management is implemented on supercomputers by Local
-Resource Managers (LRMs), such as PBS/Torque, SLURM, etc. To a first
+Traditionally, job management is implemented on supercomputers by local
+resource managers (LRMs), such as PBS/Torque, Slurm, etc. To a first
 approximation, a job management API is understood as an abstraction layer
 on top of various LRMs.
 
@@ -111,7 +111,7 @@ management API aims to also transparently abstract such execution managers.
 
 
 
-### A Note About Code Samples
+### A Note about Code Samples
 
 There are various locations in this document when code is used to provide
 examples. Such code is not working code, but a Java/C++/.NET inspired
@@ -133,7 +133,7 @@ fashion:
 
 - The proposed API is **asynchronous**. A detailed discussion about the choice
 between synchronous and asynchronous APIs can be found in [Appendix
-B](#synchronous-vs-asynchronous-api). In short, the implementation of a
+B](#appendix-b---synchronous-vs-asynchronous-api). In short, the implementation of a
 synchronous API would not scale well in most languages. Additionally, if
 so needed, the API provides a [`wait()`](#job-wait) method that allows
 client code to trivially implement a synchronous wrapper around the API.
@@ -145,7 +145,7 @@ alternative methods exists that do not require a bulk calls. Nonetheless,
 adding bulk calls to enable better performance in Layers 1-2, or even in
 Layer 0 if reasonably justified in the future, remains a possibility. For
 a technical discussion on the topic, please see [Appendix
-C](#bulk-submission).
+C](#appendix-c---bulk-submission).
 
 
 
@@ -155,15 +155,15 @@ C](#bulk-submission).
 There are at least three major ways in which a job management API can be
 used:
 
-- **Local**: the relevant API functions are invoked by programs running
+- **Local**: The relevant API functions are invoked by programs running
 on the target resource (or a specific node on the target resource, such
-as a login/head node)
+as a login/head node).
 
-- **Remote**: the API functions are invoked by programs running on a
+- **Remote**: The API functions are invoked by programs running on a
 different resource than the target resource; this requires some form of
 distributed architecture, such as a client-server model.
 
-- **Nested** (also known as "pilot jobs"): a "pilot" job is run
+- **Nested** Also known as "pilot jobs." A pilot job is run
 using either a remote or local job management library; application jobs
 are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
@@ -181,35 +181,35 @@ the layers are as follows:
 
 ### Layer 0 (local)
 
-- assumes that the jobs and client application have access to a common
-filesystem
+- Assumes that the jobs and client application have access to a common
+filesystem.
 
 - assumes that the client application is executed in an environment that
-has direct access (i.e., does not require authentication) to a local LRM
+has direct access (i.e., does not require authentication) to a local LRM.
 
 
 ### Layer 1 (remote)
 
-- specification of remote locations
+- Specification of remote locations
 
-- remote capabilities:
+- Remote capabilities:
 
-    - a service and remote invocation protocol
+    - A service and remote invocation protocol
 
-    - authentication and authorization
+    - Authentication and authorization
 
-    - encryption
+    - Encryption
 
-- file staging
+- File staging
 
-- standard output/error streaming
+- Standard output/error streaming
 
-- file cleanup (an alternative and perhaps more flexible way of doing
-this is to implement pre and post jobs in Layer 0)
+- File cleanup (an alternative and perhaps more flexible way of doing
+this is to implement pre- and post-jobs in Layer 0)
 
-- user mapping: if a system-wide service is deployed, there must be a
+- User mapping: if a system-wide service is deployed, there must be a
 mapping of the authenticated user to a local user under which the job
-should run
+should run.
 
 
 ### Layer 2 (nested)
@@ -223,7 +223,7 @@ future, and the rough functionality will be X, Y, Z
 
 ## The Job API; Layer 0
 
-This section describes the most basic form of J/PSI API, namely one in
+This section describes the most basic form of the PSI/J API, namely one in
 which the location of the backend is either implicit or local. The main
 components of the API are shown below:
 
@@ -231,8 +231,8 @@ components of the API are shown below:
 
 The components of the API can be divided into a passive set, describing
 jobs and their state, and an active set, the
-[`JobExecutor`](#job-executor) connectors, which translates job
-information and interacts with specific backends. In other words, the API
+[`JobExecutor`](#jobexecutor) connectors, which translate job
+information and interact with specific backends. In other words, the API
 is designed such that all backend-specific logic can be contained in
 `JobExecutor` connectors. Consequently, all actions, such as `submit()`
 and `cancel()` as well as job status updates belong to the `JobExecutor`
@@ -240,14 +240,14 @@ and `cancel()` as well as job status updates belong to the `JobExecutor`
 retrievable from [`Job`](#job) objects).
 
 The passive set of components has the [`Job`](#job) class at the top. A
-`Job` object has a [`JobSpecification`](#jobspecification), which
+`Job` object has a [`JobSpecification`](#jobspec), which
 describes the high-level details of the job. Here, "high-level" is meant
 to track the capabilities of what can typically be achieved with
 `fork/exec` calls, namely specifying the executable and its arguments,
 the environment of the job, its working directory, and the location of
 input and output streams. Additional information that is specific to
 queuing systems is specified using both the
-[`JobAttributes`](#jobattributes) class, as well as the [`ResourcesSpec`]
+[`JobAttributes`](#jobattributes) class, as well as the `ResourcesSpec`
 class. The `ResourcesSpec` class and its concrete sub-classes, of which
 only [`ResourceSpecV1`](#resourcespecv1) is specified at this time, can
 be used to describe the resources required to run the job, whereas the
@@ -264,15 +264,15 @@ implementation in a given language to the extent that the resulting
 implementation remains conformant to the standards and practices specific
 to that language. For example:
 
-- this document uses `camelCase` for identifiers; a Python implementation
-would, likely, use underscores instead
+- This document uses `camelCase` for identifiers; a Python implementation
+would, likely, use underscores instead.
 
-- all types in the specification are explicitly declared; an
+- All types in the specification are explicitly declared; an
 implementation in a weakly typed language may, at its authors'
 discretion, choose to implement explicit runtime type-checks, but it is
 not required to do so.
 
-- getters/setters can be replaced by properties, depending on what is
+- Getters/setters can be replaced by properties, depending on what is
 customary in the language in which the library is implemented
 
 
@@ -306,7 +306,7 @@ implementation of this API. We list two:
 1. Treat `JobExecutor` as an abstract base class and have concrete
 subclasses of `JobExecutor` implement the specific mechanisms. The
 subclasses can then be instantiated either directly, using a factory
-pattern, or any other reasonable mechanism. For example:
+pattern or any other reasonable mechanism. For example:
 
 <div class="lang-tabs">
 
@@ -406,7 +406,7 @@ a simple string type for the version.
 void submit(Job job) throws InvalidJobException, SubmitException
 ```
 
-Submits a Job to the underlying implementation. Successful return of this
+Submits a job to the underlying implementation. Successful return of this
 method indicates that the job has been sent to the underlying
 implementation and all changes in the job status, including failures,
 are reported using notifications. Conversely, if one of the two possible
@@ -414,13 +414,13 @@ exceptions is thrown, then the job has not been successfully sent to the
 underlying implementation, the job status remains unchanged, and no
 status notifications about the job will be fired.
 
-###### Exceptions:
+##### Exceptions
 
 - `InvalidJobException`:
     Thrown if the job specification cannot be understood. This exception
     is fatal in that submitting another job with the exact same details
     will also fail with an `InvalidJobException`. In principle, the
-    underlying implementation / LRM is the entity ultimately responsible
+    underlying implementation/LRM is the entity ultimately responsible
     for interpreting a specification and reporting any errors associated
     with it. However, in many cases, this reporting may come after a
     significant delay. In the interest of failing fast, library
@@ -442,16 +442,16 @@ void cancel(Job job) throws SubmitException
 
 Cancels a job that has been submitted to underlying executor
 implementation. A successful return of this method only indicates that
-the request for cancelation has been communicated to the underlying
+the request for cancellation has been communicated to the underlying
 implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
-cancelation is reflected in a change of status of the respective job to
+cancellation is reflected in a change of status of the respective job to
 `JobState.CANCELED`. User code can synchronously wait until the
 `CANCELED` state is reached using `job.wait(JobState.CANCELED)` or
 even `job.wait()`, since the latter would wait for all final
 states, including `JobState.CANCELED`. In fact, it is recommended that
 `job.wait()` be used because it is entirely possible for the job to
-complete before the cancelation is communicated to the underlying
+complete before the cancellation is communicated to the underlying
 implementation and before the client code receives the completion
 notification. In such a case, the job will never enter the `CANCELED`
 state and `job.wait(JobState.CANCELED)` would hang indefinitely.
@@ -474,7 +474,8 @@ to `null`.
 List<String> list()
 ```
 
-Return a list of native job IDs which are known to this executor instance.  
+Return a list of native job IDs which are known to this executor instance.
+  
 The returned list MAY contain IDs of jobs which were not submitted via this
 instance, and MAY be missing IDs of jobs which have been submitted by this
 instance but are finalized and purged already.  The returned job IDs MUST be
@@ -488,7 +489,6 @@ purged by the backend, and the implementation MAY purge that information also.
 The native IDs for those jobs thus MAY NOT be returned by this call, even if the
 application still holds handles to those jobs (and could thus retrieve the
 native job ID directly).
-
 
 The returned IDs can be used to re-attach a `Job` instance to the backend job
 via the `executor.attach(job, nativeJobID)` call.  This implies that the call
@@ -504,17 +504,17 @@ void attach(Job job, String nativeJobID)
 
 This method will accept a job instance in `NEW` state and a native job ID.  The
 executor will attach the Job instance to the backend job identified by that
-native (backend) job ID.  The method will return immediately and the `JobExecutor`
-will collect job state and meta data asynchronously.  A callback registered on
-the Job MUST NOT fire before the implementation completed the attachement -- at
-that point the job will have a valid `JobStatus`.  If the
+native (backend) job ID. The method will return immediately and the `JobExecutor`
+will collect job state and metadata asynchronously. A callback registered on
+the Job MUST NOT fire before the implementation completed the attachement—at
+that point the job will have a valid `JobStatus`. If the
 implementation is not able to attach the job (because it cannot verify
-the job ID, or the job information has been purged, etc), the job will
+the job ID, or the job information has been purged, etc.), the job will
 be moved into `FAILED` state.
 
 The method MUST raise an [`InvalidJobException`](#invalidjobexception)
-if the passed job is not in `NEW` state.  Any job status, resource spec
-etc. which are set on the passed `Job` instance MUST be discarded by the
+if the passed job is not in `NEW` state.  Any job status, resource spec,
+etc. which is set on the passed `Job` instance MUST be discarded by the
 implementation.
 
 
@@ -561,22 +561,22 @@ only occurs once the backend is enacting that request.
 The `ACTIVE` state is the only state where the job will consume resources.
 
 Backend implementations are likely to have their own state definitions state and
-transition semantics.  An implementation of this API MUST ensure that
+transition semantics.  An implementation of this API MUST ensure that:
 
-  - backend states are mapped to the states defined in this document;
-  - state transitions are valid with respect to the state model here defined.
+  - Backend states are mapped to the states defined in this document.
+  - State transitions are valid with respect to the state model here defined.
 
 An implementation MUST NOT issue state updates for any backend state transitions
 which cannot be mapped to the state model.  When a backend state model misses
 a representation for a state which the state model in this document requires,
 the implementation MUST report the respective state transition anyway, to the
-best of its knowledge.  For example, if a `JobExecutor` backend does, for some
-reason, not feature a state corresponding to `QUEUED`, then the implementation
+best of its knowledge.  For example, if a `JobExecutor` backend does not, for some
+reason, feature a state corresponding to `QUEUED`, then the implementation
 MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
 
 Additional information (time stamps, backend details, transition triggers etc)
-MAY be available on certain state transitions, in certain implementations - See
-the `JobStatus` definition for additional information on such meta data.
+MAY be available on certain state transitions, in certain implementations. See
+the `JobStatus` definition for additional information on such metadata.
 
 
 #### Constructors
@@ -608,7 +608,7 @@ String getId()
 ```
 
 Returns this job's ID. The ID is assigned automatically by the
-implementation when the Job object is constructed. The ID is guaranteed
+implementation when the `Job` object is constructed. The ID is guaranteed
 to be unique on the client machine. The ID does not have to match the ID
 of the underlying LRM job, but is used to identify `Job` object instances as
 seen by a client application.  
@@ -620,7 +620,7 @@ String? getNativeId()
 ```
 
 Returns this job's native ID as assigned by the underlying LRM.  The ID will
-only be available once the job has entered the `QUEUED` state - the returned
+only be available once the job has entered the `QUEUED` state—the returned
 value will be `null` otherwise.  The returned ID can be used to communicate
 with the LRM out-of-band, and also to later re-attach to the job with
 [`JobExecutor.attach()`](#jobexecutor-attach).
@@ -678,7 +678,7 @@ Implementations are encouraged to throw the `UnreachableStateException`
 as soon as it can be determined that the `targetStates` are unreachable
 and not necessarily when the job reaches a final state. However, whether
 it is possible to make such a determination before a final state is
-reached depends on the exact time when this method is called.
+reached depends on the exact time this method is called.
 </div>
 
 <div class="imp-note">
@@ -749,7 +749,7 @@ Constructs an empty `JobSpec`.
 
 <div class="lang-bindings">
 
-__Python__:
+__Python__
 
 In Python, the default constructor is replaced with the following constructor:
 
@@ -810,9 +810,9 @@ Path? getExecutable()
 ```
 
 Sets/gets the path to the executable file to be launched. A relative path
-is considered relative to the job directory (if specified, or the default
+is considered relative to the job directory (if specified), or the default
 job directory, as indicated in the description of
-[setDirectory()](#jobspec-setdirectory)).
+[setDirectory()](#jobspec-setdirectory).
 
 
 <a name="jobspec-setarguments"></a>
@@ -887,7 +887,7 @@ void setPostLaunch(Path script)
 Path? getPostLaunch()
 ```
 
-Set/get the paths to the pre/post launch scripts.
+Sets/gets the paths to the pre/post launch scripts.
 
 The `PreLaunch` script is sourced by the main process of the job before it uses
 the parallel launcher to execute the `executable`.  This script is intended for
@@ -911,12 +911,12 @@ to the rest of the job.
 
 Since the `PreLaunch` script is sourced before the parallel launch, it is only
 sourced by a single process. This process may be running on the login node or
-on a batch node, depending on the system and J/PSI implementation. In the case
+on a batch node, depending on the system and PSI/J implementation. In the case
 where code needs to run on every node or rank of a parallel job, it is
 advisable to instead use a wrapper script around the `executable`.
 
 Some environment changes can cause parallel launchers to malfunction.  For
-example, loading a module that changes the interpreter for python or lua. In
+example, loading a module that changes the interpreter for Python or Lua. In
 this case, `PreLaunch` may cause parallel launcher failures and accomplishing
 these environmental changes would be better done with a wrapper script around
 the `executable`.
@@ -989,7 +989,7 @@ This specification does not mandate a public constructor for this class.
 JobState getState()
 ```
 
-Return the state of the job.
+Returns the state of the job.
 
 
 <a name="jobstatus-gettime"></a>
@@ -1059,14 +1059,14 @@ boolean isGreaterThan(JobState other)
 ```
 
 Defines a partial ordering on the states. It is not possible to compare two
-final states -- otherwise all state pairs are comparable. Comparisons are
+final states—otherwise all state pairs are comparable. Comparisons are
 transitive.  The order is:
 
   - `QUEUED    > NEW`
   - `ACTIVE    > QUEUED`
   - `COMPLETED > ACTIVE`
   - `FAILED    > ACTIVE`
-  - `CANCELED > ACTIVE`
+  - `CANCELED  > ACTIVE`
 
 The relevance of the partial ordering is that the system guarantees that
 no transition that would violate this ordering can occur. For example, no
@@ -1134,7 +1134,7 @@ String getMessage()
 
 Retrieves the message associated with this exception. This should be a
 descriptive message that is sufficiently clear to be presented to an
-end-user.
+end user.
 
 
 <a name="invalidjobexception-getexception"></a>
@@ -1144,7 +1144,7 @@ Exception? getException()
 
 Returns an optional underlying exception that can potentially be used for
 debugging purposes, but which should not, in general, be presented to an
-end-user.
+end user.
 
 
 
@@ -1167,7 +1167,7 @@ String getMessage()
 
 Retrieves the message associated with this exception. This should be a
 descriptive message that is sufficiently clear to be presented to an
-end-user.
+end user.
 
 
 <a name="submitexception-getexception"></a>
@@ -1177,7 +1177,7 @@ Exception? getException()
 
 Returns an optional underlying exception that can potentially be used for
 debugging purposes, but which should not, in general, be presented to an
-end-user.
+end user.
 
 
 <a name="submitexception-istransient"></a>
@@ -1187,8 +1187,8 @@ boolean isTransient()
 
 Returns `true` if the underlying condition that triggered this exception
 is transient. Jobs that cannot be submitted due to a transient
-exceptional condition have chance of being successfully re-submitted at a
-later time, which is a suggestion to client code that it could re-attempt
+exceptional condition have chance of being successfully resubmitted at a
+later time, which is a suggestion to client code that it could reattempt
 the operation that triggered this exception. However, the exact chances
 of success depend on many factors and are not guaranteed in any
 particular case. For example, a DNS resolution failure while attempting
@@ -1198,7 +1198,7 @@ Internet-connected network. By contrast, an authentication failure due to
 an invalid username/password combination would not be a transient
 failure. While it may be possible for a temporary defect in a service to
 cause such a failure, under normal operating conditions such an error
-would persist across subsequent re-tries until correct credentials are
+would persist across subsequent retries until correct credentials are
 used.
 
 
@@ -1231,7 +1231,7 @@ cannot be reached.
 
 The `ResourceSpec` class is a base abstract class that describes job
 resource requirements. The current defined subclasses are:
-[`ResourceSpec`](#resourcespecv1).
+[`ResourceSpecV1`](#resourcespecv1).
 
 #### Constructors
 
@@ -1264,7 +1264,7 @@ Constructs an empty `ResourceSpecV1` object.
 
 <div class="lang-bindings">
 
-__Python__:
+__Python__
 
 In Python, the default constructor is replaced with the following constructor:
 
@@ -1347,7 +1347,7 @@ void setGPUCoresPerProcess(int gpuCoresPerProcess)
 int? getGPUCoresPerProcess()
 ```
 
-Similar to `cpuCoresPerProcess`, except for GPU cores. For heterogeneous
+Similar to `cpuCoresPerProcess`, but for GPU cores. For heterogeneous
 clusters, with GPUs available only on some nodes, setting this property
 signifies to the LRM that GPU nodes are being requested.
 
@@ -1503,7 +1503,7 @@ V1](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_25.ht
 which is itself a simplified version of the [canonical Flux jobspec
 format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_14.html).
 
-A J/PSI jobspec YAML document SHALL consist of a dictionary defining the
+A PSI/J jobspec YAML document SHALL consist of a dictionary defining the
 resources, tasks and other attributes of a single program. The dictionary
 MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
 Each of the listed job specification keys SHALL meet the form and requirements
@@ -1511,23 +1511,19 @@ listed in detail in the sections below.
 
 #### Resources
 
-The `resources` key of the J/PSI jobspec contains the data from the
+The `resources` key of the PSI/J jobspec contains the data from the
 `ResourceSpec` class.  The value of the resources key SHALL be a strict list
 which MUST define either node or slot as the first and only resource. Each list
 element SHALL represent a **resource vertex** (described below).
 
 A resource vertex SHALL contain only the following keys:
 
-**type**
-
-The `type` key for a resource SHALL indicate the type of resource to be
+* **type**: The `type` key for a resource SHALL indicate the type of resource to be
 matched. Only four resource types are valid: `[node, slot, core,
 and gpu]`. `slot` types are described in the **Reserved Resource Types**
 section below.
 
-**count**
-
-The `count` key SHALL indicate the desired number of resources matching
+* **count**: The `count` key SHALL indicate the desired number of resources matching
 the current vertex. The `count` SHALL be a single integer value
 representing a fixed count
 
@@ -1535,15 +1531,11 @@ A resource vertex MAY additionally contain one or more of the following
 keys:
 
 
-**with**
-
-The `with` key SHALL indicate an edge of type out from this resource
+* **with**: The `with` key SHALL indicate an edge of type out from this resource
 vertex to another resource. Therefore, the value of the `with` key SHALL
 be a dictionary conforming to the resource vertex specification.
 
-**label**
-
-The `label` key SHALL be a string that may be used to reference this
+* **label**: The `label` key SHALL be a string that may be used to reference this
 resource vertex from other locations within the same job specification. `label`
 SHALL be local to the namespace of the current job specification, and each label
 in the current job specification must be unique. `label` SHALL be mandatory in
@@ -1559,7 +1551,7 @@ including a `label` key, the value of which may be used to reference the
 named task slot during tasks definition. The `label` provided SHALL be local
 to the namespace of the current job specification.
 
-A task slot SHALL have at least one edge specified using `with`:, and the
+A task slot SHALL have at least one edge specified using `with`, and the
 resources associated with a slot SHALL be exclusively allocated to the
 program described in the job specification.
 
@@ -1576,59 +1568,49 @@ an out edge to a `core`, it can also, optionally, have an out edge to a
 `gpu` as well. Therefore, the complete enumeration of valid resource
 graphs is:
 
-- slot>core
+- slot > core
 
-- node>slot>core
+- node > slot > core
 
-- slot>(core,gpu)
+- slot > (core,gpu)
 
-- node>slot>(core,gpu)
+- node > slot > (core,gpu)
 
 
 #### Tasks
 
 The `task` key contains the `executable` and `arguments` values from the
-`Jobspec` class and the `processCount` and `processesPerNode` values from the
+`JobSpec` class and the `processCount` and `processesPerNode` values from the
 `ResourceSpec`.  The value of the `tasks` key SHALL be a strict list which MUST
 define exactly one task. The list element SHALL be a dictionary representing a
 task to run as part of the program. A task descriptor SHALL contain the
 following keys:
 
-**command**
-
-The value of the `command` key SHALL be a list representing an executable
+* **command**: The value of the `command` key SHALL be a list representing an executable
 and its arguments.
 
 
-**slot**
-
-The value of the `slot` key SHALL match a `label` of a resource vertex of
+* **slot**: The value of the `slot` key SHALL match a `label` of a resource vertex of
 type `slot`. It is used to indicate the **task slot** on which this task
 or tasks shall be contained and executed. The number of tasks executed
 per task slot SHALL be a function of the number of resource slots and
 total number of tasks requested to execute.
 
 
-**count**
-
-The value of the `count` key SHALL be a dictionary supporting at least
+* **count**: The value of the `count` key SHALL be a dictionary supporting at least
 the keys `per_slot` and `total`, with other keys reserved for future or
 site-specific extensions.
 
- - **per_slot**
-
-   The value of `per_slot` SHALL be a number indicating the number of
+    - **per_slot**: The value of `per_slot` SHALL be a number indicating the number of
    tasks to execute per task slot allocated to the program.
 
- - **total**
-
-   The value of the `total` field SHALL indicate the total number of
+    - **total**: The value of the `total` field SHALL indicate the total number of
    tasks to be run across all task slots, possibly oversubscribed.
 
 
 #### Attributes
 
-The `attributes` key of the J/PSI jobpsec contains the data from the
+The `attributes` key of the PSI/J JobSpec contains the data from the
 `JobAttributes` class and the data from the `JobSpec` class not already covered
 by the `tasks` key.  The value of the `attributes` key SHALL be a dictionary of
 dictionaries.  The `attributes` dictionary MAY contain one or both of the
@@ -1636,15 +1618,11 @@ following keys which, if present, must have values. Values MAY have any valid
 YAML type.
 
 
-**user**
-
-Attributes in the user dictionary are unrestricted, and may be used as
+* **user**: Attributes in the `user` dictionary are unrestricted, and may be used as
 the application demands.
 
 
-**system**
-
-Attributes in the `system` dictionary are additional parameters that
+* **system**: Attributes in the `system` dictionary are additional parameters that
 affect program execution, scheduling, etc. All attributes in `system` are
 reserved words, however unrecognized words SHALL trigger no more than a
 warning. This permits job specification reuse between schedulers which may be
@@ -1657,18 +1635,14 @@ is required.
 
 Some common system attributes are:
 
-**duration**
-
-The value of the `duration` attribute is a floating-point number greater
+* **duration**: The value of the `duration` attribute is a floating-point number greater
 than or equal to zero representing time span in seconds. A duration of 0
 SHALL be interpreted as "unlimited" or "not set" by the system.
 The scheduler will make an effort to allocate the requested resources for
 the number of seconds specified in `duration`.
 
 
-**environment**
-
-The value of the `environment` attribute is a dictionary containing the
+* **environment**: The value of the `environment` attribute is a dictionary containing the
 names and values of environment variables that should be set (or unset)
 when spawning tasks. For each entry in the `environment` dictionary, the
 key is a string representing the environment variable name and the value
@@ -1676,30 +1650,24 @@ is a string representing the environment variable value to set. A null
 value represents unsetting the environment variable given by key.
 
 
-**cwd**
-
-The value of the `cwd` attribute is a string containing the absolute path
+* **cwd**: The value of the `cwd` attribute is a string containing the absolute path
 to the current working directory to use when spawning the task.
 
 
-**job**
-
-The `job` attribute is an optional dictionary containing job metadata.
+* **job**: The `job` attribute is an optional dictionary containing job metadata.
 This metadata may be used for searching and filtering of jobs. Every
 value in the dictionary must be a string. The application is free to
 create keys of any name, however the following are reserved for special
 use:
 
-  - **name**
-
-    The name key contains the name of the job. The default name of a job
+      - **name**: The name key contains the name of the job. The default name of a job
     is the first argument of the command run by the user, or it can be
     set by the user to an arbitrary value.
 
 #### Version
 
 The version key SHALL contain the value 1.  Larger versions are reserved for any
-potential expansions of or changes to the J/PSI jobspec.
+potential expansions of or changes to the PSI/J JobSpec.
 
 ### Appendix B - Synchronous vs. Asynchronous API
 
@@ -1725,7 +1693,7 @@ above simplified definition of `run()` would be spent in `waitForCompletion()`,
 which is an operation that, if implemented as efficiently as possible, would
 consume no CPU time locally during the execution of the job. However, it holds
 the non-CPU resources associated with the thread that invokes it, namely kernel
-and stack memory. Any jobs running concurrently would, each, hold the resources
+and stack memory. Any jobs running concurrently would hold the resources
 associated with each of their respective threads. By contrast, an asynchronous
 implementation can run multiple jobs in a single thread:
 
@@ -1785,12 +1753,12 @@ void submit(Job job, JobExecutor executor, JobStatusCallback cb) {
 There are, however, subtle issues that ultimately make the two approaches
 inequivalent:
 
-- a synchronous API must have some asynchronous status notifications if
+- A synchronous API must have some asynchronous status notifications if
 it is to allow timely propagation of events that are not strictly part of
-the overall job lifetime, such as, transitioning from a queued state to a
-running state when run by a queuing LRM;
+the overall job lifetime, such as transitioning from a queued state to a
+running state when run by a queuing LRM.
 
-- an asynchronous translation layer on top of a synchronous API still
+- An asynchronous translation layer on top of a synchronous API still
 suffers from the aforementioned wasted thread memory issue.
 
 In light of the above, one might conclude that a scalable API would start
@@ -1816,13 +1784,13 @@ two round trips to submit one job, and three if one also waits for the
 connection to close. Calling the `submit()` method repeatedly in a loop
 results in the same process repeated serially, resulting in a total time
 of `3 * rtt * n`, where `n` is the total number of jobs and `rtt` is the
-round-trip time (the time it takes to send a message to the server plus
+round trip time (the time it takes to send a message to the server plus
 the time it takes for the reply to make it back):
 
 <img width="300pt" src="diagrams/bulk_submission_simple_many.svg" alt="Multiple Jobs Timing Diagram"/>
 
 A way of speeding up the process is, if the details for all the jobs in
-the loop is known, to submit all the jobs at once:
+the loop are known, to submit all the jobs at once:
 
 <img width="300pt" src="diagrams/bulk_submission_bulk.svg" alt="Bulk Jobs Timing Diagram"/>
 
@@ -1913,7 +1881,7 @@ operations.
 
 #### Connection Multiplexing
 
-An alternative way of improving efficiency is to re-use a single
+An alternative way of improving efficiency is to reuse a single
 connection for each remote resource that jobs are submitted to. If data
 is sent and received asynchronously, the timing has all the
 characteristics of the asynchronous networking case while also
@@ -1938,7 +1906,7 @@ This Appendix contains some examples of how the API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, which
 is expected to be a relatively frequently used binding.
 
-#### Submit and wait for N jobs
+#### Submit and Wait for N Jobs
 
 This example shows how to submit `N` jobs and synchronously wait for them to
 complete.
@@ -1970,7 +1938,7 @@ for i in range(N):
 ```
 
 
-#### Run N jobs while throttling to M concurrent jobs
+#### Run N Jobs while Throttling to M Concurrent Jobs
 
 This example shows how to run a total of `N` jobs while ensuring that at most
 `M` are running in parallel at any given time. It uses the callback mechanism of
@@ -2013,9 +1981,9 @@ ThrottleSubmitter().start()
 ```
 
 
-#### Submit a malformed or unsatisfiable job
+#### Submit a Malformed or Unsatisfiable Job
 
-Use the exception types to distinguish between re-triable or not
+Uses exception types to distinguish whether a job is re-triable or not
 
 ```python
 import psij
@@ -2052,7 +2020,7 @@ else:
 job_1.wait()
 ```
 
-#### Submit a job, wait for queued event, cancel then, and then wait for the final event
+#### Submit a Job, Wait for Queued Event, Cancel, and Then Wait for the Final Event
 
 ```python
 import psij
@@ -2075,7 +2043,7 @@ job.wait()
 ```
 
 
-#### Run a job with P total processes where each process gets C cpus and G gpus
+#### Run a Job with P Total Processes where Each Process Gets C CPUs and G GPUs
 
 ```python
 import psij
@@ -2103,7 +2071,7 @@ job.wait()
 ```
 
 
-#### N exclusive nodes, each with P processes
+#### N Exclusive Nodes, Each with P Processes
 
 This example will place a job across 5 nodes with 2 ranks per node.
 The remaining cores of the node will remain idle as the job requests
@@ -2132,7 +2100,7 @@ job.wait()
 
 
 
-#### Construct a job that uses all the various “knobs” of the resource and job specifications
+#### Construct a Job that Uses All the Various “Knobs” of the Resource and Job Specifications
 
 ```python
 import psij
@@ -2170,7 +2138,7 @@ jex.submit(job)
 job.wait()
 ```
 
-#### Submit a job, check for transient error, retry if one occurred
+#### Submit a Job, Check for a Transient Error, Retry if One Occurred
 
 ```python
 import time
@@ -2210,8 +2178,7 @@ job.wait()
 
 ### Appendix D - Naming
 
-The Portable Submission Interface for Jobs (J/PSI) is named after the [J/ψ
+The Portable Submission Interface for Jobs (PSI/J) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
-"Jay-Sigh" (or ˈdʒeɪ ˈsaɪ if you know
+"Sigh-Jay" (or ˈdʒeɪ ˈsaɪ in
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
-
