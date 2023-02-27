@@ -306,7 +306,7 @@ implementation of this API. We list two:
 1. Treat `JobExecutor` as an abstract base class and have concrete
 subclasses of `JobExecutor` implement the specific mechanisms. The
 subclasses can then be instantiated either directly, using a factory
-pattern or any other reasonable mechanism. For example:
+pattern, or any other reasonable mechanism. For example:
 
 <div class="lang-tabs">
 
@@ -749,7 +749,7 @@ Constructs an empty `JobSpec`.
 
 <div class="lang-bindings">
 
-__Python__
+__Python__:
 
 In Python, the default constructor is replaced with the following constructor:
 
@@ -1264,7 +1264,7 @@ Constructs an empty `ResourceSpecV1` object.
 
 <div class="lang-bindings">
 
-__Python__
+__Python__:
 
 In Python, the default constructor is replaced with the following constructor:
 
@@ -2180,5 +2180,5 @@ job.wait()
 
 The Portable Submission Interface for Jobs (PSI/J) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
-"Sigh-Jay" (or ˈdʒeɪ ˈsaɪ in
+"Sigh-Jay" (or ˈsaɪ ˈdʒeɪ in
 [IPA](https://en.wikipedia.org/wiki/Help:IPA/English)).
