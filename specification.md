@@ -1900,7 +1900,7 @@ optimize the throughput of connections to particular services.
 
 
 
-### Appendix C - Examples
+### Appendix D - Examples
 
 This Appendix contains some examples of how the API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, which
@@ -2176,7 +2176,7 @@ job.wait()
 ```
 
 
-### Appendix D - Naming
+### Appendix E - Naming
 
 The Portable Submission Interface for Jobs (PSI/J) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
