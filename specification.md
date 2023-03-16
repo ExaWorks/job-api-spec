@@ -7,7 +7,7 @@
 <script src="extras.js"></script>
 
 # A Portable Submission Interface for Jobs (PSI/J)
-*Mihael Hategan [add your name here]*
+*James Corbett, Mihael Hategan, Stephen Herbein, Andre Merzky*
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
