@@ -6,12 +6,13 @@
 
 <script src="extras.js"></script>
 
-# A Portable Submission Interface for Jobs (J/PSI)
+# A Portable Submission Interface for Jobs (PSI/J)
 *Mihael Hategan [add your name here]*
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [A Portable Submission Interface for Jobs (J/PSI)](#a-portable-submission-interface-for-jobs-jpsi)
+
+- [A Portable Submission Interface for Jobs (PSI/J)](#a-portable-submission-interface-for-jobs-psij)
   - [STATUS: EARLY DRAFT](#status-early-draft)
   - [Introduction](#introduction)
     - [A Note about Code Samples](#a-note-about-code-samples)
