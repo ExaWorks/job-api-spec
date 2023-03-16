@@ -11,10 +11,11 @@
 
 <!-- TOC depthFrom:1 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
+
 - [A Portable Submission Interface for Jobs (PSI/J)](#a-portable-submission-interface-for-jobs-psij)
   - [STATUS: EARLY DRAFT](#status-early-draft)
   - [Introduction](#introduction)
-    - [A Note About Code Samples](#a-note-about-code-samples)
+    - [A Note about Code Samples](#a-note-about-code-samples)
   - [Motivation and Design Goals](#motivation-and-design-goals)
   - [Layers](#layers)
     - [Layer 0 (local)](#layer-0-local)
@@ -25,7 +26,7 @@
       - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
     - [JobExecutor](#jobexecutor)
       - [Methods](#methods)
-          - [Exceptions](#exceptions)
+        - [Exceptions](#exceptions)
     - [Job](#job)
       - [State Model](#state-model)
       - [Constructors](#constructors)
@@ -54,7 +55,7 @@
     - [ResourceSpec](#resourcespec)
       - [Constructors](#constructors)
       - [Methods](#methods)
-    - [ResourceSpec](#resourcespec)
+    - [ResourceSpecV1](#resourcespecv1)
       - [Constructors](#constructors)
       - [Methods](#methods)
     - [JobAttributes](#jobattributes)
@@ -64,23 +65,30 @@
       - [Constructors](#constructors)
       - [Methods](#methods)
     - [TimeUnit](#timeunit)
-        - [Path](#path)
+    - [Path](#path)
   - [Appendices](#appendices)
     - [Appendix A - Job Specification Serialization Format](#appendix-a-job-specification-serialization-format)
       - [Resources](#resources)
         - [Reserved Resource Types](#reserved-resource-types)
-        - [V1-Specific Resource Graph Restrictions](#v1-specific-resource-graph-restrictions)
+        - [Resource Graph Restrictions](#resource-graph-restrictions)
       - [Tasks](#tasks)
       - [Attributes](#attributes)
-    - [Appendix B - Synchronous vs. Asynchronous API](#appendix-b---synchronous-vs-asynchronous-api)
-    - [Appendix C - Bulk Submission](#appendix-c---bulk-submission)
+      - [Version](#version)
+    - [Appendix B - Synchronous vs. Asynchronous API](#appendix-b-synchronous-vs-asynchronous-api)
+    - [Appendix C - Bulk Submission](#appendix-c-bulk-submission)
       - [Threaded Submission](#threaded-submission)
       - [Asynchronous Networking](#asynchronous-networking)
       - [Connection Multiplexing](#connection-multiplexing)
-    - [Appendix C - examples](#appendix-c-examples)
-      - [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
-      - [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
-    - [Appendix D - Naming](#appendix-d-naming)
+    - [Appendix D - Examples](#appendix-d-examples)
+      - [Submit and Wait for N Jobs](#submit-and-wait-for-n-jobs)
+      - [Run N Jobs while Throttling to M Concurrent Jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
+      - [Submit a Malformed or Unsatisfiable Job](#submit-a-malformed-or-unsatisfiable-job)
+      - [Submit a Job, Wait for Queued Event, Cancel, and Then Wait for the Final Event](#submit-a-job-wait-for-queued-event-cancel-and-then-wait-for-the-final-event)
+      - [Run a Job with P Total Processes where Each Process Gets C CPUs and G GPUs](#run-a-job-with-p-total-processes-where-each-process-gets-c-cpus-and-g-gpus)
+      - [N Exclusive Nodes, Each with P Processes](#n-exclusive-nodes-each-with-p-processes)
+      - [Construct a Job that Uses All the Various “Knobs” of the Resource and Job Specifications](#construct-a-job-that-uses-all-the-various-knobs-of-the-resource-and-job-specifications)
+      - [Submit a Job, Check for a Transient Error, Retry if One Occurred](#submit-a-job-check-for-a-transient-error-retry-if-one-occurred)
+    - [Appendix E - Naming](#appendix-e-naming)
 
 <!-- /TOC -->
 
@@ -1900,7 +1908,7 @@ optimize the throughput of connections to particular services.
 
 
 
-### Appendix C - Examples
+### Appendix D - Examples
 
 This Appendix contains some examples of how the API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, which
@@ -2176,7 +2184,7 @@ job.wait()
 ```
 
 
-### Appendix D - Naming
+### Appendix E - Naming
 
 The Portable Submission Interface for Jobs (PSI/J) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
