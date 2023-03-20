@@ -610,6 +610,20 @@ the above constructor, the job will be in the `NEW` state.
 
 #### Methods
 
+<a name="job-getexecutor"></a>
+```java
+void setExecutor(JobExecutor executor)
+JobExecutor? getExecutor()
+```
+
+Returns the [`JobExecutor`](#jobexecutor) that this job is bound to. An executor
+is bound to a job when the job is successfully submitted to the executor using
+[`JobExecutor.submit()`](#jobexecutor-submit) or attached to an existing native
+job using [`JobExecutor.attach()`](#jobexecutor-attach). It is the
+responsibility of the `JobExecutor` implementation to set this property on a job
+instance when that job is submitted or attached.
+
+
 <a name="job-getid"></a>
 ```java
 String getId()
