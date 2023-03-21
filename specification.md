@@ -139,21 +139,45 @@ implementation.
 Specifically, the following aspects have informed the design in a significant
 fashion:
 
+- The interface is meant to be minimal and focused on submitting and managing
+jobs. Functionality that is outside that envelope, such as aggregating
+information about cluster queuing systems, simplifying the composition of jobs
+handled by the API, or the design of non API user interfaces are all beyond the
+scope of this specification.
+
+- The proposed API is intended to be used by higher level tools, such as (but
+not limited to) workflow systems. While it can be used directly by end users,
+user friendliness is not necessarily a goal that is prioritized over other
+goals, such as scalability.
+
 - The proposed API is **asynchronous**. A detailed discussion about the choice
 between synchronous and asynchronous APIs can be found in [Appendix
-B](#appendix-b---synchronous-vs-asynchronous-api). In short, the implementation of a
-synchronous API would not scale well in most languages. Additionally, if
-so needed, the API provides a [`wait()`](#job-wait) method that allows
-client code to trivially implement a synchronous wrapper around the API.
+B](#appendix-b---synchronous-vs-asynchronous-api). In short, the implementation
+of a synchronous API would not scale well in most languages. Additionally, if so
+needed, the API provides a [`wait()`](#job-wait) method that allows client code
+to trivially implement a synchronous wrapper around the API.
 
 - Bulk versions of calls have been considered. The main reason for having bulk
-calls is to facilitate the use of more efficient mechanisms for
-transmitting job information to an underlying implementation. However,
-alternative methods exists that do not require a bulk calls. Nonetheless,
-adding bulk calls to enable better performance in Layers 1-2, or even in
-Layer 0 if reasonably justified in the future, remains a possibility. For
-a technical discussion on the topic, please see [Appendix
-C](#appendix-c---bulk-submission).
+calls is to facilitate the use of more efficient mechanisms for transmitting job
+information to an underlying implementation. However, alternative methods exists
+that do not require a bulk calls. Nonetheless, adding bulk calls to enable
+better performance in Layers 1-2, or even in Layer 0 if reasonably justified in
+the future, remains a possibility. For a technical discussion on the topic,
+please see [Appendix C](#appendix-c---bulk-submission).
+
+- While the API can be seen as a general job management API, the main intended
+goal is interaction with LRMs. This tacitly informs a number of design choices.
+For example, the fundamental unit the API operates on is a job and, aside from
+pilot job functionality, there is no intent to provide an interface allowing
+dynamic manipulation of jobs after they are sent to a LRM.
+
+- The PSI/J API is inspired by and learns from a number of similar APIs and
+libraries. Some of these are:
+[SAGA](https://en.wikipedia.org/wiki/Simple_API_for_Grid_Applications), [The
+Globus Toolkit](https://en.wikipedia.org/wiki/Globus_Toolkit), and
+[DRMAA](https://en.wikipedia.org/wiki/DRMAA).
+
+
 
 
 
