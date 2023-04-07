@@ -17,8 +17,7 @@ details how to contribute in a standardized and efficient manner.
   - Minor changes (e.g., grammatical fixes) do not require an Issue first.
 - A PR should be a minimal and accurate answer to exactly one identified and
   agreed upon problem. PRs that tackle multiple problems are harder to review and
-  slower to merge when uncontroversial changes are held up by the more
-  discussed changes.
+  slower to merge when uncontroversial changes are held up by changes that require more discussion.
 - Where applicable, a PR or commit message body should reference an Issue by
   number (e.g. "Fixes #33”).
 - Use the Draft PR feature on GitHub or title your PR with `WIP` if your PR is
