@@ -77,7 +77,7 @@
       - [Threaded Submission](#threaded-submission)
       - [Asynchronous Networking](#asynchronous-networking)
       - [Connection Multiplexing](#connection-multiplexing)
-    - [Appendix C - examples](#appendix-c-examples)
+    - [Appendix C - Examples](#appendix-c-examples)
       - [Submit and wait for N jobs](#submit-and-wait-for-n-jobs)
       - [Run N jobs while throttling to M concurrent jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
     - [Appendix D - Naming](#appendix-d-naming)
@@ -91,8 +91,7 @@
 ## Introduction
 
 The purpose of this document is to provide an analysis of the design and
-implementation issues of a job management API suitable for managing jobs
-that are on exascale machines, as well as propose such an API. A job
+implementation issues of a job management API suitable for managing jobs on exascale machines, as well as propose such an API. A job
 management API is a set of interfaces that allow the specification and
 management of the invocation of application executables. The
 corresponding implementation of a job management API is a job management
