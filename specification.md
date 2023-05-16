@@ -100,7 +100,7 @@
 
 The purpose of this document is to provide an analysis of the design and
 implementation issues of a job management API suitable for managing jobs
-that are on exascale machines, as well as propose such an API. A job
+on exascale machines. A job
 management API is a set of interfaces that allow the specification and
 management of the invocation of application executables. The
 corresponding implementation of a job management API is a job management
@@ -108,12 +108,11 @@ library. A job management library, through its  API,  is invoked by a
 client application.
 
 Traditionally, job management is implemented on supercomputers by local
-resource managers (LRMs), such as PBS/Torque, Slurm, etc. To a first
-approximation, a job management API is understood as an abstraction layer
+resource managers (LRMs), such as PBS/Torque, Slurm, etc. To a first approximation, a job management API can be understood as an abstraction layer
 on top of various LRMs.
 
 Job management is sometimes also provided by execution managers, with
-capabilities similar to LRMs but operating in user space, on a limited
+capabilities similar to LRMs but operating in user space on a limited
 subset of resources such as within a job's allocation.  This job
 management API aims to also transparently abstract such execution managers.
 
@@ -121,7 +120,7 @@ management API aims to also transparently abstract such execution managers.
 
 ### A Note about Code Samples
 
-There are various locations in this document when code is used to provide
+There are various locations in this document where code is used to provide
 examples. Such code is not working code, but a Java/C++/.NET inspired
 pseudo-code which almost surely will require modifications to be usable.
 
@@ -130,43 +129,34 @@ pseudo-code which almost surely will require modifications to be usable.
 
 The API is designed with a number of goals in mind. These are centered around
 scalability and keeping the API and potential implementations simple. Where
-trade-offs must be made, such as deciding between interface and implementation
-simplicity, interface simplicity is generally favored. However, an attempt is
+trade-offs must be made—such as deciding between interface and implementation
+simplicity—interface simplicity is generally favored. However, an attempt is
 also made to distill and analyze the resulting complexities of a potential
 implementation in order to minimize the amount of work needed to write such an
 implementation.
 
-Specifically, the following aspects have informed the design in a significant
-fashion:
+Specifically, the following aspects have significantly informed the design:
 
-- The interface is meant to be minimal and focused on submitting and managing
-jobs. Functionality that is outside that envelope, such as aggregating
+- **The interface is meant to be minimal** and focused on submitting and managing
+jobs. Functionality outside that envelope, such as aggregating
 information about cluster queuing systems, simplifying the composition of jobs
-handled by the API, or the design of non API user interfaces are all beyond the
+handled by the API, or the design of non API user interfaces, are all beyond the
 scope of this specification.
 
 - The proposed API is intended to be used by higher level tools, such as (but
 not limited to) workflow systems. While it can be used directly by end users,
-user friendliness is not necessarily a goal that is prioritized over other
+**user friendliness is not prioritized** over other
 goals, such as scalability.
 
-- The proposed API is **asynchronous**. A detailed discussion about the choice
+- **The proposed API is asynchronous**. A detailed discussion about the choice
 between synchronous and asynchronous APIs can be found in [Appendix
 B](#appendix-b---synchronous-vs-asynchronous-api). In short, the implementation
 of a synchronous API would not scale well in most languages. Additionally, if so
 needed, the API provides a [`wait()`](#job-wait) method that allows client code
 to trivially implement a synchronous wrapper around the API.
 
-- Bulk versions of calls have been considered. The main reason for having bulk
-calls is to facilitate the use of more efficient mechanisms for transmitting job
-information to an underlying implementation. However, alternative methods exists
-that do not require a bulk calls. Nonetheless, adding bulk calls to enable
-better performance in Layers 1-2, or even in Layer 0 if reasonably justified in
-the future, remains a possibility. For a technical discussion on the topic,
-please see [Appendix C](#appendix-c---bulk-submission).
-
-- While the API can be seen as a general job management API, the main intended
-goal is interaction with LRMs. This tacitly informs a number of design choices.
+- While the API can be seen as a general job management API, **the main intended
+goal is interaction with LRMs.** This tacitly informs a number of design choices.
 For example, the fundamental unit the API operates on is a job and, aside from
 pilot job functionality, there is no intent to provide an interface allowing
 dynamic manipulation of jobs after they are sent to a LRM.
@@ -177,8 +167,14 @@ libraries. Some of these are:
 Globus Toolkit](https://en.wikipedia.org/wiki/Globus_Toolkit), and
 [DRMAA](https://en.wikipedia.org/wiki/DRMAA).
 
-
-
+Bulk versions of calls have been considered.
+The main reason for having bulk calls is to facilitate the use of more 
+efficient mechanisms for transmitting job
+information to an underlying implementation. However, alternative methods exist
+that do not require bulk calls. Nonetheless, adding bulk calls to enable
+better performance in Layers 1-2, or even in Layer 0 if reasonably justified in
+the future, remains a possibility. For a technical discussion on the topic,
+please see [Appendix C](#appendix-c---bulk-submission).
 
 
 
@@ -195,7 +191,7 @@ as a login/head node).
 different resource than the target resource; this requires some form of
 distributed architecture, such as a client-server model.
 
-- **Nested** Also known as "pilot jobs." A pilot job is run
+- **Nested or Pilot Jobs** A pilot job is run
 using either a remote or local job management library; application jobs
 are then submitted to the pilot system, which sends them directly to the
 existing pilot job instances for execution, bypassing queuing
@@ -216,15 +212,15 @@ the layers are as follows:
 - Assumes that the jobs and client application have access to a common
 filesystem.
 
-- assumes that the client application is executed in an environment that
+- Assumes that the client application is executed in an environment that
 has direct access (i.e., does not require authentication) to a local LRM.
 
 
 ### Layer 1 (remote)
 
-- Specification of remote locations
+- Adds the specification of remote job submission locations
 
-- Remote capabilities:
+- Provides remote capabilities including:
 
     - A service and remote invocation protocol
 
@@ -232,14 +228,14 @@ has direct access (i.e., does not require authentication) to a local LRM.
 
     - Encryption
 
-- File staging
+- Enables file staging
 
-- Standard output/error streaming
+- Allows for standard output/error streaming
 
-- File cleanup (an alternative and perhaps more flexible way of doing
+- Enables file cleanup (an alternative and perhaps more flexible way of doing
 this is to implement pre- and post-jobs in Layer 0)
 
-- User mapping: if a system-wide service is deployed, there must be a
+- May require user mapping if a system-wide service is deployed.  User mapping is a
 mapping of the authenticated user to a local user under which the job
 should run.
 
@@ -296,8 +292,8 @@ implementation in a given language to the extent that the resulting
 implementation remains conformant to the standards and practices specific
 to that language. For example:
 
-- This document uses `camelCase` for identifiers; a Python implementation
-would, likely, use underscores instead.
+- This document uses `camelCase` for identifiers. A Python implementation
+would likely use underscores instead.
 
 - All types in the specification are explicitly declared; an
 implementation in a weakly typed language may, at its authors'
@@ -325,9 +321,9 @@ extract the information about the relevant jobs from the result.
 ### JobExecutor
 
 The `JobExecutor` represents one or more concrete mechanisms for
-executing jobs. It contains all the operations that are specific to a
-particular such mechanism. Specifically, it knows how to start a job
-through the `submit()` call, query the status of jobs and inform client
+executing jobs. It contains all the operations specific to a
+particular mechanism. Specifically, it knows how to start a job
+through the `submit()` call, query the status of jobs and inform a client
 API of any updates through callbacks, and can `cancel()` a running job.
 
 Client code interacts with a concrete job execution mechanism by invoking
@@ -379,9 +375,9 @@ executor.submit(job)
 </div>
 
 
-2. Treat `JobExecutor` as a frontend class, which can possibly be
+2. Treat `JobExecutor` as a frontend class, which can be
 instantiated in a way that allows the selection of the particular
-concrete job submission mechanism and manage jobs by directly invoking
+concrete job submission mechanism and manages jobs by directly invoking
 methods of the `JobExecutor` class. For example:
 
 <div class="lang-tabs">
@@ -418,7 +414,7 @@ String getName()
 ```
 
 Returns the name of this executor. The name should be something simple
-but sufficiently informative, such as  "SLURM", "PBS",  "Condor", or
+but sufficiently informative, such as  "SLURM", "PBS", "Condor", or
 "AWS".
 
 
@@ -427,7 +423,9 @@ but sufficiently informative, such as  "SLURM", "PBS",  "Condor", or
 Version getVersion()
 ```
 
-Returns the version of this executor. If the system/language/standard
+Returns the version of this executor. 
+
+If the system/language/standard
 library in which the library is implemented provides a specific
 versioning mechanism and/or versioning class, it should be used as the
 `Version` class. If such a class is not provided, implementations can use
@@ -438,7 +436,9 @@ a simple string type for the version.
 void submit(Job job) throws InvalidJobException, SubmitException
 ```
 
-Submits a job to the underlying implementation. Successful return of this
+Submits a job to the underlying implementation. 
+
+Successful return of this
 method indicates that the job has been sent to the underlying
 implementation and all changes in the job status, including failures,
 are reported using notifications. Conversely, if one of the two possible
@@ -449,21 +449,23 @@ status notifications about the job will be fired.
 ##### Exceptions
 
 - `InvalidJobException`:
-    Thrown if the job specification cannot be understood. This exception
+    Thrown if the job specification cannot be understood. 
+    
+    This exception
     is fatal in that submitting another job with the exact same details
     will also fail with an `InvalidJobException`. In principle, the
-    underlying implementation/LRM is the entity ultimately responsible
+    underlying implementation/LRM is ultimately responsible
     for interpreting a specification and reporting any errors associated
     with it. However, in many cases, this reporting may come after a
     significant delay. In the interest of failing fast, library
-    implementations should make an effort of validating specifications
-    early and throwing this exception as soon as possible if that
+    implementations should make an effort to validate specifications
+    early and throw this exception as soon as possible if that
     validation fails.
 
 - `SubmitException`:
-	Thrown if the request cannot be sent to the underlying
+    Thrown if the request cannot be sent to the underlying
     implementation. Unlike `InvalidJobException`, this exception can
-	occur for reasons that are transient.
+    occur for reasons that are transient.
 
 
 
@@ -473,7 +475,9 @@ void cancel(Job job) throws SubmitException
 ```
 
 Cancels a job that has been submitted to underlying executor
-implementation. A successful return of this method only indicates that
+implementation. 
+
+A successful return of this method only indicates that
 the request for cancellation has been communicated to the underlying
 implementation. The job will then be canceled at the discretion of the
 implementation, which may be at some later time. A successful
@@ -481,7 +485,9 @@ cancellation is reflected in a change of status of the respective job to
 `JobState.CANCELED`. User code can synchronously wait until the
 `CANCELED` state is reached using `job.wait(JobState.CANCELED)` or
 even `job.wait()`, since the latter would wait for all final
-states, including `JobState.CANCELED`. In fact, it is recommended that
+states, including `JobState.CANCELED`. 
+
+It is recommended that
 `job.wait()` be used because it is entirely possible for the job to
 complete before the cancellation is communicated to the underlying
 implementation and before the client code receives the completion
@@ -506,24 +512,23 @@ to `null`.
 List<String> list()
 ```
 
-Return a list of native job IDs which are known to this executor instance.
+Returns a list of native job IDs known to this executor instance.
   
 The returned list MAY contain IDs of jobs which were not submitted via this
 instance, and MAY be missing IDs of jobs which have been submitted by this
-instance but are finalized and purged already.  The returned job IDs MUST be
-uniquely identify job in the scope of the `JobExecutor` instance and thus in the
+instance but have been finalized and purged already. The returned job IDs must uniquely identify each job in the scope of the `JobExecutor` instance and thus in the
 scope of the backend that `JobExecutor` is bound to, but should not be assumed
 to be unique beyond that scope.
 
 IDs for any job which has been submitted via this instance and which is not yet
-in a final state MUST be returned.  Information for jobs in final state may get
-purged by the backend, and the implementation MAY purge that information also.
+in a final state MUST be returned. Information for jobs in a final state may get
+purged by the backend, and the implementation may also purge that information.
 The native IDs for those jobs thus MAY NOT be returned by this call, even if the
 application still holds handles to those jobs (and could thus retrieve the
 native job ID directly).
 
 The returned IDs can be used to re-attach a `Job` instance to the backend job
-via the `executor.attach(job, nativeJobID)` call.  This implies that the call
+via the `executor.attach(job, nativeJobID)` call. This implies that the call
 SHALL only return those IDs to which the callee can attach under currently used
 authorization.
 
@@ -534,7 +539,11 @@ authorization.
 void attach(Job job, String nativeJobID)
 ```
 
-This method will accept a job instance in `NEW` state and a native job ID.  The
+Associates a Job object with a native job.
+
+This method will accept a job instance in the `NEW` state and a native job ID. 
+
+The
 executor will attach the Job instance to the backend job identified by that
 native (backend) job ID. The method will return immediately and the `JobExecutor`
 will collect job state and metadata asynchronously. A callback registered on
@@ -560,8 +569,7 @@ job is to be run, where applicable. The later involves specifying, for
 example, the number of CPU cores desired or other such requirements. Once
 all relevant information is provided, the job may be sent to an
 underlying implementation using the [`submit()`](#jobexecutor-submit)
-call of a [`JobExecutor`](#jobexecutor) instance. The executor then takes
-care of updating the status of the job, which is accessible synchronously
+call of a [`JobExecutor`](#jobexecutor) instance. The executor then updates the status of the job, which is accessible synchronously
 through the [`Job.getStatus()`](#job-getstatus) call or, asynchronously,
 through callbacks. Implementations of job executors must ensure that the
 following state model is adhered to.
@@ -574,39 +582,41 @@ instance on which the job's state is available as an attribute.  State
 transitions can also be received via callbacks
 
 An implementation MUST ensure that job state transitions occur according to the
-following state model:  a job is created in an initial state `NEW`.  When the
-job is accepted by the backend for execution, it will enter the state `QUEUED`.
-When the job is being executed and consumes resources, it enters the `ACTIVE`
-state.  Upon completion, it will enter the `COMPLETED` state which is a final
+following state model:  
+  - A job is created in an initial state `NEW`.  
+  - When the job is accepted by the backend for execution, it will enter the state `QUEUED`.
+  - When the job is being executed and consumes resources, it enters the `ACTIVE`
+state.
+  - Upon completion, it will enter the `COMPLETED` state which is a final
 state.
 
-At any point in time (until the job is final), the job can enter the `FAILED`
-state on error conditions.  That state is also reached when the job completes
-execution with an error code, but can also indicate a backend error, or
-a library error of any kind.  The `FAILED` state is final.
+At any point in time until the job is final, the job can enter the `FAILED`
+state on error conditions. That state is also reached when the job completes
+execution with an error code, but can also indicate a backend error or
+a library error of any kind. The `FAILED` state is final.
 
-At any point in time (until the job is final), the job can enter the `CANCELED`
-state as reaction to the `job.cancel()` call.  Note that the transition to
-`CANCELED` is not immediate when calling that method, but the state transition
+At any point in time until the job is final, the job can enter the `CANCELED`
+state as a reaction to the `job.cancel()` call. Note that the state transition to
+`CANCELED` is not immediate when calling that method, but
 only occurs once the backend is enacting that request.
 
 The `ACTIVE` state is the only state where the job will consume resources.
 
 Backend implementations are likely to have their own state definitions state and
-transition semantics.  An implementation of this API MUST ensure that:
+transition semantics. An implementation of this API MUST ensure that:
 
-  - Backend states are mapped to the states defined in this document.
-  - State transitions are valid with respect to the state model here defined.
+  - Backend states are mapped to the states defined in this document
+  - State transitions are valid with respect to the state model here defined
 
 An implementation MUST NOT issue state updates for any backend state transitions
-which cannot be mapped to the state model.  When a backend state model misses
-a representation for a state which the state model in this document requires,
+which cannot be mapped to the state model. When a backend state model misses
+a representation for a state which the state model requires,
 the implementation MUST report the respective state transition anyway, to the
-best of its knowledge.  For example, if a `JobExecutor` backend does not, for some
+best of its knowledge. For example, if a `JobExecutor` backend does not, for some
 reason, feature a state corresponding to `QUEUED`, then the implementation
 MUST issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
 
-Additional information (time stamps, backend details, transition triggers etc)
+Additional information (timestamps, backend details, transition triggers etc.)
 MAY be available on certain state transitions, in certain implementations. See
 the `JobStatus` definition for additional information on such metadata.
 
@@ -640,7 +650,9 @@ void setExecutor(JobExecutor executor)
 JobExecutor? getExecutor()
 ```
 
-Returns the [`JobExecutor`](#jobexecutor) that this job is bound to. An executor
+Returns the [`JobExecutor`](#jobexecutor) that this job is bound to. 
+
+An executor
 is bound to a job when the job is successfully submitted to the executor using
 [`JobExecutor.submit()`](#jobexecutor-submit) or attached to an existing native
 job using [`JobExecutor.attach()`](#jobexecutor-attach). It is the
@@ -665,10 +677,10 @@ seen by a client application.
 String? getNativeId()
 ```
 
-Returns this job's native ID as assigned by the underlying LRM.  The ID will
+Returns this job's native ID as assigned by the underlying LRM. The ID will
 only be available once the job has entered the `QUEUED` state—the returned
-value will be `null` otherwise.  The returned ID can be used to communicate
-with the LRM out-of-band, and also to later re-attach to the job with
+value will be `null` otherwise. The returned ID can be used to communicate
+with the LRM out-of-band, and also to later reattach to the job with
 [`JobExecutor.attach()`](#jobexecutor-attach).
 
 
@@ -687,7 +699,9 @@ valid job requires a non-null specification.
 JobStatus getStatus()
 ```
 
-Returns the current status of the job. It is guaranteed that the status
+Returns the current status of the job. 
+
+It is guaranteed that the status
 returned by this method is monotonic in time with respect to the partial
 ordering of [JobStatus](#jobstatus) types. That is, if
 `jobStatus1.getState()` and `jobStatus2.getState()` are comparable and
@@ -695,10 +709,11 @@ ordering of [JobStatus](#jobstatus) types. That is, if
 for `jobStatus2` to be returned by a call placed prior to a call that
 returns `jobStatus1` if both calls are placed from the same thread or if
 a proper memory barrier is placed between the calls.
+
 Furthermore, implementations must, to the extent possible, simulate
 missing states. For example, if the implementation polls a LRM queue
 infrequently enough such that the active state of a job is skipped
-between two polling rounds, the job would otherwise appear to have jumped
+between two polling rounds, the job would appear to have jumped
 from a `QUEUED` state to a `COMPLETED` state. However, implementations
 can introduce a synthetic `ACTIVE` state change.
 
@@ -825,7 +840,7 @@ JobSpec(name: str = None, executable: str = None,
         attributes: JobAttributes = None)
 ```
 
-A constructor for `JobSpec` which allows properties to be initialized
+Creates an instance of `JobSpec` which allows properties to be initialized
 through keyword arguments.
 
 </div>
@@ -839,7 +854,9 @@ void setName(String name)
 String? getName()
 ```
 
-Sets/retrieves a name for the job. The name plays no functional role.
+Sets/retrieves a name for the job. 
+
+The name plays no functional role.
 However, it can help users in tracking the job across various layers.
 Implementations should make an effort to propagate the name so that the
 user can quickly identify the job as it propagates through the system.
@@ -854,7 +871,9 @@ Path? getDirectory()
 ```
 
 Sets/gets the directory that will be the *current working directory* of
-the job immediately after starting. The path must either be an absolute
+the job immediately after starting. 
+
+The path must either be an absolute
 directory or start with `"~/"`, in which case it indicates a path
 relative to the user's home directory on the machine that the job runs.
 If no directory is specified for a job, implementations are free to
@@ -882,7 +901,9 @@ void setArguments(List<String> arguments)
 List<String>? getArguments()
 ```
 
-Sets/gets the argument list to be passed to the executable. Unlike with
+Sets/gets the argument list to be passed to the executable. 
+
+Unlike with
 `execve()`, the first element of the list will correspond to `argv[1]`
 when accessed by the invoked executable. If no previous call to
 `setArguments` was made, `getArguments` will return `null`. The setter
@@ -903,7 +924,9 @@ If this flag is set to `false`, the job starts with an empty environment.
 The only environment variables that will be accessible to the job are the
 ones set using `setEnvironment()`. If this flag is set to `true`, which
 is the default, the job will also have access to inherited environment
-variables. The precise nature of the inherited environment is left to the
+variables. 
+
+The precise nature of the inherited environment is left to the
 implementation. In principle, this functionality is meant to allow
 computing resources to pass various information to executing
 applications, such as the location of a scratch directory in `$SCRATCH`,
@@ -916,7 +939,9 @@ void setEnvironment(Map<String, String> environment)
 Map<String, String>? getEnvironment()
 ```
 
-Sets/gets the environment for the job. The environment is a mapping of
+Sets/gets the environment for the job. 
+
+The environment is a mapping of
 environment variable names to their respective values. The getter returns
 `null` if no previous call to `setEnvironment()` was made.
 Implementations must honor simple variable substitution for the values,
@@ -951,7 +976,7 @@ Path? getPostLaunch()
 Sets/gets the paths to the pre/post launch scripts.
 
 The `PreLaunch` script is sourced by the main process of the job before it uses
-the parallel launcher to execute the `executable`.  This script is intended for
+the parallel launcher to execute the `executable`. This script is intended for
 setting up the environment via external systems like `lmod` and `virtualenv` as
 well as for performing actions that should only be done once at the start of a
 job (e.g., creating a results directory).
@@ -959,7 +984,7 @@ job (e.g., creating a results directory).
 <div class="note impl">
 
 "Sourcing" the script means to execute the commands contained in the `PreLaunch`
-script within the current environment.  This is equivalent to the `dot` command
+script within the current environment. This is equivalent to the `dot` command
 as defined by POSIX.2. Any environment variables set or changed by the
 `PreLaunch` script SHALL be made available to the launcher. The parallel
 launcher should be configured to forward the environment from the calling
@@ -1014,7 +1039,9 @@ void setAttributes(JobAttributes attributes)
 JobAttributes getAttributes()
 ```
 
-Gets/sets the [job attributes](#jobattributes). Job attributes are
+Gets/sets the [job attributes](#jobattributes). 
+
+Job attributes are
 details about the job, such as the walltime, that are descriptive of how
 the job behaves. Attributes are, in principle, non-essential in that the
 job could run even though no attributes are specified. In practice,
@@ -1247,12 +1274,16 @@ boolean isTransient()
 ```
 
 Returns `true` if the underlying condition that triggered this exception
-is transient. Jobs that cannot be submitted due to a transient
+is transient. 
+
+Jobs that cannot be submitted due to a transient
 exceptional condition have chance of being successfully resubmitted at a
 later time, which is a suggestion to client code that it could reattempt
 the operation that triggered this exception. However, the exact chances
 of success depend on many factors and are not guaranteed in any
-particular case. For example, a DNS resolution failure while attempting
+particular case. 
+
+For example, a DNS resolution failure while attempting
 to connect to a remote service is a transient error since it can be
 reasonably assumed that DNS resolution is a persistent feature of an
 Internet-connected network. By contrast, an authentication failure due to
@@ -1350,7 +1381,9 @@ void setNodeCount(int nodeCount)
 int? getNodeCount()
 ```
 
-Sets/gets the node count. If specified, allocate this number of nodes for
+Sets/gets the node count. 
+
+If specified, the implementation must instruct the LRM to allocate this number of nodes for
 the job. Alternatively, one may specify the `processCount` instead and
 let the LRM allocate the necessary number of nodes according to local
 policies. Specifying both the `nodeCount` and the `processCount` is not
@@ -1394,7 +1427,9 @@ void setCPUCoresPerProcess(int cpuCoresPerProcess)
 int? getCPUCoresPerProcess()
 ```
 
-Sets the number of cores that each process needs. This property is used
+Sets the number of cores that each process needs. 
+
+This property is used
 by the underlying implementation to compute the number of nodes needed
 from the number of processes requested and the number of cores available
 on each node. Specifically, `nodeCount = processCount * cpuCoresPerNode /
@@ -1438,8 +1473,7 @@ TimeInterval? getDuration()
 ```
 
 Sets/gets the duration of the job. If not specified, a duration of 10
-minutes is assumed. Implementations are not required to implement better
-than second resolution for the time interval and LRMs often have minute
+minutes is assumed. Implementations are not required to implement better-than-second resolution for the time interval and LRMs often have minute
 resolutions for job durations.
 
 
@@ -1473,7 +1507,9 @@ void setReservationId(String reservationId)
 String? getReservationId()
 ```
 
-Sets/get a reservation ID for the job. Many LRMs allow making advanced
+Sets/get a reservation ID for the job. 
+
+Many LRMs allow making advanced
 reservations, which pre-allocate a block of nodes to be used by a project
 during a certain time interval. Jobs submitted to the pre-allocated nodes
 do not wait in the queue and are, instead, started as soon as possible.
@@ -1586,7 +1622,7 @@ section below.
 
 * **count**: The `count` key SHALL indicate the desired number of resources matching
 the current vertex. The `count` SHALL be a single integer value
-representing a fixed count
+representing a fixed count.
 
 A resource vertex MAY additionally contain one or more of the following
 keys:
@@ -1797,7 +1833,7 @@ void runJob(Job job, JobExecutor executor) {
 }
 ```
 
-The converse, wrapping a synchronous API with an asynchronous interface
+The converse, wrapping a synchronous API with an asynchronous interface,
 is also straightforward:
 
 ```java
@@ -1859,7 +1895,9 @@ where `send(job_data[])` indicates that we are now sending an array of
 job information. This essentially reduces the time from `3 * rtt * n` to
 `3 * rtt`, or from `O(n)` to `O(1)`. The downside is that one must know
 what all the jobs in the array are at the time the `submit(job_data[])`
-call is made. In practice, it is likely that a job submission API will be
+call is made. 
+
+In practice, it is likely that a job submission API will be
 driven by a workflow engine, which may not use static planning and
 produce jobs individually rather than in arrays. Nonetheless, it is
 possible to employ a buffer that accumulates job requests over a certain
@@ -1874,7 +1912,7 @@ submission performance, which are analyzed in the following paragraphs.
 
 #### Threaded Submission
 
-Threaded submission involves, as the name implies, using multiple
+Threaded submission involves using multiple
 concurrent threads to submit jobs. This can effectively divide the
 submission time by the number of threads employed, as can be seen in
 the following timing diagram:
@@ -1885,7 +1923,7 @@ Threaded submission can, however, lose some of its advantage if any
 submission steps involve CPU-bound operations, such as is the case when
 initializing secure connections. A TLS handshake involves, for example,
 some encryption and decryption using asymmetric cryptography. This is
-usually slow enough, even for short messages, so as to limit the number
+usually slow enough, even for short messages, to limit the number
 of operations to a few hundreds per second per CPU core. Since CPU cores
 are time-shared between threads, only one CPU-bound operation can be
 effectively executing on a given core at one time. A possible timing
@@ -1953,7 +1991,7 @@ establishment:
 
 Connection multiplexing also comes with performance advantages. When
 using individual connections to transmit short messages, TCP buffers must
-be emptied before they become full, since there is simply no other data
+be emptied before they become full since there is simply no other data
 to send over the connection. When using a single connection to transmit
 larger messages, TCP buffers can be more efficiently utilized.
 Additionally, it becomes feasible to tune buffer sizes in order to
@@ -1963,7 +2001,7 @@ optimize the throughput of connections to particular services.
 
 ### Appendix D - Examples
 
-This Appendix contains some examples of how the API can be used. Unlike the
+This Appendix contains examples of how the PSI/J API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, which
 is expected to be a relatively frequently used binding.
 
