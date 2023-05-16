@@ -67,19 +67,12 @@
     - [TimeUnit](#timeunit)
     - [Path](#path)
   - [Appendices](#appendices)
-    - [Appendix A - Job Specification Serialization Format](#appendix-a---job-specification-serialization-format)
-      - [Resources](#resources)
-        - [Reserved Resource Types](#reserved-resource-types)
-        - [Resource Graph Restrictions](#resource-graph-restrictions)
-      - [Tasks](#tasks)
-      - [Attributes](#attributes)
-      - [Version](#version)
-    - [Appendix B - Synchronous vs. Asynchronous API](#appendix-b---synchronous-vs-asynchronous-api)
-    - [Appendix C - Bulk Submission](#appendix-c---bulk-submission)
+    - [Appendix A - Synchronous vs. Asynchronous API](#appendix-a---synchronous-vs-asynchronous-api)
+    - [Appendix B - Bulk Submission](#appendix-b---bulk-submission)
       - [Threaded Submission](#threaded-submission)
       - [Asynchronous Networking](#asynchronous-networking)
       - [Connection Multiplexing](#connection-multiplexing)
-    - [Appendix D - Examples](#appendix-d---examples)
+    - [Appendix C - Examples](#appendix-c---examples)
       - [Submit and Wait for N Jobs](#submit-and-wait-for-n-jobs)
       - [Run N Jobs while Throttling to M Concurrent Jobs](#run-n-jobs-while-throttling-to-m-concurrent-jobs)
       - [Submit a Malformed or Unsatisfiable Job](#submit-a-malformed-or-unsatisfiable-job)
@@ -88,7 +81,7 @@
       - [N Exclusive Nodes, Each with P Processes](#n-exclusive-nodes-each-with-p-processes)
       - [Construct a Job that Uses All the Various “Knobs” of the Resource and Job Specifications](#construct-a-job-that-uses-all-the-various-knobs-of-the-resource-and-job-specifications)
       - [Submit a Job, Check for a Transient Error, Retry if One Occurred](#submit-a-job-check-for-a-transient-error-retry-if-one-occurred)
-    - [Appendix E - Naming](#appendix-e---naming)
+    - [Appendix D - Naming](#appendix-d---naming)
 
 <!-- /TOC -->
 
@@ -149,7 +142,7 @@ users, user friendliness is not prioritized over other goals, such as
 scalability.
 
 - **The proposed API is asynchronous**. A detailed discussion about the choice
-between synchronous and asynchronous APIs can be found in [Appendix B](#appendix-b---synchronous-vs-asynchronous-api). In short, the implementation
+between synchronous and asynchronous APIs can be found in [Appendix B](#appendix-a---synchronous-vs-asynchronous-api). In short, the implementation
 of a synchronous API would not scale well in most languages. Additionally, if 
 so needed, the API provides a [`wait()`](#job-wait) method that allows client 
 code to trivially implement a synchronous wrapper around the API.
@@ -175,7 +168,7 @@ multiple operations into one, thus achieving a similar result without needing
 separate bulk and non bulk API calls. Nonetheless, adding bulk calls to enable 
 better performance in Layers 1-2, or even in Layer 0 if reasonably justified in 
 the future, remains a possibility. For a technical discussion on the topic, 
-please see [Appendix C](#appendix-c---bulk-submission).
+please see [Appendix C](#appendix-b---bulk-submission).
 
 
 
@@ -1568,178 +1561,7 @@ used instead.
 
 ## Appendices
 
-### Appendix A - Job Specification Serialization Format
-
-A domain specific language based on YAML is defined to express the resource 
-requirements and other attributes of one program submitted for execution. This 
-version is based heavily on [Flux's Jobspec
-V1](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_25.html),
-which is itself a simplified version of the [canonical Flux jobspec
-format](https://flux-framework.readthedocs.io/projects/flux-rfc/en/latest/spec_14.html).
-
-A PSI/J jobspec YAML document SHALL consist of a dictionary defining the
-resources, tasks and other attributes of a single program. The dictionary
-MUST contain the keys `resources`, `tasks`, `attributes`, and `version`.
-Each of the listed job specification keys SHALL meet the form and requirements
-listed in detail in the sections below.
-
-#### Resources
-
-The `resources` key of the PSI/J jobspec contains the data from the
-`ResourceSpec` class.  The value of the resources key SHALL be a strict list
-which MUST define either node or slot as the first and only resource. Each list
-element SHALL represent a **resource vertex** (described below).
-
-A resource vertex SHALL contain only the following keys:
-
-* **type**: The `type` key for a resource SHALL indicate the type of resource 
-to be matched. Only four resource types are valid: 
-`[node, slot, core, and gpu]`. `slot` types are described in the 
-**Reserved Resource Types** section below.
-
-* **count**: The `count` key SHALL indicate the desired number of resources 
-matching the current vertex. The `count` SHALL be a single integer value
-representing a fixed count.
-
-A resource vertex MAY additionally contain one or more of the following keys:
-
-
-* **with**: The `with` key SHALL indicate an edge of type out from this 
-resource vertex to another resource. Therefore, the value of the `with` key 
-SHALL be a dictionary conforming to the resource vertex specification.
-
-* **label**: The `label` key SHALL be a string that may be used to reference 
-this resource vertex from other locations within the same job specification. 
-`label` SHALL be local to the namespace of the current job specification, and 
-each label in the current job specification must be unique. `label` SHALL be 
-mandatory in resource vertices of type `slot`.
-
-##### Reserved Resource Types
-
-**slot**
-
-A resource type of `type: slot` SHALL indicate a grouping of resources into a 
-named task slot. A `slot` SHALL be a valid resource specification including a 
-`label` key, the value of which may be used to reference the named task slot 
-during tasks definition. The `label` provided SHALL be local to the namespace 
-of the current job specification.
-
-A task slot SHALL have at least one edge specified using `with`, and the
-resources associated with a slot SHALL be exclusively allocated to the program 
-described in the job specification.
-
-##### Resource Graph Restrictions
-
-The `resources` list MUST contain exactly one element, which MUST be either 
-`node` or `slot`. Additionally, the resource graph MUST contain the `core` type.
-
-There are also restrictions on which resources can have `out` edges to other 
-resources. Specifically, a `node` can have an out edge to a `slot`, and a 
-`slot` can have an out edge to a `core`. If a `slot` has an out edge to a 
-`core`, it can also, optionally, have an out edge to a `gpu` as well. 
-Therefore, the complete enumeration of valid resource graphs is:
-
-- slot > core
-
-- node > slot > core
-
-- slot > (core,gpu)
-
-- node > slot > (core,gpu)
-
-
-#### Tasks
-
-The `task` key contains the `executable` and `arguments` values from the
-`JobSpec` class and the `processCount` and `processesPerNode` values from the
-`ResourceSpec`.  The value of the `tasks` key SHALL be a strict list which MUST
-define exactly one task. The list element SHALL be a dictionary representing a
-task to run as part of the program. A task descriptor SHALL contain the
-following keys:
-
-* **command**: The value of the `command` key SHALL be a list representing an 
-executable and its arguments.
-
-
-* **slot**: The value of the `slot` key SHALL match a `label` of a resource 
-vertex of type `slot`. It is used to indicate the **task slot** on which this 
-task or tasks shall be contained and executed. The number of tasks executed
-per task slot SHALL be a function of the number of resource slots and total 
-number of tasks requested to execute.
-
-
-* **count**: The value of the `count` key SHALL be a dictionary supporting at 
-least the keys `per_slot` and `total`, with other keys reserved for future or
-site-specific extensions.
-
-    - **per_slot**: The value of `per_slot` SHALL be a number indicating the 
-    number of tasks to execute per task slot allocated to the program.
-
-    - **total**: The value of the `total` field SHALL indicate the total number 
-    of tasks to be run across all task slots, possibly oversubscribed.
-
-
-#### Attributes
-
-The `attributes` key of the PSI/J JobSpec contains the data from the
-`JobAttributes` class and the data from the `JobSpec` class not already covered
-by the `tasks` key.  The value of the `attributes` key SHALL be a dictionary of
-dictionaries.  The `attributes` dictionary MAY contain one or both of the
-following keys which, if present, must have values. Values MAY have any valid
-YAML type.
-
-
-* **user**: Attributes in the `user` dictionary are unrestricted, and may be 
-used as the application demands.
-
-
-* **system**: Attributes in the `system` dictionary are additional parameters 
-that affect program execution, scheduling, etc. All attributes in `system` are
-reserved words, however unrecognized words SHALL trigger no more than a
-warning. This permits job specification reuse between schedulers which may be
-configured differently and recognize different sets of attributes.
-
-Most system attributes are optional. Schedulers SHALL provide reasonable
-defaults for any system attributes that they recognize when at all
-possible. Most system attributes are optional, but the duration attribute
-is required.
-
-Some common system attributes are:
-
-* **duration**: The value of the `duration` attribute is a floating-point 
-number greater than or equal to zero representing time span in seconds. A 
-duration of 0 SHALL be interpreted as "unlimited" or "not set" by the system.
-The scheduler will make an effort to allocate the requested resources for
-the number of seconds specified in `duration`.
-
-
-* **environment**: The value of the `environment` attribute is a dictionary 
-containing the names and values of environment variables that should be set (or 
-unset) when spawning tasks. For each entry in the `environment` dictionary, the
-key is a string representing the environment variable name and the value
-is a string representing the environment variable value to set. A null
-value represents unsetting the environment variable given by key.
-
-
-* **cwd**: The value of the `cwd` attribute is a string containing the absolute 
-path to the current working directory to use when spawning the task.
-
-
-* **job**: The `job` attribute is an optional dictionary containing job 
-metadata. This metadata may be used for searching and filtering of jobs. Every
-value in the dictionary must be a string. The application is free to create 
-keys of any name, however the following are reserved for special use:
-
-      - **name**: The name key contains the name of the job. The default name 
-      of a job is the first argument of the command run by the user, or it can 
-      be set by the user to an arbitrary value.
-
-#### Version
-
-The version key SHALL contain the value 1.  Larger versions are reserved for 
-any potential expansions of or changes to the PSI/J JobSpec.
-
-### Appendix B - Synchronous vs. Asynchronous API
+### Appendix A - Synchronous vs. Asynchronous API
 
 Running a job synchronously means that a hypothetical `run()` call does not
 return until the job completes. The typical scenario in which a job management
@@ -1835,7 +1657,7 @@ In light of the above, one might conclude that a scalable API would start with
 an asynchronous API and optionally add convenience synchronous methods.
 
 
-### Appendix C - Bulk Submission
+### Appendix B - Bulk Submission
 
 Bulk submission refers to the idea of using a minimal number of operations to 
 submit multiple jobs. At the user-facing API level this would, for example, 
@@ -1961,7 +1783,7 @@ particular services.
 
 
 
-### Appendix D - Examples
+### Appendix C - Examples
 
 This Appendix contains examples of how the PSI/J API can be used. Unlike the
 specification language, the examples are in a hypothetical Python binding, 
@@ -2237,7 +2059,7 @@ job.wait()
 ```
 
 
-### Appendix E - Naming
+### Appendix D - Naming
 
 The Portable Submission Interface for Jobs (PSI/J) is named after the [J/ψ
 meson](https://en.wikipedia.org/wiki/J/psi_meson).  It is pronounced like
