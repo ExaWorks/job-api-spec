@@ -143,9 +143,8 @@ information about cluster queuing systems, simplifying the composition of jobs
 handled by the API, or the design of non API user interfaces, are all beyond the
 scope of this specification.
 
-- The proposed API is intended to be used by higher level tools, such as (but
-not limited to) workflow systems. While it can be used directly by end users,
-**user friendliness is not prioritized** over other
+- The proposed API is **intended to be used by higher level tools**, such as (but
+not limited to) workflow systems. While it can be used directly by end users, user friendliness is not prioritized over other
 goals, such as scalability.
 
 - **The proposed API is asynchronous**. A detailed discussion about the choice
