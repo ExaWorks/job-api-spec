@@ -98,23 +98,23 @@
 
 ## Introduction
 
-The purpose of this document is to propose and provide an analysis of the design and
+The purpose of this document is to provide an analysis of the design and
 implementation issues of a job management API suitable for managing jobs
 on exascale machines. A job
 management API is a set of interfaces that allow the specification and
-management of application executables. The
+management of the invocation of application executables. The
 corresponding implementation of a job management API is a job management
 library. A job management library, through its  API,  is invoked by a
 client application.
 
 Traditionally, job management is implemented on supercomputers by local
-resource managers (LRMs), such as PBS/Torque, Slurm, etc. A job management API can be understood as an abstraction layer
+resource managers (LRMs), such as PBS/Torque, Slurm, etc. To a first approximation, a job management API can be understood as an abstraction layer
 on top of various LRMs.
 
 Job management is sometimes also provided by execution managers, with
 capabilities similar to LRMs but operating in user space on a limited
 subset of resources such as within a job's allocation.  This job
-management API aims to transparently abstract such execution managers.
+management API aims to also transparently abstract such execution managers.
 
 
 
@@ -155,10 +155,11 @@ of a synchronous API would not scale well in most languages. Additionally, if so
 needed, the API provides a [`wait()`](#job-wait) method that allows client code
 to trivially implement a synchronous wrapper around the API.
 
-- **Bulk versions of calls have been considered.** Bulk
-calls facilitate the use of more efficient mechanisms for transmitting job
+Bulk versions of calls have been considered.
+The main reason for having bulk calls is to facilitate the use of more 
+efficient mechanisms for transmitting job
 information to an underlying implementation. However, alternative methods exist
-that do not require a bulk calls. Nonetheless, adding bulk calls to enable
+that do not require bulk calls. Nonetheless, adding bulk calls to enable
 better performance in Layers 1-2, or even in Layer 0 if reasonably justified in
 the future, remains a possibility. For a technical discussion on the topic,
 please see [Appendix C](#appendix-c---bulk-submission).
@@ -220,7 +221,7 @@ has direct access (i.e., does not require authentication) to a local LRM.
 
 ### Layer 1 (remote)
 
-- Specifies remote locations
+- Adds the specification of remote job submission locations
 
 - Provides remote capabilities including:
 
@@ -237,7 +238,7 @@ has direct access (i.e., does not require authentication) to a local LRM.
 - Enables file cleanup (an alternative and perhaps more flexible way of doing
 this is to implement pre- and post-jobs in Layer 0)
 
-- Requires user mapping: if a system-wide service is deployed, there must be a
+- May require user mapping if a system-wide service is deployed.  User mapping is a
 mapping of the authenticated user to a local user under which the job
 should run.
 
@@ -416,8 +417,8 @@ String getName()
 ```
 
 Returns the name of this executor. The name should be something simple
-but sufficiently informative, such as  "SLURM," "PBS,"  "Condor," or
-"AWS."
+but sufficiently informative, such as  "SLURM", "PBS", "Condor", or
+"AWS".
 
 
 <a name="jobexecutor-getversion"></a>
@@ -518,14 +519,13 @@ Returns a list of native job IDs known to this executor instance.
   
 The returned list MAY contain IDs of jobs which were not submitted via this
 instance, and MAY be missing IDs of jobs which have been submitted by this
-instance but have been finalized and purged already. The returned job IDs MUST be a
-uniquely identified job in the scope of the `JobExecutor` instance and thus in the
+instance but have been finalized and purged already. The returned job IDs must uniquely identify each job in the scope of the `JobExecutor` instance and thus in the
 scope of the backend that `JobExecutor` is bound to, but should not be assumed
 to be unique beyond that scope.
 
 IDs for any job which has been submitted via this instance and which is not yet
 in a final state MUST be returned. Information for jobs in a final state may get
-purged by the backend, and the implementation MAY purge that information.
+purged by the backend, and the implementation may also purge that information.
 The native IDs for those jobs thus MAY NOT be returned by this call, even if the
 application still holds handles to those jobs (and could thus retrieve the
 native job ID directly).
@@ -542,7 +542,9 @@ authorization.
 void attach(Job job, String nativeJobID)
 ```
 
-This method will accept a job instance in `NEW` state and a native job ID. 
+Associates a Job object with a native job.
+
+This method will accept a job instance in the `NEW` state and a native job ID. 
 
 The
 executor will attach the Job instance to the backend job identified by that
@@ -597,7 +599,7 @@ execution with an error code, but can also indicate a backend error or
 a library error of any kind. The `FAILED` state is final.
 
 At any point in time until the job is final, the job can enter the `CANCELED`
-state as reaction to the `job.cancel()` call. Note that the state transition to
+state as a reaction to the `job.cancel()` call. Note that the state transition to
 `CANCELED` is not immediate when calling that method, but
 only occurs once the backend is enacting that request.
 
@@ -622,7 +624,7 @@ MAY be available on certain state transitions, in certain implementations. See
 the `JobStatus` definition for additional information on such metadata.
 
 
-##### Constructors
+#### Constructors
 
 <a name="job-"></a>
 <a name="job-_void"></a>
@@ -643,7 +645,7 @@ Constructs a `Job` object with the given [`JobSpec`](#jobspec). As with
 the above constructor, the job will be in the `NEW` state.
 
 
-##### Methods
+#### Methods
 
 <a name="job-getexecutor"></a>
 ```java
@@ -826,7 +828,7 @@ JobSpec(name: str = None, executable: str = None,
         attributes: JobAttributes = None)
 ```
 
-Creates a constructor for `JobSpec` which allows properties to be initialized
+Creates an instance of `JobSpec` which allows properties to be initialized
 through keyword arguments.
 
 </div>
@@ -1367,7 +1369,9 @@ void setNodeCount(int nodeCount)
 int? getNodeCount()
 ```
 
-Sets/gets the node count. If specified, allocates this number of nodes for
+Sets/gets the node count. 
+
+If specified, the implementation must instruct the LRM to allocate this number of nodes for
 the job. Alternatively, one may specify the `processCount` instead and
 let the LRM allocate the necessary number of nodes according to local
 policies. Specifying both the `nodeCount` and the `processCount` is not
@@ -1875,7 +1879,7 @@ the loop are known, to submit all the jobs at once:
 
 <img width="300pt" src="diagrams/bulk_submission_bulk.svg" alt="Bulk Jobs Timing Diagram"/>
 
-`send(job_data[])` indicates that we are now sending an array of
+where `send(job_data[])` indicates that we are now sending an array of
 job information. This essentially reduces the time from `3 * rtt * n` to
 `3 * rtt`, or from `O(n)` to `O(1)`. The downside is that one must know
 what all the jobs in the array are at the time the `submit(job_data[])`
