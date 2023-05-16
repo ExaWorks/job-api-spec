@@ -166,11 +166,9 @@ libraries. Some of these are:
 Globus Toolkit](https://en.wikipedia.org/wiki/Globus_Toolkit), and
 [DRMAA](https://en.wikipedia.org/wiki/DRMAA).
 
-Bulk versions of calls have been considered.
-The main reason for having bulk calls is to facilitate the use of more 
+- The **PSI/J API is orthogonal**. That means that there is at most one way to achieve a certain goal. A particular example of orthogonality is the lack of bulk calls. The main reason for having bulk calls is to facilitate the use of more 
 efficient mechanisms for transmitting job
-information to an underlying implementation. However, alternative methods exist
-that do not require bulk calls. Nonetheless, adding bulk calls to enable
+information to an underlying backend. However, implementations can use various mechanisms to combine multiple operations into one, thus achieving a similar result without needing separate bulk and non bulk API calls. Nonetheless, adding bulk calls to enable
 better performance in Layers 1-2, or even in Layer 0 if reasonably justified in
 the future, remains a possibility. For a technical discussion on the topic,
 please see [Appendix C](#appendix-c---bulk-submission).
