@@ -210,6 +210,8 @@ direct access (i.e., does not require authentication) to a local LRM.
 
 ### Layer 1 (remote)
 
+**Note: the specification for the remote layer is not available at this time**
+
 - Adds the specification of remote job submission locations
 
 - Provides remote capabilities including:
@@ -234,10 +236,14 @@ should run.
 
 ### Layer 2 (nested)
 
-- TODO: add a statement that we intend on supporting Layer 2 in the future, and 
-the rough functionality will be X, Y, Z
+**Note: the specification for the nested layer is not available at this time**
 
-- TBD
+- In addition to the remote layer, adds a mechanism to configure how pilot jobs
+are launched and managed. This may include the local layer executor to use for 
+launching the pilot jobs and a flexible mechanism that allows one to specify 
+various parameters for a pilot job management engine, such as limits on the
+number and sizes of pilot jobs, their scaling with respect to the user job 
+load, and circumstances under which pilot jobs are to be shut down.
 
 
 
