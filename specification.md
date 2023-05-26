@@ -238,12 +238,15 @@ should run.
 
 **Note: the specification for the nested layer is not available at this time**
 
-- In addition to the remote layer, adds a mechanism to configure how pilot jobs
-are launched and managed. This may include the local layer executor to use for 
-launching the pilot jobs and a flexible mechanism that allows one to specify 
-various parameters for a pilot job management engine, such as limits on the
-number and sizes of pilot jobs, their scaling with respect to the user job 
-load, and circumstances under which pilot jobs are to be shut down.
+- In addition to the remote layer, adds API elements allowing implementations 
+to configure how pilot jobs are launched and managed. This may include the 
+local layer executor to use for launching the pilot jobs and a flexible 
+mechanism that allows implementations to specify various parameters for a pilot 
+job management engine, such as limits on the number and sizes of pilot jobs, 
+their scaling with respect to the user job load, and circumstances under which 
+pilot jobs are to be shut down. It does not mandate that implementations have 
+such pilot management mechanisms. Instead, it provides API-level supporting 
+infrastructure if implementation chose to have pilot management mechanisms.
 
 
 
