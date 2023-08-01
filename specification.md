@@ -216,6 +216,12 @@ filesystem.
 - Assumes that the client application is executed in an environment that has 
 direct access (i.e., does not require authentication) to a local LRM.
 
+- Enables file staging to and from job directory
+
+- Enables file cleanup
+
+- [Allows for standard output/error streaming if supported by the executor]
+
 
 ### Layer 1 (remote)
 
@@ -230,13 +236,6 @@ direct access (i.e., does not require authentication) to a local LRM.
     - Authentication and authorization
 
     - Encryption
-
-- Enables file staging
-
-- Allows for standard output/error streaming
-
-- Enables file cleanup (an alternative and perhaps more flexible way of doing
-this is to implement pre- and post-jobs in Layer 0)
 
 - May require user mapping if a system-wide service is deployed. User mapping 
 is a mapping of the authenticated user to a local user under which the job
