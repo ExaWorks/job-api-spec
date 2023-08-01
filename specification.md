@@ -61,11 +61,33 @@
     - [JobAttributes](#jobattributes)
       - [Constructors](#constructors-10)
       - [Methods](#methods-11)
-    - [TimeInterval](#timeinterval)
+    - [StageInSet](#stageinset)
       - [Constructors](#constructors-11)
       - [Methods](#methods-12)
+    - [StageOutSet](#stageoutset)
+      - [Constructors](#constructors-12)
+      - [Methods](#methods-13)
+    - [CleanupSet](#cleanupset)
+    - [Constructors](#constructors-13)
+      - [Methods](#methods-14)
+    - [StageIn](#stagein)
+      - [Constructors](#constructors-14)
+      - [Methods](#methods-15)
+    - [StagingMode](#stagingmode)
+      - [Constructors](#constructors-15)
+      - [Methods](#methods-16)
+    - [StageOut](#stageout)
+      - [Constructors](#constructors-16)
+      - [Methods](#methods-17)
+    - [StageOutFlags](#stageoutflags)
+      - [Constructors](#constructors-17)
+      - [Methods](#methods-18)
+    - [TimeInterval](#timeinterval)
+      - [Constructors](#constructors-18)
+      - [Methods](#methods-19)
     - [TimeUnit](#timeunit)
     - [Path](#path)
+    - [URI](#uri)
   - [Appendices](#appendices)
     - [Appendix A - Synchronous vs. Asynchronous API](#appendix-a---synchronous-vs-asynchronous-api)
     - [Appendix B - Bulk Submission](#appendix-b---bulk-submission)
@@ -580,15 +602,24 @@ that the following state model is adhered to.
 Job instances are, in this API, stateful objects.  A job's state can be
 inspected via the `job.getStatus()` method which will return a `JobStatus`
 instance on which the job's state is available as an attribute.  State
-transitions can also be received via callbacks
+transitions can also be received via callbacks. The transitions through 
+`STAGE_IN`, `STAGE_OUT`, and `CLEANUP` must be generated even if a particular 
+job does not specify any files for staging or clean up.
 
 An implementation MUST ensure that job state transitions occur according to the
 following state model:  
   - A job is created in an initial state `NEW`.  
   - When the job is accepted by the backend for execution, it will enter the 
   state `QUEUED`.
+  - Before the job starts executing, it enters the 
+  `STAGE_IN` state and remains in that state until all files in the stage-in 
+  set are staged in.
   - When the job is being executed and consumes resources, it enters the 
   `ACTIVE` state.
+  - After the job ends, it enters the `STAGE_OUT` state and 
+  remains in that state until all files in the stage-out set are staged out.
+  - After staging completes, the job enters the `CLEAN_UP`
+  state
   - Upon completion, it will enter the `COMPLETED` state which is a final
   state.
 
@@ -602,7 +633,9 @@ state as a reaction to the `job.cancel()` call. Note that the state transition
 to `CANCELED` is not immediate when calling that method, but only occurs once 
 the backend is enacting that request.
 
-The `ACTIVE` state is the only state where the job will consume resources.
+The job consumes billable resources while in the `ACTIVE` state. Depending on 
+the executor implementation, the job may also consume billable resources while
+in the `STAGE_IN`, `STAGE_OUT`, and/or `CLEAN_UP` states.
 
 Backend implementations are likely to have their own state definitions state 
 and transition semantics. An implementation of this API MUST ensure that:
@@ -616,7 +649,7 @@ model misses a representation for a state which the state model requires, the
 implementation MUST report the respective state transition anyway, to the best 
 of its knowledge. For example, if a `JobExecutor` backend does not, for some
 reason, feature a state corresponding to `QUEUED`, then the implementation MUST 
-issue a `QUEUED` state update between `NEW` and `ACTIVE` anyway.
+issue a `QUEUED` state update between `NEW` and `STAGE_IN` anyway.
 
 Additional information (timestamps, backend details, transition triggers etc.)
 MAY be available on certain state transitions, in certain implementations. See
@@ -713,8 +746,9 @@ Furthermore, implementations must, to the extent possible, simulate missing
 states. For example, if the implementation polls a LRM queue infrequently 
 enough such that the active state of a job is skipped between two polling 
 rounds, the job would appear to have jumped from a `QUEUED` state to a 
-`COMPLETED` state. However, implementations can introduce a synthetic `ACTIVE` 
-state change.
+`COMPLETED` state. However, implementations can, for example, introduce a 
+synthetic `ACTIVE` state change.
+
 
 
 <a name="job-wait"></a>
@@ -732,7 +766,7 @@ if the job is in a `COMPLETED` state, since the job being completed means that
 it must have gone through the `ACTIVE` state. On the other hand, if the job is 
 in a `FAILED` state, `wait()` cannot return successfully since it is possible 
 for the job to have gone directly from a `QUEUED` state to a `FAILED` state 
-without ever beeing `ACTIVE`. Using the `wait()` method is, in most cases, 
+without ever being `ACTIVE`. Using the `wait()` method is, in most cases, 
 race-condition prone, since it cannot guarantee that job state changes cannot 
 happen immediately after `wait()` is invoked, but before the implementation of
 `wait()` checks for the current job state. If reliable tracking of job states 
@@ -1040,6 +1074,39 @@ specifying a walltime is often necessary to prevent LRMs from prematurely
 terminating a job.
 
 
+<a name="jobspec-setstagein"></a>
+```java
+void setStageIn(StageInSet stageIn)
+StageInSet getStageIn()
+```
+
+Gets/set the [stage-in set](#stageinset). The stage-in set specifies
+a set of files that will be transferred by the executor prior to starting the 
+job.
+
+
+<a name="jobspec-setstageout"></a>
+```java
+void setStageOut(StageOutSet stageOut)
+StageOutSet getStageOut()
+```
+
+Gets/set the [stage-out set](#stageoutset). The stage-out set specifies
+a set of files that will be transferred by the executor after the job has 
+finished execution but before the job is cleaned up.
+
+
+<a name="jobspec-setcleanup"></a>
+```java
+void setCleanup(CleanupSet cleanup)
+CleanupSet getCleanup()
+```
+
+Gets/set the [cleanup set](#cleanupset). The cleanup set specifies
+a set of files that are to be deleted once the job completes and all relevant
+files are staged out but before the job is marked as `COMPLETED` (or `FAILED`).
+
+
 
 ### JobStatus
 
@@ -1126,7 +1193,7 @@ A convenience wrapper for
 ### JobState
 
 An enumeration holding the possible job states, which are: `NEW`, `QUEUED`, 
-`ACTIVE`, `COMPLETED`, `FAILED`, and `CANCELED`.
+`STAGE_IN`, `ACTIVE`, `STAGE_OUT`, `CLEANUP`, `COMPLETED`, `FAILED`, and `CANCELED`.
 
 #### Constructors
 
@@ -1145,15 +1212,17 @@ It is not possible to compare two final states—otherwise all state pairs are
 comparable. Comparisons are transitive. The order is:
 
   - `QUEUED    > NEW`
-  - `ACTIVE    > QUEUED`
-  - `COMPLETED > ACTIVE`
-  - `FAILED    > ACTIVE`
-  - `CANCELED  > ACTIVE`
+  - `STAGE_IN  > QUEUED`
+  - `ACTIVE    > STAGE_IN`
+  - `STAGE_OUT > ACTIVE`
+  - `CLEANUP   > STAGE_OUT`
+  - `COMPLETED > CLEANUP`
+  - `FAILED    > CLEANUP`
+  - `CANCELED  > CLEANUP`
 
 The relevance of the partial ordering is that the system guarantees that no 
 transition that would violate this ordering can occur. For example, no job can 
-go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE > QUEUED`, 
-therefore `COMPLETED > QUEUED`.
+go from `COMPLETED` to `QUEUED` because `COMPLETED > QUEUED`.
 
 An implementation must ensure that state update notifications are delivered in
 order and without missing intermediate states.
@@ -1531,6 +1600,438 @@ attributes or not. It is, therefore, entirely possible for
 
 </div>
 
+
+### StageInSet
+
+This class represents a set of stage-in directives, each represented by a 
+[`StageIn`](#stagein) object, that have no particular order. 
+
+<div class="imp-note">
+
+In languages with generic types and a `Set` type, a staging set could
+simply be `Set<StageIn>`, but implementations have the liberty to
+implement a specialized class that exposes the same essential functionality.
+
+</div>
+
+#### Constructors
+
+<a name="stageinset-"></a>
+<a name="stageinset-_void"></a>
+```java
+StageInSet()
+```
+
+Constructs an empty stage-in set. 
+
+<div class="imp-note">
+
+For implementations that use a generic set, such as `Set<StageIn>`, a default
+`Set` constructor are considered to fulfill the contract of this API.
+Implementations are encouraged to provide convenience constructors that allow
+the specification of staging set entries as constructor parameters. If such a
+constructor is provided, implementations may elect to eschew mutating methods,
+such as entry removal. Implementations must, however, provide relevant
+accessor/iterator methods based on what is customary for the language being
+used.
+
+</div>
+
+
+#### Methods
+
+<a name="stageinset-add"></a>
+```java
+add(StageIn stageIn)
+```
+
+Adds an entry to this staging set.
+
+
+### StageOutSet
+
+This class represents a set of stage-out directives, each represented by a 
+[`StageOut`](#stageout) object, that have no particular order. 
+
+<div class="imp-note">
+
+In languages with generic types and a `Set` type, a staging set could
+simply be `Set<StageOut>`, but implementations have the liberty to
+implement a specialized class that exposes the same essential functionality.
+
+</div>
+
+#### Constructors
+
+<a name="stageoutset-"></a>
+<a name="stageoutset-_void"></a>
+```java
+StageOutSet()
+```
+
+Constructs an empty stage-out set. 
+
+<div class="imp-note">
+
+For implementations that use a generic set, such as `Set<StageOut>`, a default
+`Set` constructor are considered to fulfill the contract of this API.
+Implementations are encouraged to provide convenience constructors that allow
+the specification of staging set entries as constructor parameters. If such a
+constructor is provided, implementations may elect to eschew mutating methods,
+such as entry removal. Implementations must, however, provide relevant
+accessor/iterator methods based on what is customary for the language being
+used.
+
+</div>
+
+
+#### Methods
+
+<a name="stageoutset-add"></a>
+```java
+add(StageOut stageOut)
+```
+
+Adds an entry to this staging set.
+
+
+
+### CleanupSet
+
+This class represents a set of files to be cleaned up after a job completes.
+There is no particular order to the files. Implementations of `JobExecutor` 
+must guarantee that files in a job's cleanup set are deleted when the job 
+enters a final `JobState`. The absence from disk of a file in a job's cleanup 
+set does not represent an error condition. However, failure to delete a file 
+that exists both on disk and in a job's cleanup set must result in an error.
+
+The files in a `CleanupSet` are represented by [`Path`](#path) objects. Paths
+pointing to directories instruct executors to delete the specified directory
+recursively. A relative path is considered to be relative to the job directory.
+Executor implementations can and are encouraged to reject cleanup directives
+that point to files or directories that are outside the job directory.
+
+
+<div class="imp-note">
+
+In languages with generic types and a `Set` type, a staging set could simply be
+`Set<Path>`, but implementations have the liberty to implement a specialized
+class that exposes the same essential functionality.
+
+</div>
+
+### Constructors
+
+<a name="cleanupset-"></a>
+<a name="cleanupset-_void"></a>
+```java
+CleanupSet()
+```
+
+Constructs an empty cleanup set. 
+
+<div class="imp-note">
+
+For implementations that use a generic set, such as `Set<Path>`, a default 
+`Set` constructor are considered to fulfill the contract of this API. 
+Implementations are encouraged to provide convenience constructors that allow 
+the specification of staging set entries as constructor parameters. If such a 
+constructor is provided, implementations may elect to eschew mutating methods, 
+such as entry removal. Implementations must, however, provide relevant 
+accessor/iterator methods based on what is customary for the language being 
+used.
+
+</div>
+
+
+#### Methods
+
+<a name="cleanupset-add"></a>
+```java
+add(Path path)
+```
+
+Adds an entry to this cleanup set.
+
+
+
+### StageIn
+
+A stage-in represents a single staging directive (a directive that instructs
+executors to stage a single file). A `StageIn` consists of a source, a target,
+and a stage-in mode. The latter can be used to select details about how a
+stage-in directive should be processed.
+
+
+#### Constructors
+
+<a name="stagein-_uri_path_stageinmode"></a>
+```java
+StageIn(URI source, Path target, StagingMode mode)
+```
+
+Constructs a staging set entry that stages `source` to `target` using the `mode`
+[`StagingMode`](#stagingmode). 
+
+The `source` parameter is a `URI` pointing to a file that is to be staged in.
+The `URI` objects can, in principle, be arbitrary. However, the ability to stage
+files using a given scheme (such as `ftp` or `http`) depends on the
+implementation of the executor being used to run the job. Please also note that,
+at this time, there is no support in the PSI/J API for specifying credentials
+for accessing file endpoints beyond what is supported by the `URI` standard
+(i.e., a user name and a password). Typically, the source `URI` will simply
+contain a path, which is understood to refer to paths on the system where the
+executor is instantiated. If a source `URI` refers to a relative path, that path
+is taken to be relative to the current working directory of the process that
+instantiated the executor handling the job. Executors may but are not obligated
+to save the value of the current working directory at the time they are
+instantiated, so changes to the current working directory may lead to unexpected
+results.
+
+The `target` parameter specifies a path where the file should be staged-in. The
+path represents a path accessible from the system where the job is running. If
+a `target` path is relative, it is considered to be relative to the job 
+directory.
+
+The `mode` parameter is used to specify details about how executors should carry
+on a given staging directive. For details, please see the
+[`StagingMode`](#stagingmode) class. 
+
+
+
+<a name="stagingsetentry-_uri_uri"></a>
+```java
+StageIn(URI source, Path target)
+```
+
+A convenience constructor that is equivalent to 
+`StageIn(source, target, StagingMode.COPY)`.
+
+
+<div class="lang-bindings">
+
+__Python__:
+
+In Python, the constructors are replaced with the following single constructor:
+
+<a name="stagingsetentry-_**"></a>
+```python
+StageIn(source: URI, target: Path, 
+                mode: StagingMode = StagingMode.COPY)
+```
+
+</div>
+
+
+#### Methods
+
+<a name="stagein-getsource"></a>
+```java
+URI getSource()
+```
+
+Returns the value of the `source` property for this `StageIn`.
+
+
+<a name="stagein-gettarget"></a>
+```java
+Path getTarget()
+```
+
+Returns the value of the `target` property for this `StagIn`.
+
+
+<a name="stagein-getmode"></a>
+```java
+StagingMode getMode()
+```
+
+Returns the copy mode for this `StageIn`.
+
+
+### StagingMode
+
+An enumeration holding a number of possible basic staging modes, which 
+are: `COPY`, `LINK`, and `MOVE`. The meaning of each value is as follows:
+
+`COPY`
+: Instruct the implementation to stage the file by copying. This is the 
+default.
+
+`LINK`
+: Instruct the implementation to link the target to the source rather than
+copying, if possible. The meaning of "link" will be operating system dependent
+and is a matter of optimization. Implementations are not required to honor this
+flag and can silently ignore it, but should specify, in their documentation, 
+whether linking is implemented or not.
+
+`MOVE` : Instruct the implementation to move the source to the target rather
+than copying, if possible. Moving files instead of copying may lead to increased
+performance when the source and target are on the same filesystem and when the
+source file is a temporary file in a larger workflow. As with `LINK`,
+implementations are not required to honor this flag and can silently ignore it.
+
+
+
+#### Constructors
+
+This class represents an enumeration and has no public constructors.
+
+
+#### Methods
+
+This specification does not mandate any specific methods for this class.
+
+
+
+### StageOut
+
+A stage-out represents a single staging directive (a directive that instructs
+executors to stage a single file). A `StageOut` consists of a source, a target,
+and a stage-out mode. The latter can be used to select details about how a
+stage-out directive should be processed.
+
+
+#### Constructors
+
+<a name="stageout-_path_uri_stageoutmode"></a>
+```java
+StageOut(Path source, URI target, StageOutFlags flags, StagingMode mode)
+```
+
+Constructs a staging set entry that stages `source` to `target` according to
+`flags` and `mode`.
+
+The `source` parameter is a `Path` pointing to a file that is to be staged in.
+For details about the value of this parameter, please see the `target` parameter
+of the [`StageIn()`](#stagein-_uri_path_stageinmode") constructor.
+
+The `target` parameter specifies a `URI`` where the file should be staged-out
+to. For details about the value of this parameter, plase see the `source`
+parameter of the [`StageIn()`](#stagein-_uri_path_stageinmode") constructor.
+
+The `flags` parameter is used to specify the conditions under which executors
+should carry on a given staging directive. For details, please see the
+[`StageOutFlags`](#stageoutflags) class. 
+
+The `mode` parametr is used to specify details about how executors should carry
+on a given staging directive. For details, please see the
+[`StagingMode`](#stagingmode) class. 
+
+
+
+<a name="stageout-_path_uri"></a>
+```java
+StageOut(Path source, URI target)
+```
+
+A convenience constructor that is equivalent to 
+`StageOut(source, target, StageOutFlags.ALWAYS, StagingMode.COPY)`.
+
+
+<div class="lang-bindings">
+
+__Python__:
+
+In Python, the constructors are replaced with the following single constructor:
+
+<a name="stageout-_**"></a>
+```python
+StageOut(source: URI, target: Path, 
+         flags: StageOutFlags.ALWAYS = StageOutFlags.ALWAYS,
+         mode: StagingMode.COPY)
+```
+
+</div>
+
+
+#### Methods
+
+<a name="stageout-getsource"></a>
+```java
+Path getSource()
+```
+
+Returns the value of the `source` property for this `StageOut`.
+
+
+<a name="stageout-gettarget"></a>
+```java
+URI getTarget()
+```
+
+Returns the value of the `target` property for this `StagOut`.
+
+
+<a name="stageout-getflags"></a>
+```java
+StageOutFlags getFlags()
+```
+
+Returns the flags for this `StageOut`.
+
+
+<a name="stageout-getmode"></a>
+```java
+StagingMode getMode()
+```
+
+Returns the staging mode for this `StageOut`.
+
+
+
+
+### StageOutFlags
+
+A set of flags holding a combination of possible basic stage-out flags, which
+are: `IF_PRESENT`, `ON_SUCCESS`, `ON_ERROR`, `ON_CANCEL`. In general, flags are
+*not* mutually exclusive and this class should allow specifying a combination of
+flags. For example, a file that is meant to be staged whether a job completes
+successfully or with an error should have both `ON_SUCCESS` and `ON_ERROR` flags
+set. For stage-ins, only the `IF_PRESENT` flag (or its absence) are relevant.
+
+
+`IF_PRESENT`
+: If specified, only stage files if the source is present at the time when
+the corresponding staging directive is carried out. If the source is not
+present, the corresponding staging directive is ignored. If this flag is not
+specified and the source does not exist, the implementation must throw an 
+exception.
+
+`ON_SUCCESS`
+: If specified, execute the corresponding staging directive if the job
+succeeds. This flag only applies to stage-out directives.
+
+`ON_ERROR`
+: If specified, execute the corresponding staging directive if the job
+fails. This flag only applies to stage-out directives.
+
+`ON_CANCEL`
+: If specified, execute the corresponding staging directive if the job
+is canceled. This flag only applies to stage-out directives.
+
+`ALWAYS`
+: A convenience value representing a combination of the `ON_SUCCESS`, 
+`ON_ERROR`, and `ON_CANCEL` flags.
+
+A lack of any of the `ON_SUCCESS`, `ON_ERROR`, and `ON_CANCEL` flags indicates
+that the staging directive should always be attempted (subject to the 
+semantics of the `IF_PRESENT` flag).
+
+
+#### Constructors
+
+This class represents a flag set and has no public constructors.
+
+
+#### Methods
+
+This specification does not mandate any specific methods for this class.
+
+
+
+
+
 ### TimeInterval
 
 A class that allows users to specify a time interval in various formats.
@@ -1580,6 +2081,15 @@ Implementations are encouraged to use standard library classes if available
 instead of re-implementing a custom `Path` class. If standard library classes
 are not available to represent filesystem paths, then the `String` class MAY be 
 used instead.
+
+
+### URI
+
+A class representing a `URI` as defined in 
+[RFC 2396](https://datatracker.ietf.org/doc/html/rfc2396). Implementations
+are encouraged to use standard library classes if available in the target
+language.
+
 
 ## Appendices
 
