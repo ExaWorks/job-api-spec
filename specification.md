@@ -13,7 +13,7 @@
 
 
 - [A Portable Submission Interface for Jobs (PSI/J)](#a-portable-submission-interface-for-jobs-psij)
-  - [STATUS: EARLY DRAFT](#status-early-draft)
+  - [Current Version: 0.2](#current-version-02)
   - [Introduction](#introduction)
     - [A Note about Code Samples](#a-note-about-code-samples)
   - [Motivation and Design Goals](#motivation-and-design-goals)
@@ -85,7 +85,16 @@
 
 <!-- /TOC -->
 
-## STATUS: EARLY DRAFT
+## Current Version: 0.2
+
+Version 0.1:
+- initial version
+- specification for Layer 0
+
+Version 0.2:
+- moves file staging from Layer 1 to Layer 0
+- adds file staging
+
 
 
 
