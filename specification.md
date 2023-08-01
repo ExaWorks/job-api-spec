@@ -21,7 +21,7 @@
     - [Layer 0 (local)](#layer-0-local)
     - [Layer 1 (remote)](#layer-1-remote)
     - [Layer 2 (nested)](#layer-2-nested)
-  - [The Job API; Layer 0](#the-job-api-layer-0)
+  - [The Job API](#the-job-api)
     - [Implementation Notes](#implementation-notes)
       - [Interaction with LRMs and Scalability](#interaction-with-lrms-and-scalability)
     - [JobExecutor](#jobexecutor)
@@ -258,10 +258,11 @@ infrastructure if implementation chose to have pilot management mechanisms.
 
 
 
-## The Job API; Layer 0
+## The Job API
 
-This section describes the most basic form of the PSI/J API, namely one in
-which the location of the backend is either implicit or local. The main
+This section describes the PSI/J API. Classes, properties, and methods from 
+Layer 1 are explicitly marked with a <sup>Layer 1</sup> superscript, whereas 
+Layer 0 classes, properties, and methods have no special marking. The main 
 components of the API are shown below:
 
 <img width="100%" src="diagrams/class_diagram.svg" alt="Async Jobs Timing Diagram"/>
