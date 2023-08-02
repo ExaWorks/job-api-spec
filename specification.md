@@ -867,6 +867,8 @@ JobSpec(name: str = None, executable: str = None,
         stdout_path: Path = None, stderr_path: Path = None,
         resources: ResourceSpec = None,
         attributes: JobAttributes = None)
+        stageIn: Optional[StageInSet] = None,
+        stageOut: Optional[StageOutSet] = None,
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
