@@ -1134,8 +1134,8 @@ comparable. Comparisons are transitive. The order is:
   - `QUEUED    > NEW`
   - `ACTIVE    > QUEUED`
   - `COMPLETED > ACTIVE`
-  - `FAILED    > ACTIVE`
-  - `CANCELED  > ACTIVE`
+  - `FAILED    > QUEUED`
+  - `CANCELED  > QUEUED`
 
 The relevance of the partial ordering is that the system guarantees that no 
 transition that would violate this ordering can occur. For example, no job can 
