@@ -1079,9 +1079,7 @@ Dictionary<String, Object>? getMetadata()
 Returns metadata associated with this status, if any. 
 
 The content of the metadata dictionary is not mandated by this specification 
-and is left to the implementation. Possible metadata entries include:
-
-* `native-id`: the native identifier used by the LRM for the job.
+and is left to the implementation.
 
 
 <a name="jobstatus-getexitcode"></a>
