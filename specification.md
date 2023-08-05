@@ -1323,7 +1323,7 @@ is in a state incompatible with that request, such as when a `Job` is submitted
 multiple times.
 
 Implementations are encouraged to use existing language facilities to represent
-this exception.
+this exception if available.
 
 #### Constructors
 
