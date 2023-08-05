@@ -1839,6 +1839,7 @@ submitted jobs complete in order to keep the running number of jobs at `M`.
 
 ```python
 import psij
+import threading
 
 class ThrottledSubmitter:
     def __init__(self):
@@ -1846,14 +1847,16 @@ class ThrottledSubmitter:
         # keep track of completed jobs so that we can submit the rest
         self.jex.set_job_status_callback(self.callback)
         self.count = 0
+        self.lock = threading.RLock()
 
     def make_job(self):
         ...
 
     def submit_next():
-        if self.count < N:
-            self.jex.submit(self.jobs[self.count])
-            self.count += 1
+        with self.lock:
+          if self.count < N:
+              self.jex.submit(self.jobs[self.count])
+              self.count += 1
 
     def start(self)
         # create list of jobs
