@@ -813,13 +813,17 @@ In Python, the default constructor is replaced with the following constructor:
 
 <a name="jobspec-_**"></a>
 ```python
-JobSpec(executable: str = None, arguments: List[str] = None, 
-        directory: Path = None, name: str = None,
+JobSpec(executable: Optional[str] = None,
+        arguments: Optional[List[str]] = None,
+        directory: Optional[Path] = None,
+        name: Optional[str] = None,
         inherit_environment: bool = True,
-        environment: Dict[str, str] = None, stdin_path: Path = None,
-        stdout_path: Path = None, stderr_path: Path = None,
-        resources: ResourceSpec = None,
-        attributes: JobAttributes = None)
+        environment: Optional[Dict[str, str]] = None,
+        stdin_path: Optional[Path] = None,
+        stdout_path: Optional[Path] = None,
+        stderr_path: Optional[Path] = None,
+        resources: Optional[ResourceSpec] = None,
+        attributes: Optional[JobAttributes] = None)
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
