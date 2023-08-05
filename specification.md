@@ -1943,7 +1943,7 @@ job.wait()
 ```python
 import psij
 
-res_spec = psij.ResourceSpec()
+res_spec = psij.ResourceSpecV1()
 res_spec.process_count     = 10
 res_spec.cores_per_process = 4
 res_spec.gpus_per_process  = 1
@@ -1975,7 +1975,7 @@ access to the nodes.
 ```python
 import psij
 
-res_spec = psij.ResourceSpec()
+res_spec = psij.ResourceSpecV1()
 res_spec.exclusive_nodes = true
 res_spec.process_count = 10
 res_spec.processes__per_node = 2
