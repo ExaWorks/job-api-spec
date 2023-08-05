@@ -1444,6 +1444,25 @@ JobAttributes()
 
 Constructs an empty `JobAttributes` object.
 
+__Python__:
+
+In Python, the default constructor is replaced with the following constructor:
+
+<a name="resourcespecv1-_**"></a>
+```python
+JobAttributes(duration: Optional[TimeInterval] = none,
+              queue_name: Optional[str] = none,
+              project_name: Optional[str] = None,
+              reservation_id: Optional[str] = None,
+              custom_attributes: Optional[Dict[str, object]] = None)
+```
+
+A constructor for `JobAttributes` which allows properties to be initialized
+through keyword arguments.
+
+</div>
+
+
 #### Methods
 
 <a name="jobattributes-setduration"></a>
