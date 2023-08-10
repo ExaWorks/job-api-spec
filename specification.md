@@ -27,6 +27,7 @@
     - [JobExecutor](#jobexecutor)
       - [Methods](#methods)
         - [Exceptions](#exceptions)
+        - [Exceptions](#exceptions-1)
     - [Job](#job)
       - [State Model](#state-model)
       - [Constructors](#constructors)
@@ -52,18 +53,21 @@
     - [UnreachableStateException](#unreachablestateexception)
       - [Constructors](#constructors-7)
       - [Methods](#methods-8)
-    - [ResourceSpec](#resourcespec)
+    - [InvalidStateException](#invalidstateexception)
       - [Constructors](#constructors-8)
       - [Methods](#methods-9)
-    - [ResourceSpecV1](#resourcespecv1)
+    - [ResourceSpec](#resourcespec)
       - [Constructors](#constructors-9)
       - [Methods](#methods-10)
-    - [JobAttributes](#jobattributes)
+    - [ResourceSpecV1](#resourcespecv1)
       - [Constructors](#constructors-10)
       - [Methods](#methods-11)
-    - [TimeInterval](#timeinterval)
+    - [JobAttributes](#jobattributes)
       - [Constructors](#constructors-11)
       - [Methods](#methods-12)
+    - [TimeInterval](#timeinterval)
+      - [Constructors](#constructors-12)
+      - [Methods](#methods-13)
     - [TimeUnit](#timeunit)
     - [Path](#path)
   - [Appendices](#appendices)
@@ -430,7 +434,8 @@ the version.
 
 <a name="jobexecutor-submit"></a>
 ```java
-void submit(Job job) throws InvalidJobException, SubmitException
+void submit(Job job) throws InvalidJobException, InvalidStateException,
+    SubmitException
 ```
 
 Submits a job to the underlying implementation. 
@@ -456,6 +461,10 @@ notifications about the job will be fired.
     specifications early and throw this exception as soon as possible if that
     validation fails.
 
+- `InvalidStateException`:
+    Throws if the job is in an invalid state, such as when a previously
+    submitted job is being submitted again.
+
 - `SubmitException`:
     Thrown if the request cannot be sent to the underlying implementation. 
     Unlike `InvalidJobException`, this exception can occur for reasons that are 
@@ -465,7 +474,7 @@ notifications about the job will be fired.
 
 <a name="jobexecutor-cancel"></a>
 ```java
-void cancel(Job job) throws SubmitException
+void cancel(Job job) throws InvalidStateException, SubmitException
 ```
 
 Cancels a job that has been submitted to underlying executor implementation. 
@@ -484,6 +493,19 @@ the job to complete before the cancellation is communicated to the underlying
 implementation and before the client code receives the completion notification. 
 In such a case, the job will never enter the `CANCELED`state and 
 `job.wait(JobState.CANCELED)` would hang indefinitely.
+
+##### Exceptions
+
+- `InvalidStateException`:
+  Thrown if the job being canceled has never been submitted or possibly if it
+  has already been canceled. Please note that a call to `JobExecutor.cancel()`
+  does not necessarily result in the job being immediately marked as
+  `CANCELED`, and it is entirely possible for this exception to not be thrown
+  when `JobExecutor.cancel()` is called multiple times on the same job.
+
+- `SubmitException`:
+  Thrown if the executor cannot successfully communicate the request to the
+  backend.
 
 <a name="jobexecutor-setjobstatuscallback"></a>
 ```java
@@ -1295,6 +1317,23 @@ String getStatus()
 Returns the job status that has caused an implementation to determine that the 
 desired states passed to the [`Job.wait`](#job-wait) method cannot be reached.
 
+
+### InvalidStateException
+
+This exception is thrown when a request is made for a [`Job`](#job) object that
+is in a state incompatible with that request, such as when a `Job` is submitted
+multiple times.
+
+Implementations are encouraged to use existing language facilities to represent
+this exception if available.
+
+#### Constructors
+
+This specification does not mandate a public constructor for this class.
+
+#### Methods
+
+This specification does not mandate any methods for this class.
 
 
 
