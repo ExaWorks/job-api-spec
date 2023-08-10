@@ -1862,6 +1862,7 @@ submitted jobs complete in order to keep the running number of jobs at `M`.
 
 ```python
 import psij
+import threading
 
 class ThrottledSubmitter:
     def __init__(self):
@@ -1869,14 +1870,16 @@ class ThrottledSubmitter:
         # keep track of completed jobs so that we can submit the rest
         self.jex.set_job_status_callback(self.callback)
         self.count = 0
+        self.lock = threading.RLock()
 
     def make_job(self):
         ...
 
     def submit_next():
-        if self.count < N:
-            self.jex.submit(self.jobs[self.count])
-            self.count += 1
+        with self.lock:
+          if self.count < N:
+              self.jex.submit(self.jobs[self.count])
+              self.count += 1
 
     def start(self)
         # create list of jobs
@@ -1963,7 +1966,7 @@ job.wait()
 ```python
 import psij
 
-res_spec = psij.ResourceSpec()
+res_spec = psij.ResourceSpecV1()
 res_spec.process_count     = 10
 res_spec.cores_per_process = 4
 res_spec.gpus_per_process  = 1
@@ -1995,7 +1998,7 @@ access to the nodes.
 ```python
 import psij
 
-res_spec = psij.ResourceSpec()
+res_spec = psij.ResourceSpecV1()
 res_spec.exclusive_nodes = true
 res_spec.process_count = 10
 res_spec.processes__per_node = 2
