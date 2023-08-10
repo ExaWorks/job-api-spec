@@ -813,8 +813,8 @@ In Python, the default constructor is replaced with the following constructor:
 
 <a name="jobspec-_**"></a>
 ```python
-JobSpec(name: str = None, executable: str = None,
-        arguments: List[str] = None, directory: Path = None,
+JobSpec(executable: str = None, arguments: List[str] = None, 
+        directory: Path = None, name: str = None,
         inherit_environment: bool = True,
         environment: Dict[str, str] = None, stdin_path: Path = None,
         stdout_path: Path = None, stderr_path: Path = None,
