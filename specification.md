@@ -1126,7 +1126,7 @@ This class represents an enumeration and has no public constructors.
 boolean isGreaterThan(JobState other)
 ```
 
-Defines a partial ordering on the states. 
+Defines a strict partial ordering on the states.
 
 It is not possible to compare two final states—otherwise all state pairs are 
 comparable. Comparisons are transitive. The order is:
@@ -1134,16 +1134,25 @@ comparable. Comparisons are transitive. The order is:
   - `QUEUED    > NEW`
   - `ACTIVE    > QUEUED`
   - `COMPLETED > ACTIVE`
-  - `FAILED    > QUEUED`
-  - `CANCELED  > QUEUED`
+  - `FAILED    > ACTIVE`
+  - `CANCELED  > ACTIVE`
 
-The relevance of the partial ordering is that the system guarantees that no 
-transition that would violate this ordering can occur. For example, no job can 
-go from `COMPLETED` to `QUEUED` because `COMPLETED > ACTIVE > QUEUED`, 
-therefore `COMPLETED > QUEUED`.
+The relevance of the partial ordering is that the system guarantees that a
+transition from a state `s1` to a state `s2`, possibly through some other
+intermediate states, is only possible if `s2 > s1`. More formally, given two
+distinct states `s1` and`s2`, then either `s1 < s2`, `s2 < s1`, or `s1 || s2`,
+where the symbol `||` denotes two states that are not comparable. With this
+notation, the following statements apply:
+- `s1 < s2`: a transition from `s1` to `s2` is possible.
+- `s1 > s2`: a transition from `s1` to `s2` is *not* possible.
+- `s1 || s2`: a transition from `s1` to `s2` is *not* possible.
+
+For example, a transition from `QUEUED` to `FAILED` is possible because
+`ACTIVE > QUEUED` and `FAILED > ACTIVE`, therefore, by transitivity,
+`FAILED > QUEUED`.
 
 An implementation must ensure that state update notifications are delivered in
-order and without missing intermediate states.
+accordance with this ordering.
 
 
 <a name="jobstate-isfinal"></a>
