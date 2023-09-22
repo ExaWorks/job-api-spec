@@ -607,12 +607,12 @@ following state model:
   - A job is created in an initial state `NEW`.  
   - When the job is accepted by the backend for execution, it will enter the 
   state `QUEUED`.
-  - Before the job starts executing, it enters the 
+  - Before job execution starts, it enters the
   `STAGE_IN` state and remains in that state until all files in the stage-in 
   set are staged in.
   - When the job is being executed and consumes resources, it enters the 
   `ACTIVE` state.
-  - After the job ends, it enters the `STAGE_OUT` state and 
+  - After job execution ends, it enters the `STAGE_OUT` state and
   remains in that state until all files in the stage-out set are staged out.
   - After staging completes, the job enters the `CLEAN_UP`
   state
