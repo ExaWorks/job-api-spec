@@ -332,10 +332,6 @@ explicit runtime type-checks, but it is not required to do so.
 - Getters/setters can be replaced by properties, depending on what is customary 
 in the language in which the library is implemented.
 
-- Implementations may elect, at their discretion, to implement many of the 
-classes described in this document as read-only classes for which all 
-properties are set at construction time. 
-
 
 <div class="imp-note">
 
