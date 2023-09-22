@@ -742,8 +742,8 @@ Furthermore, implementations must, to the extent possible, simulate missing
 states. For example, if the implementation polls a LRM queue infrequently 
 enough such that the active state of a job is skipped between two polling 
 rounds, the job would appear to have jumped from a `QUEUED` state to a 
-`COMPLETED` state. However, implementations can, for example, introduce a 
-synthetic `ACTIVE` state change.
+`COMPLETED` state. In such cases implementations must introduce a synthetic
+`ACTIVE` state change.
 
 
 
