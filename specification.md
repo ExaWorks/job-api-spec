@@ -50,24 +50,21 @@
     - [SubmitException](#submitexception)
       - [Constructors](#constructors-6)
       - [Methods](#methods-7)
-    - [UnreachableStateException](#unreachablestateexception)
+    - [InvalidStateException](#invalidstateexception)
       - [Constructors](#constructors-7)
       - [Methods](#methods-8)
-    - [InvalidStateException](#invalidstateexception)
+    - [ResourceSpec](#resourcespec)
       - [Constructors](#constructors-8)
       - [Methods](#methods-9)
-    - [ResourceSpec](#resourcespec)
+    - [ResourceSpecV1](#resourcespecv1)
       - [Constructors](#constructors-9)
       - [Methods](#methods-10)
-    - [ResourceSpecV1](#resourcespecv1)
+    - [JobAttributes](#jobattributes)
       - [Constructors](#constructors-10)
       - [Methods](#methods-11)
-    - [JobAttributes](#jobattributes)
+    - [TimeInterval](#timeinterval)
       - [Constructors](#constructors-11)
       - [Methods](#methods-12)
-    - [TimeInterval](#timeinterval)
-      - [Constructors](#constructors-12)
-      - [Methods](#methods-13)
     - [TimeUnit](#timeunit)
     - [Path](#path)
   - [Appendices](#appendices)
@@ -730,38 +727,28 @@ state change.
 <a name="job-wait_timeinterval-jobstate@"></a>
 ```java
 JobStatus wait(TimeInterval? timeout, JobState targetStates...)
-    throws UnreachableStateException
 ```
 
-Waits until the job has reached either of the `targetStates`, any state that 
-follows one or more of the `targetStates` but not states that are not in 
-`targetStates`, or until an amount of time indicated by the timeout parameter 
-passes. For example, `wait(timeout, [JobState.ACTIVE])` can return successfully 
-if the job is in a `COMPLETED` state, since the job being completed means that 
-it must have gone through the `ACTIVE` state. On the other hand, if the job is 
-in a `FAILED` state, `wait()` cannot return successfully since it is possible 
-for the job to have gone directly from a `QUEUED` state to a `FAILED` state 
-without ever beeing `ACTIVE`. Using the `wait()` method is, in most cases, 
-race-condition prone, since it cannot guarantee that job state changes cannot 
-happen immediately after `wait()` is invoked, but before the implementation of
-`wait()` checks for the current job state. If reliable tracking of job states 
-is needed, status callbacks should be used instead of `wait()`. The `wait()` 
-method returns the [JobStatus](#jobstatus) object that has caused `wait()` to 
-complete or `null` if the timeout is reached. If none of the states in 
-`targetStates` can be reached (such as, for example, because the job has 
-entered the `FAILED` state while `targetStates` consists of `COMPLETED`), this 
-method throws an [`UnreachableStateException`](#unreachablestateexception). If 
-strict behavior is desired (that is, if `wait()` is to only return when one of
-the `targetStates` is reached but no other), the returned status can be checked 
-for the relevant state.
+Waits until one of the following conditions is true:
+- The job is in one of the `targetStates`
+- The job is in a state that is *greater than* one or more of the
+  `targetStates`. The meaning of "greater than" is that defined by the partial
+  state ordering in [`JobState.isGreaterThan`](#jobstate-isgreaterthan)
+- The job is in a final state
+- The `timeout` has expired
 
-<div class="imp-note">
-Implementations are encouraged to throw the `UnreachableStateException` as soon 
-as it can be determined that the `targetStates` are unreachable and not 
-necessarily when the job reaches a final state. However, whether it is possible 
-to make such a determination before a final state is reached depends on the 
-exact time this method is called.
-</div>
+For example, `wait(timeout, [JobState.QUEUED])` can return successfully
+if the job is in an `ACTIVE` state, since the job being active means that
+it must have gone through the `QUEUED` state. Using the `wait()` method is, in
+most cases, race-condition prone, since it cannot guarantee that job state
+changes cannot happen immediately after `wait()` is invoked, but before the
+implementation of `wait()` checks for the current job state. If reliable
+tracking of job states is needed, status callbacks should be used instead of
+`wait()`. The `wait()` method returns the [JobStatus](#jobstatus) object that
+has caused `wait()` to complete or `null` if the timeout is reached. If strict
+behavior is desired, such as, for example, ensuring that the job is in a
+`COMPLETED` final state, then the returned status can be checked for the
+relevant state.
 
 <div class="imp-note">
 In certain languages (e.g., Java), the `wait` method is a final method of every 
@@ -786,8 +773,7 @@ JobStatus wait(TimeInterval? timeout)
 Waits for the job to enter a final state for a certain amount of time, or
 indefinitely if `timeout` is `null`. Returns a [JobStatus](#jobstatus) object 
 that represents the status of the job at termination or `null` if the timeout 
-is reached. Unlike `wait(JobState targetStates...)`, this version cannot throw 
-an `UnreachableStateException`.
+is reached.
 
 <a name="job-wait_void"></a>
 ```java
@@ -1305,26 +1291,6 @@ temporary defect in a service to cause such a failure, under normal operating
 conditions such an error would persist across subsequent retries until correct 
 credentials are used.
 
-
-
-### UnreachableStateException
-
-This exception is thrown when the [`Job.wait`](#job-wait) method is called with 
-a set of states that cannot be reached by the job when the call is made.
-
-#### Constructors
-
-This specification does not mandate a public constructor for this class.
-
-#### Methods
-
-<a name="unreachablestateexception-getStatus"></a>
-```java
-String getStatus()
-```
-
-Returns the job status that has caused an implementation to determine that the 
-desired states passed to the [`Job.wait`](#job-wait) method cannot be reached.
 
 
 ### InvalidStateException
