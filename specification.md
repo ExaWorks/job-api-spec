@@ -1602,13 +1602,15 @@ attributes or not. It is, therefore, entirely possible for
 ### StageInSet
 
 This class represents a set of stage-in directives, each represented by a 
-[`StageIn`](#stagein) object, that have no particular order. 
+[`StageIn`](#stagein) object, that have no particular order.
 
 <div class="imp-note">
 
-In languages with generic types and a `Set` type, a staging set could
-simply be `Set<StageIn>`, but implementations have the liberty to
-implement a specialized class that exposes the same essential functionality.
+Implementations must use what is customary for the language in which this
+specification is implemented. For example, in languages where a generic `Set`
+type is provided, implementations must use that instead of a custom 
+`StageInSet` class. When a ganeric `Set` is not available, implementations must
+ensure that the `StageInSet` class contains relevant accessor methods.
 
 </div>
 
@@ -1620,21 +1622,7 @@ implement a specialized class that exposes the same essential functionality.
 StageInSet()
 ```
 
-Constructs an empty stage-in set. 
-
-<div class="imp-note">
-
-For implementations that use a generic set, such as `Set<StageIn>`, a default
-`Set` constructor are considered to fulfill the contract of this API.
-Implementations are encouraged to provide convenience constructors that allow
-the specification of staging set entries as constructor parameters. If such a
-constructor is provided, implementations may elect to eschew mutating methods,
-such as entry removal. Implementations must, however, provide relevant
-accessor/iterator methods based on what is customary for the language being
-used.
-
-</div>
-
+Constructs an empty stage-in set.
 
 #### Methods
 
@@ -1653,9 +1641,11 @@ This class represents a set of stage-out directives, each represented by a
 
 <div class="imp-note">
 
-In languages with generic types and a `Set` type, a staging set could
-simply be `Set<StageOut>`, but implementations have the liberty to
-implement a specialized class that exposes the same essential functionality.
+Implementations must use what is customary for the language in which this
+specification is implemented. For example, in languages where a generic `Set`
+type is provided, implementations must use that instead of a custom 
+`StageOutSet` class. When a ganeric `Set` is not available, implementations must
+ensure that the `StageOutSet` class contains relevant accessor methods.
 
 </div>
 
@@ -1668,20 +1658,6 @@ StageOutSet()
 ```
 
 Constructs an empty stage-out set. 
-
-<div class="imp-note">
-
-For implementations that use a generic set, such as `Set<StageOut>`, a default
-`Set` constructor are considered to fulfill the contract of this API.
-Implementations are encouraged to provide convenience constructors that allow
-the specification of staging set entries as constructor parameters. If such a
-constructor is provided, implementations may elect to eschew mutating methods,
-such as entry removal. Implementations must, however, provide relevant
-accessor/iterator methods based on what is customary for the language being
-used.
-
-</div>
-
 
 #### Methods
 
@@ -1712,9 +1688,11 @@ that point to files or directories that are outside the job directory.
 
 <div class="imp-note">
 
-In languages with generic types and a `Set` type, a staging set could simply be
-`Set<Path>`, but implementations have the liberty to implement a specialized
-class that exposes the same essential functionality.
+Implementations must use what is customary for the language in which this
+specification is implemented. For example, in languages where a generic `Set`
+type is provided, implementations must use that instead of a custom 
+`StageOutSet` class. When a ganeric `Set` is not available, implementations must
+ensure that the `StageOutSet` class contains relevant accessor methods.
 
 </div>
 
@@ -1727,20 +1705,6 @@ CleanupSet()
 ```
 
 Constructs an empty cleanup set. 
-
-<div class="imp-note">
-
-For implementations that use a generic set, such as `Set<Path>`, a default 
-`Set` constructor are considered to fulfill the contract of this API. 
-Implementations are encouraged to provide convenience constructors that allow 
-the specification of staging set entries as constructor parameters. If such a 
-constructor is provided, implementations may elect to eschew mutating methods, 
-such as entry removal. Implementations must, however, provide relevant 
-accessor/iterator methods based on what is customary for the language being 
-used.
-
-</div>
-
 
 #### Methods
 
