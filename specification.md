@@ -865,7 +865,7 @@ JobSpec(name: str = None, executable: str = None,
         attributes: JobAttributes = None)
         stage_in: Optional[Set[StageIn]] = None,
         stage_out: Optional[Set[StageOut]] = None,
-        cleanup: Optional[Set[Cleanup]] = None)
+        cleanup: Optional[Set[Path]] = None)
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
