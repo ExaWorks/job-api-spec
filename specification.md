@@ -831,7 +831,10 @@ JobSpec(executable: Optional[str] = None,
         stdout_path: Optional[Path] = None,
         stderr_path: Optional[Path] = None,
         resources: Optional[ResourceSpec] = None,
-        attributes: Optional[JobAttributes] = None)
+        attributes: Optional[JobAttributes] = None,
+        pre_launch: Optional[Path] = None,
+        post_launch: Optional[Path] = None,
+        launcher: Optional[str] = None)
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
