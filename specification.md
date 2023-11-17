@@ -863,8 +863,9 @@ JobSpec(name: str = None, executable: str = None,
         stdout_path: Path = None, stderr_path: Path = None,
         resources: ResourceSpec = None,
         attributes: JobAttributes = None)
-        stageIn: Optional[StageInSet] = None,
-        stageOut: Optional[StageOutSet] = None,
+        stage_in: Optional[Set[StageIn]] = None,
+        stage_out: Optional[Set[StageOut]] = None,
+        cleanup: Optional[Set[Cleanup]] = None)
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
@@ -1203,8 +1204,8 @@ This class represents an enumeration and has no public constructors.
 ```java
 boolean isGreaterThan(JobState other)
 ```
-
 Defines a partial ordering on the states. 
+
 
 It is not possible to compare two final states—otherwise all state pairs are 
 comparable. Comparisons are transitive. The order is:
