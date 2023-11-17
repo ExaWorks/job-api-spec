@@ -1015,6 +1015,32 @@ The `PreLaunch` and `PostLaunch` scripts SHALL be POSIX-compliant shell scripts.
 
 </div>
 
+<a name="jobspec-setlauncher"></a>
+```java
+void setLauncher(String launcher)
+String? getLauncher()
+```
+
+Sets the launcher to be used for this job. A launcher is a mechanism used to
+start the parallel ranks of a job. An implementation is required to implement,
+at a minimum, the following launchers:
+
+`single`
+: The single launcher launches a single rank on the lead node. This launcher
+must be used if no launcher is explicitly specified.
+
+`multiple`
+: A multiple launcher launches multiple ranks on the lead node.
+
+`mpirun`
+: This launcher uses the standard `mpirun` tool to launch the job ranks.
+
+In addition to the base launchers above, implementation must implement launchers
+that are likely to correspond to job executors that are provided that are
+provided by that implementation. For example, if a `Slurm` job executor is
+provided, a `srun` launcher must also be made available.
+
+
 <a name="jobspec-setresources"></a>
 ```java
 void setResources(ResourceSpec resources)
