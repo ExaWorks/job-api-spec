@@ -831,7 +831,10 @@ JobSpec(executable: Optional[str] = None,
         stdout_path: Optional[Path] = None,
         stderr_path: Optional[Path] = None,
         resources: Optional[ResourceSpec] = None,
-        attributes: Optional[JobAttributes] = None)
+        attributes: Optional[JobAttributes] = None,
+        pre_launch: Optional[Path] = None,
+        post_launch: Optional[Path] = None,
+        launcher: Optional[str] = None)
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
@@ -1011,6 +1014,32 @@ single rank process hangs.
 The `PreLaunch` and `PostLaunch` scripts SHALL be POSIX-compliant shell scripts.
 
 </div>
+
+<a name="jobspec-setlauncher"></a>
+```java
+void setLauncher(String launcher)
+String? getLauncher()
+```
+
+Sets the launcher to be used for this job. A launcher is a mechanism used to
+start the parallel ranks of a job. An implementation is required to implement,
+at a minimum, the following launchers:
+
+`single`
+: The single launcher launches a single rank on the lead node. This launcher
+must be used if no launcher is explicitly specified.
+
+`multiple`
+: A multiple launcher launches multiple ranks on the lead node.
+
+`mpirun`
+: This launcher uses the standard `mpirun` tool to launch the job ranks.
+
+In addition to the base launchers above, implementation must implement launchers
+that are likely to correspond to job executors that are provided that are
+provided by that implementation. For example, if a `Slurm` job executor is
+provided, a `srun` launcher must also be made available.
+
 
 <a name="jobspec-setresources"></a>
 ```java
