@@ -865,7 +865,8 @@ JobSpec(name: str = None, executable: str = None,
         attributes: JobAttributes = None)
         stage_in: Optional[Set[StageIn]] = None,
         stage_out: Optional[Set[StageOut]] = None,
-        cleanup: Optional[Set[Path]] = None)
+        cleanup: Optional[Set[Path]] = None,
+        cleanup_flags: StageOutFlags = StageOutFlags.ALWAYS)
 ```
 
 Creates an instance of `JobSpec` which allows properties to be initialized
@@ -1106,6 +1107,16 @@ a set of files that are to be deleted once the job completes and all relevant
 files are staged out but before the job is marked as `COMPLETED` (or `FAILED`).
 
 
+<a name="jobspec-set_cleanup_flags"></a>
+```java
+void setCleanupFlags(StageOutFlags flags)
+StageOutFlags getCleanupFlags()
+```
+
+Allows the controlling of the circumstances under which cleanup should occur. 
+By default, this flag should be set to `StageOutFlags.ALWAYS`. The value
+`StageOutFlags.IF_PRESENT` is ignored and the absence of files in the cleanup
+set when the cleanup step occurs must not result in an error.
 
 ### JobStatus
 
