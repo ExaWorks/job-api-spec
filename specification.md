@@ -1560,18 +1560,20 @@ If no queue is specified, the implementation or LRM may either choose a default
 queue or throw an [`InvalidJobException`](#invalidjobexception).
 
 
-<a name="jobattributes-setprojectname"></a>
+<a name="jobattributes-setaccount"></a>
 ```java
-void setProjectName(String projectName)
-String? getProjectName()
+void setAccount(String account)
+String? getAccount()
 ```
 
-Sets/gets a project name. 
+Sets/gets an account for accounting/billing purposes.
 
-It is common for local LRM policies to use projects to allow structured billing 
+It is common for local LRM policies to use accounts to allow structured billing
 of CPU-hours. If no project is specified, the implementation or LRM may either 
 choose a default project or throw an 
-[`InvalidJobException`](#invalidjobexception).
+[`InvalidJobException`](#invalidjobexception). Certain schedulers may have the notion of a
+`project` or both an `account` and `project`. This attribute must be mapped to
+the scheduler option that is intended for billing/accounting.
 
 
 <a name="jobattributes-setreservationid"></a>
